@@ -1,0 +1,155 @@
+@import "./_colors.scss";
+@import "./_uprofiler.scss";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: $cool-grey-9;
+  color: $cool-grey-0;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 62.5%;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.container {
+  width: 960px;
+  margin: 0 auto;
+}
+
+.nav {
+  background: $white;
+  border-bottom: 1px solid $cool-grey-8;
+
+  &__items {
+    list-style-type: none;
+    display: flex;
+  }
+
+  &__item {
+    a {
+      display: block;
+      padding: 12px 16px 12px 0;
+    }
+  }
+}
+
+.button {
+  display: block;
+  background: $cool-grey-3;
+  border: 1px solid $cool-grey-3;
+  border-radius: 4px;
+  color: $white;
+  cursor: pointer;
+  padding: 12px;
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  width: 100%;
+  transition: all 0.25s;
+
+  &:last-child {
+    margin: 0;
+  }
+
+  &:hover {
+    background: $cool-grey-2;
+    border-color: $cool-grey-3;
+  }
+
+  &--primary {
+    background: $vivid-purple-3;
+    border-color: $vivid-purple-3;
+
+    &:hover {
+      background: $vivid-purple-0;
+      border-color: $vivid-purple-0;
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    border-color: $vivid-purple-5;
+    color: $vivid-purple-3;
+
+    &:hover {
+      background: transparent;
+      border-color: $vivid-purple-2;
+      color: $vivid-purple-1;
+    }
+  }
+}
+
+.flash {
+  list-style-type: none;
+  margin: 12px 0;
+
+  &__item {
+    padding: 12px;
+    background: $cool-grey-3;
+    border-radius: 4px;
+
+    color: $white;
+  }
+}
+
+.form {
+  &--login,
+  &--signup {
+    background: $white;
+    border: 1px solid $cool-grey-8;
+    border-radius: 4px;
+    box-shadow:
+      0 3px 30px 2px rgba($cool-grey-3, 0.1),
+      0 2px 2px  0px rgba($cool-grey-5, 0.1);
+    margin: 48px auto;
+    padding: 32px;
+    width: 420px;
+  }
+
+  &__errors {
+    list-style-type: none;
+    margin: -8px 0 16px 0;
+    padding: 12px;
+    background: $cool-grey-3;
+    border-radius: 4px;
+
+    color: $white;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  &__group {
+    label {
+      margin: 0 0 16px 0;
+      display: block;
+      font-size: 1rem;
+
+      input {
+        display: block;
+        margin: 4px 0 0 0;
+      }
+    }
+
+    input {
+      padding: 9px;
+      border: 1px solid $cool-grey-7;
+      border-radius: 4px;
+      color: $cool-grey-1;
+      font-size: 1rem;
+      font-weight: 400;
+      width: 100%;
+
+      &:focus {
+        border-color: $cool-grey-6;
+        box-shadow: 0 0 0 2px $cool-grey-8;
+      }
+    }
+  }
+}

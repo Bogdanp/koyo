@@ -1,0 +1,2 @@
+scss: npx broccoli b --output-path static --watch
+web: raco koyo serve

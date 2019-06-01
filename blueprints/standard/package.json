@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "broccoli": "^3.0.0",
+    "broccoli-cli": "^1.0.0",
+    "broccoli-concat": "^3.7.3",
+    "broccoli-funnel": "^2.0.2",
+    "broccoli-merge-trees": "^3.0.2",
+    "broccoli-sass": "^0.7.0",
+    "broccoli-uglify-sourcemap": "^3.1.1",
+    "eslint": "^5.15.0",
+    "prettier": "^1.16.4"
+  }
+}

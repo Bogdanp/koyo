@@ -1,0 +1,109 @@
+#lang racket/base
+
+(require koyo/xexpr
+         rackunit)
+
+(provide xexpr-tests)
+
+(define xexpr-tests
+  (test-suite
+   "xexpr"
+
+   (test-suite
+    "xexpr->text"
+
+    (test-case "turns xexprs into text"
+      (check-equal? (xexpr->text "Hi") "Hi")
+      (check-equal? (xexpr->text '(h1)) "")
+      (check-equal? (xexpr->text '(h1 "Hello" "there")) "Hello there")
+      (check-equal? (xexpr->text '(h1 ((class "heading")) "Hi")) "Hi")
+      (check-equal? (xexpr->text '(div
+                                   ((class "container"))
+                                   (h1
+                                    ((class "title"))
+                                    "A" (strong "good") "title.")
+                                   (p
+                                    "And some content!")))
+                    "A good title. And some content!")
+      (check-equal? (xexpr->text '(p "Xexprs" 'mdash "good?")) "Xexprs &mdash; good?")
+      (check-equal? (xexpr->text '(p "Xexprs" 8212 "good?")) "Xexprs &#8212; good?")))
+
+   (test-suite
+    "xexpr-select"
+
+    (test-case "finds elements by their tag in a path"
+      (define tree
+        '(div
+          (header
+           (h1 "First heading"))
+          (main
+           (div
+            (h1 "Second heading")))
+          (footer
+           (div
+            (div
+             (h1 "Third heading")
+             (h1 "Fourth heading"))))))
+
+      (check-equal?
+       (xexpr-select tree h1)
+       '((h1 "First heading")
+         (h1 "Second heading")
+         (h1 "Third heading")
+         (h1 "Fourth heading")))
+
+      (check-equal?
+       (xexpr-select tree main h1)
+       '((h1 "Second heading")))
+
+      (check-equal?
+       (xexpr-select tree footer h1)
+       '((h1 "Third heading")
+         (h1 "Fourth heading"))))
+
+    (test-case "finds elements by their attributes in a path"
+      (define tree
+        '(div
+          (header
+           (a [(class "findme")
+               (data-extra "")]))
+          (footer
+           (a))))
+
+      (check-equal?
+       (xexpr-select tree (a [(class "findme")]))
+       '((a [(class "findme") (data-extra "")]))))
+
+    (test-case "finds elements by their attributes in a path containing a wildcard"
+      (define tree
+        '(div
+          (header
+           (a [(class "findme")]))
+          (footer
+           (h1 [(class "findme")]))))
+
+      (check-equal?
+       (xexpr-select tree (* [(class "findme")]))
+       '((a [(class "findme")])
+         (h1 [(class "findme")])))
+
+      (check-equal?
+       (xexpr-select tree footer (* [(class "findme")]))
+       '((h1 [(class "findme")]))))
+
+    (test-suite
+     "xexpr-select-text"
+
+     (test-case "finds the text inside elements"
+       (define tree
+         '(div
+           (h1 "first")
+           (h1 "second")))
+
+       (check-equal?
+        (xexpr-select-text tree h1)
+        '("first" "second")))))))
+
+(module+ test
+  (require rackunit/text-ui)
+  (run-tests xexpr-tests))
