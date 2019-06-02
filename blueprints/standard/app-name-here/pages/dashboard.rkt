@@ -2,6 +2,7 @@
 
 (require racket/contract
          web-server/http
+         "../components/auth.rkt"
          "../components/user.rkt"
          "../components/template.rkt")
 
