@@ -16,7 +16,9 @@
  xexpr->text
  xexpr-select
  xexpr-select-first
- xexpr-select-text)
+ xexpr-select-text
+ xexpr-unless
+ xexpr-when)
 
 (define (default-surround s)
   (string-append "<div>" s "</div>"))
@@ -131,3 +133,17 @@
   (syntax-parse stx
     [(_ e:expr s ...+)
      #'(map (curryr xexpr->text "") (xexpr-select e s ...))]))
+
+(define-syntax (xexpr-unless stx)
+  (syntax-parse stx
+    [(_ condition:expr e:expr ...+)
+     #'(if condition
+           (list)
+           (list e ...))]))
+
+(define-syntax (xexpr-when stx)
+  (syntax-parse stx
+    [(_ condition:expr e:expr ...+)
+     #'(if condition
+           (list e ...)
+           (list))]))
