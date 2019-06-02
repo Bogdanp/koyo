@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require koyo/xexpr
+         racket/function
          rackunit)
 
 (provide xexpr-tests)
@@ -8,6 +9,20 @@
 (define xexpr-tests
   (test-suite
    "xexpr"
+
+   (test-suite
+    "html->xexpr"
+
+    (test-case "groups multiple elements into a single toplevel xexpr by default"
+      (check-equal? (html->xexpr "<b>1</b><i>2</i>")
+                    '((div ()
+                           (b () "1")
+                           (i () "2")))))
+
+    (test-case "turns html strings into lists of xexprs"
+      (check-equal? (html->xexpr "<b>1</b><i>2</i>" identity)
+                    '((b () "1")
+                      (i () "2")))))
 
    (test-suite
     "xexpr->text"

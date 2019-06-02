@@ -8,6 +8,7 @@
                "component-lib"
                "db-lib"
                "gregor-lib"
+               "html-lib"
                "postmark-client"
                "srfi-lite-lib"
                "web-server-lib"))

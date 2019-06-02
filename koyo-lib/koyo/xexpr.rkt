@@ -2,17 +2,35 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
+         (prefix-in h: html)
          racket/contract
          racket/function
          racket/match
+         racket/port
          racket/string
          xml)
 
 (provide
+ html->xexpr
+ html->xexpr/first
  xexpr->text
  xexpr-select
  xexpr-select-first
  xexpr-select-text)
+
+(define (default-surround s)
+  (string-append "<div>" s "</div>"))
+
+(define/contract (html->xexpr s [surround default-surround])
+  (->* (string?)
+       ((-> string? string?))
+       (listof xexpr?))
+  (call-with-input-string (surround s)
+    (lambda (in)
+      (map xml->xexpr (h:read-html-as-xml in)))))
+
+(define html->xexpr/first
+  (compose1 car html->xexpr))
 
 (define/contract (xexpr->text e [sep " "])
   (->* (xexpr?) (string?) string?)
