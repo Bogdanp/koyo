@@ -6,6 +6,6 @@
     (provide (all-from-out mod ...))))
 
 (reprovide
- "../pages/auth.rkt"
- "../pages/common.rkt"
- "../pages/dashboard.rkt")
+ "auth.rkt"
+ "common.rkt"
+ "dashboard.rkt")

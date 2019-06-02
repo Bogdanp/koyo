@@ -1,16 +1,15 @@
 #lang racket/base
 
-(require racket/contract/base
+(require racket/contract
          web-server/http
-         "../components/auth.rkt"
          "../components/user.rkt"
          "../components/template.rkt")
 
 (provide
- (contract-out
-  [dashboard-page (-> request? response?)]))
+ dashboard-page)
 
-(define (dashboard-page req)
+(define/contract (dashboard-page req)
+  (-> request? response?)
   (page
    (container
     '(h1 "Dashboard")

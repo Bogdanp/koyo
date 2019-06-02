@@ -25,9 +25,9 @@
          web-server/dispatchers/filesystem-map
          web-server/managers/lru
          web-server/servlet-dispatch
+         "../pages/all.rkt"
          "auth.rkt"
          "mail.rkt"
-         "page.rkt"
          "user.rkt")
 
 (provide

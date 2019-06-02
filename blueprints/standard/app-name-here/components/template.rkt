@@ -9,6 +9,7 @@
          koyo/preload
          koyo/profiler
          koyo/url
+         koyo/xexpr
          racket/format
          racket/runtime-path
          web-server/http
@@ -16,7 +17,10 @@
          (prefix-in config: "../config.rkt")
          "auth.rkt")
 
-(provide container static-uri page xexpr-when)
+(provide
+ static-uri
+ container
+ page)
 
 (define-syntax known-static-files
   (let* ([current-dir (build-path (syntax-source #'here) 'up)]
@@ -35,13 +39,6 @@
      #'(let ([p (format "/static/~a?rev=~a" path config:version)])
          (track-preload-dependency! p)
          p)]))
-
-(define-syntax (xexpr-when stx)
-  (syntax-parse stx
-    [(xexpr-when condition e ...+)
-     #'(if condition
-           (list e ...)
-           (list))]))
 
 (define (container . content)
   `(div ((class "container")) ,@content))
