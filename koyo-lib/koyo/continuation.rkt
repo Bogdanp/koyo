@@ -22,6 +22,8 @@
 
 (provide
  current-continuation-key
+ current-continuation-key-cookie-path
+ current-continuation-key-cookie-secure?
  current-continuation-mismatch-handler
  protect-continuation
  wrap-protect-continuations
@@ -37,6 +39,14 @@
 (define/contract current-continuation-key
   (parameter/c (or/c false/c non-empty-string?))
   (make-parameter #f))
+
+(define/contract current-continuation-key-cookie-path
+  (parameter/c non-empty-string?)
+  (make-parameter "/"))
+
+(define/contract current-continuation-key-cookie-secure?
+  (parameter/c boolean?)
+  (make-parameter #t))
 
 (define/contract current-continuation-mismatch-handler
   (parameter/c (-> request? response?))
@@ -83,8 +93,8 @@
           (generate-random-string)))
 
     (parameterize ([current-continuation-key continuation-key])
-      (define the-cookie (make-cookie #:path "/"    ;; TODO: This must be configurable.
-                                      #:secure? #t  ;; TODO: This must be configurable.
+      (define the-cookie (make-cookie #:path (current-continuation-key-cookie-path)
+                                      #:secure? (current-continuation-key-cookie-secure?)
                                       #:http-only? #t
                                       #:extension "SameSite=Strict"
                                       continuation-key-cookie-name
