@@ -2,12 +2,12 @@
 
 ;; Everything but the kitchen sink.
 
-(define-syntax-rule (require/provide mod ...)
+(define-syntax-rule (reprovide mod ...)
   (begin
     (require mod ...)
     (provide (all-from-out mod ...))))
 
-(require/provide
+(reprovide
  "config.rkt"
  "continuation.rkt"
  "cors.rkt"
