@@ -10,5 +10,5 @@ what you use.
 ## Quickstart
 
     $ raco pkg install koyo
-    $ raco koyo new example
+    $ raco koyo new example  # or raco koyo new -b minimal example
     $ cd example && cat README.md

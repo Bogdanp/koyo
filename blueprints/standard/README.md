@@ -17,7 +17,6 @@
 
 ### First-time Setup
 
-    $ cp .env.default .env
     $ nvm use && npm install
     $ pip install -r requirements.txt
     $ raco pkg install app-name-here/                                    # install and build the application and its deps
