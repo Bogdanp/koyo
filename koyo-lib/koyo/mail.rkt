@@ -98,7 +98,7 @@
 ;; Mailer ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- make-mailer
+ make-mailer-factory
  mailer?
  mailer-adapter
  mailer-sender
@@ -110,9 +110,9 @@
   [(define component-start identity)
    (define component-stop identity)])
 
-(define/contract ((make-mailer #:adapter adapter
-                               #:sender sender
-                               #:common-variables common-variables))
+(define/contract ((make-mailer-factory #:adapter adapter
+                                       #:sender sender
+                                       #:common-variables common-variables))
   (-> #:adapter mail-adapter?
       #:sender non-empty-string?
       #:common-variables (hash/c symbol? string?)

@@ -62,7 +62,7 @@
  exn:fail:user-manager?
  exn:fail:user-manager:username-taken?
 
- user-manager
+ make-user-manager
  user-manager?
  user-manager-lookup/id
  user-manager-lookup/username
@@ -73,11 +73,15 @@
 (struct exn:fail:user-manager exn:fail ())
 (struct exn:fail:user-manager:username-taken exn:fail:user-manager ())
 
-(struct++ user-manager ([db connection?])
+(struct user-manager (db)
   #:transparent
   #:methods gen:component
   [(define component-start identity)
    (define component-stop identity)])
+
+(define/contract (make-user-manager db)
+  (-> database? user-manager?)
+  (user-manager db))
 
 (define/contract (user-manager-create! um username password)
   (-> user-manager? string? string? user?)

@@ -101,7 +101,7 @@
                                             #:shelf-life config:session-shelf-life
                                             #:secret-key config:session-secret-key
                                             #:store (make-memory-session-store))]
-    [users (db) user-manager])
+    [users (db) make-user-manager])
 
   (define auth #f)
   (define users #f)

@@ -41,9 +41,9 @@
                              #:host config:db-host
                              #:port config:db-port)]
   [flashes (sessions) make-flash-manager]
-  [mailer (make-mailer #:adapter mail-adapter
-                       #:sender config:support-email
-                       #:common-variables config:common-mail-variables)]
+  [mailer (make-mailer-factory #:adapter mail-adapter
+                               #:sender config:support-email
+                               #:common-variables config:common-mail-variables)]
   [server (app) (compose1 (make-server-factory #:host config:http-host
                                                #:port config:http-port) app-dispatcher)]
   [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
@@ -51,7 +51,7 @@
                                           #:shelf-life config:session-shelf-life
                                           #:secret-key config:session-secret-key
                                           #:store (make-memory-session-store #:file-path "/tmp/app-name-here-session.ss"))]
-  [users (db) user-manager])
+  [users (db) make-user-manager])
 
 
 ;; Interface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
