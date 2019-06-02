@@ -65,7 +65,5 @@
 
 (module+ test
   (require rackunit/text-ui)
-  (with-handlers ([exn:fail:sql?
-                   (lambda (e)
-                     (displayln "Failed to connect to Postgres.  Skipping database tests."))])
+  (when (equal? (getenv "KOYO_DATABASE_TESTS") "x")
     (run-tests database-tests)))
