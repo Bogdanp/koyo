@@ -6,13 +6,17 @@
          racket/file
          racket/format
          racket/function
+         racket/list
          racket/match
          racket/path
          racket/runtime-path
          racket/string
          racket/system
          raco/command-name
+         "logging.rkt"
          "runner.rkt")
+
+(define-logger cli)
 
 (define-runtime-path blueprints-path
   (build-path 'up 'up "blueprints"))
@@ -41,15 +45,71 @@
     [(list)
      (exit-with-errors! "error: could not find a dynamic.rkt module in the current directory")]))
 
+(define (infer-project-name dmp)
+  (path->string
+   (last
+    (explode-path
+     (simplify-path
+      (build-path dmp 'up))))))
+
 (define (handle-help)
   (exit-with-errors!
    "usage: raco koyo <command> <option> ... <arg> ..."
    ""
    "available commands:"
+   "  dist   generate a deployable distribution of the application"
    "  graph  generate a graph of all the components in the current application"
    "  help   display this help message"
    "  new    generate a new koyo-based project from a blueprint"
    "  serve  run a server for the current application"))
+
+(define (handle-dist)
+  (define target-path "dist")
+  (define dynamic-module-path
+    (command-line
+     #:program (current-program-name)
+     #:once-each
+     [("-t" "--target") target-path
+                        "where to put the distribution"
+                        (set! target-path target-path)]
+     #:args ([dynamic-module-path #f])
+     (or dynamic-module-path (infer-dynamic-module-path))))
+
+  (define project-name
+    (infer-project-name dynamic-module-path))
+
+  (define project-root
+    (simplify-path (build-path dynamic-module-path 'up 'up)))
+
+  (define temp-path
+    (make-temporary-file "koyo-build~a" 'directory))
+
+  (define temp-exe-path
+    (build-path temp-path project-name))
+
+  (log-cli-info "building executable")
+  (unless (zero?
+           (system*/exit-code (find-executable-path "raco")
+                              "exe" "-o" temp-exe-path
+                              dynamic-module-path))
+    (exit-with-errors! @~a{error: failed to build racket executable from application}))
+
+  (log-cli-info "creating distribution")
+  (unless (zero?
+           (system*/exit-code (find-executable-path "raco")
+                              "distribute" target-path temp-exe-path))
+    (exit-with-errors! @~a{error: failed to create distribution from application}))
+
+  (define static-path
+    (build-path project-root "static"))
+
+  (when (directory-exists? static-path)
+    (log-cli-info "copying static folder into target folder")
+    (define target-static-path
+      (build-path target-path "static"))
+
+    (delete-directory/files target-static-path #:must-exist? #f)
+    (copy-directory/files static-path target-static-path)))
 
 (define (handle-graph)
   (define dynamic-module-path
@@ -129,8 +189,12 @@
 (define ((handle-unknown command))
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
 
+;; TODO: Make it possible to control the verbosity?
+(void (start-logger #:levels '((cli . debug))))
+
 (define all-commands
-  (hasheq 'graph handle-graph
+  (hasheq 'dist  handle-dist
+          'graph handle-graph
           'help  handle-help
           'new   handle-new
           'serve handle-serve))
