@@ -49,8 +49,11 @@
                    (handler changed-path))))))
 
 (define/contract (run-forever dynamic-module-path
+                              #:recompile? [recompile? #t]
                               #:errortrace? [errortrace? #t])
-  (->* (path-string?) (#:errortrace? boolean?) void?)
+  (->* (path-string?)
+       (#:recompile? boolean?
+        #:errortrace? boolean?) void?)
 
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
@@ -77,10 +80,16 @@
      (lambda ()
        (control 'interrupt))))
 
+  (define (make path)
+    (process* (find-executable-path "raco") "make" (path->string path)))
+
   (log-runner-info "starting application process")
   (watch
    #:path (simplify-path (build-path dynamic-module-path 'up))
    #:handler (lambda (changed-path)
+               (when (and recompile? (equal? (path-get-extension changed-path) #".rkt"))
+                 (log-runner-info (format "recompiling '~a'" changed-path))
+                 (make changed-path))
                (when stop
                  (log-runner-info "stopping application process")
                  (stop))))
