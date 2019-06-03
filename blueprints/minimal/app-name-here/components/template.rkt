@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require koyo/preload
+(require koyo/haml
+         koyo/preload
          koyo/profiler
          racket/format
          web-server/http
@@ -19,14 +20,12 @@
 
   (with-timing 'template "page"
     (define page
-      `(html
-        (head
-         (title
-          ,(if subtitle
-               (~a subtitle " - AppNameHere")
-               "AppNameHere")))
-        (body
-         ,@content)))
+      (haml
+       (:html
+        (:head
+         (:title (if subtitle (~a subtitle " - AppNameHere") "AppNameHere")))
+        (:body
+         (@ content)))))
 
     (response
      200

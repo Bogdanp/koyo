@@ -5,6 +5,7 @@
                      racket/path
                      syntax/parse)
          koyo/flash
+         koyo/haml
          koyo/l10n
          koyo/preload
          koyo/profiler
@@ -41,17 +42,21 @@
          p)]))
 
 (define (container . content)
-  `(div ((class "container")) ,@content))
+  (haml (.container (@ content))))
 
 (define (nav . items)
-  `(div
-    ((class "nav"))
-    ,(container `(ul ((class "nav__items")) ,@items))))
+  (haml
+   (.nav
+    (container
+     (haml (.nav__items (@ items)))))))
 
 (define (nav-item uri label)
-  `(li
-    ((class "nav__item"))
-    (a ((href ,uri) (up-target "body")) ,label)))
+  (haml
+   (:li.nav__item
+    (:a
+     [(:href uri)
+      (:up-target "body")]
+     label))))
 
 (define (page #:subtitle [subtitle #f]
               #:show-nav? [show-nav? #t]
@@ -64,37 +69,34 @@
 
   (with-timing 'template "page"
     (define page
-      `(html
-        (head
-         (title
-          ,(if subtitle
-               (~a subtitle " - AppNameHere")
-               "AppNameHere"))
-         (link ((rel "stylesheet") (href ,(static-uri "css/screen.css"))))
-         (link ((rel "stylesheet") (href ,(static-uri "vendor/unpoly.min.css")))))
-        (body
-         ,@(xexpr-when show-nav?
-             (if (current-user)
-                 (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-dashboard))
-                      (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))
-                 (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-dashboard))
-                      (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
-                      (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))))
+      (haml
+       (:html
+        (:head
+         (:title (if subtitle (~a subtitle " - AppNameHere") "AppNameHere"))
+         (:link [(:rel "stylesheet") (:href (static-uri "css/screen.css"))])
+         (:link [(:rel "stylesheet") (:href (static-uri "vendor/unpoly.min.css"))]))
+        (:body
+         (when show-nav?
+           (if (current-user)
+               (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-dashboard))
+                    (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))
+               (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-dashboard))
+                    (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
+                    (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))))
 
-         ,@(xexpr-when (not (null? (current-flash-messages)))
-             (container
-              `(ul
-                ((class "flash"))
-                ,@(for/list ([flash (current-flash-messages)])
-                    `(li
-                      ((class ,(format "flash__item flash__item--~a" (car flash))))
-                      ,(cdr flash))))))
+         (unless (null? (current-flash-messages))
+           (container
+            (haml
+             (:ul.flash
+              (@ (for/list ([flash (current-flash-messages)])
+                   (haml
+                    (:li
+                     [(:class (format "flash__item flash__item--~a" (car flash)))]
+                     (cdr flash)))))))))
 
-         (div
-          ((class "content"))
-          ,@content)
+         (.content (@ content))
 
-         (script ((src ,(static-uri "vendor/unpoly.min.js")))))))
+         (:script [(:src (static-uri "vendor/unpoly.min.js"))])))))
 
     (response
      200
