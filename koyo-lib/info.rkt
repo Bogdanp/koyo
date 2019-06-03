@@ -14,3 +14,5 @@
                "srfi-lite-lib"
                "web-server-lib"))
 (define build-deps '("at-exp-lib"))
+
+(define compile-omit-paths '("blueprints"))
