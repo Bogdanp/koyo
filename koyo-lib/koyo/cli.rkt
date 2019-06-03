@@ -191,6 +191,7 @@
 
 ;; TODO: Make it possible to control the verbosity?
 (void (start-logger #:levels '((koyo    . debug)
+                               (runner  . debug)
                                (watcher . debug))))
 
 (define all-commands

@@ -11,6 +11,7 @@
 (provide
  run-forever)
 
+(define-logger runner)
 (define-logger watcher)
 
 (define (track-file? p)
@@ -70,10 +71,13 @@
      (lambda ()
        (control 'interrupt))))
 
+  (log-runner-info "starting application process")
   (watch
    #:path (simplify-path (build-path dynamic-module-path 'up))
    #:handler (lambda (changed-path)
-               (and stop (stop))))
+               (when stop
+                 (log-runner-info "stopping application process")
+                 (stop))))
 
   (let loop ()
     (define-values (stopped-evt stop-process)
@@ -85,4 +89,5 @@
       (sync/enable-break
        (handle-evt stopped-evt
                    (lambda _
+                     (log-runner-info "restarting application process")
                      (loop)))))))
