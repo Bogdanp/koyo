@@ -19,7 +19,7 @@
 (define-logger koyo)
 
 (define-runtime-path blueprints-path
-  (build-path 'up "blueprints"))
+  (build-path 'up 'up "blueprints"))
 
 (define blueprint-names
   (map path->string (directory-list blueprints-path)))
