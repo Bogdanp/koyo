@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require gregor
+         mzlib/os
          racket/contract
          racket/format
          racket/list
@@ -32,8 +33,9 @@
                   (match-lambda
                     [(vector level message _ _)
                      (fprintf out
-                              "[~a] [~a] ~a\n"
+                              "[~a] [~a] [~a] ~a\n"
                               (~t (now) "yyyy-MM-dd HH:mm:ss")
+                              (~a (getpid) #:align 'right #:width 8)
                               (~a level #:align 'right #:width 7)
                               message)
                      (receive-logs)]))

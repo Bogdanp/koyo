@@ -5,6 +5,7 @@
 
 (define deps '("base"
                "north"
+               "compatibility-lib"
                "component-lib"
                "db-lib"
                "gregor-lib"
