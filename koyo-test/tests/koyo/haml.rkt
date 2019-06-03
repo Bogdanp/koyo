@@ -74,8 +74,12 @@
 
     (test-case "converts literals to xexprs"
       (check-equal? (haml 1) 1)
-      (check-equal? (haml mdash) 'mdash)
+      (check-equal? (haml &mdash) 'mdash)
       (check-equal? (haml "test") "test"))
+
+    (test-case "converts bound identifiers to xexprs"
+      (define label "hello")
+      (check-equal? (haml label) label))
 
     (test-case "converts elements to xexprs"
       (check-equal?

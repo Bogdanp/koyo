@@ -16,7 +16,10 @@
    selector-attributes
 
    attribute?
-   attribute-name)
+   attribute-name
+
+   html-symbol?
+   html-symbol-value)
 
   (define (selector? s)
     (define s:str (symbol->string s))
@@ -67,7 +70,15 @@
   (define (attribute-name s)
     (match (regexp-match attribute-re (symbol->string s))
       [(list _ value)
-       (string->symbol value)])))
+       (string->symbol value)]))
+
+  (define (html-symbol? s)
+    (define s:str (symbol->string s))
+    (and (> (string-length s:str) 1)
+         (string-prefix? (symbol->string s) "&")))
+
+  (define (html-symbol-value s)
+    (string->symbol (substring (symbol->string s) 1))))
 
 (begin-for-syntax
   (require 'selectors)
@@ -97,7 +108,12 @@
              #:with value #',val))
 
   (define-syntax-class literal
-    (pattern (~or lit:id lit:str lit:number)
+    (pattern lit:id
+             #:with xexpr (if (html-symbol? (syntax-e #'lit))
+                              (html-symbol-value (syntax-e #'lit))
+                              #',lit))
+
+    (pattern (~or lit:str lit:number)
              #:with xexpr #'lit))
 
   (define-syntax-class element
