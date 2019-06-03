@@ -48,21 +48,27 @@
                    (log-watcher-debug "detected change in ~v" (path->string changed-path))
                    (handler changed-path))))))
 
-(define/contract (run-forever dynamic-module-path)
-  (-> path-string? void?)
+(define/contract (run-forever dynamic-module-path
+                              #:errortrace? [errortrace? #t])
+  (->* (path-string?) (#:errortrace? boolean?) void?)
 
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
 
+  (define command-args
+    (if errortrace?
+        (list "-l" "errortrace" "-t" dynamic-module-path)
+        (list dynamic-module-path)))
+
   (define stop #f)
   (define (run)
     (match-define (list in out pid err control)
-      (process*/ports (current-output-port)
-                      (current-input-port)
-                      (current-error-port)
-                      (find-executable-path "racket")
-                      "-l" "errortrace" "-t"
-                      dynamic-module-path))
+      (apply process*/ports
+             (current-output-port)
+             (current-input-port)
+             (current-error-port)
+             (find-executable-path "racket")
+             command-args))
 
     (values
      (thread

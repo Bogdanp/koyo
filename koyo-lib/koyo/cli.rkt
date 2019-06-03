@@ -178,13 +178,18 @@
           (write-string replaced-contents out))))))
 
 (define (handle-serve)
+  (define errortrace? #t)
   (define dynamic-module-path
     (command-line
      #:program (current-program-name)
+     #:once-each
+     [("--disable-errortrace") "run the application without error trace"
+                               (set! errortrace? #f)]
      #:args ([dynamic-module-path #f])
      (or dynamic-module-path (infer-dynamic-module-path))))
 
-  (run-forever (path->complete-path dynamic-module-path)))
+  (run-forever (path->complete-path dynamic-module-path)
+               #:errortrace? errortrace?))
 
 (define ((handle-unknown command))
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
