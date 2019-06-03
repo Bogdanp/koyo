@@ -15,4 +15,5 @@
                "web-server-lib"))
 (define build-deps '("at-exp-lib"))
 
+(define setup-collects '("koyo"))
 (define compile-omit-paths '("blueprints"))
