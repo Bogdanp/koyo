@@ -16,7 +16,7 @@
          "logging.rkt"
          "runner.rkt")
 
-(define-logger cli)
+(define-logger koyo)
 
 (define-runtime-path blueprints-path
   (build-path 'up 'up "blueprints"))
@@ -87,14 +87,14 @@
   (define temp-exe-path
     (build-path temp-path project-name))
 
-  (log-cli-info "building executable")
+  (log-koyo-info "building executable")
   (unless (zero?
            (system*/exit-code (find-executable-path "raco")
                               "exe" "-o" temp-exe-path
                               dynamic-module-path))
     (exit-with-errors! @~a{error: failed to build racket executable from application}))
 
-  (log-cli-info "creating distribution")
+  (log-koyo-info "creating distribution")
   (unless (zero?
            (system*/exit-code (find-executable-path "raco")
                               "distribute" target-path temp-exe-path))
@@ -104,7 +104,7 @@
     (build-path project-root "static"))
 
   (when (directory-exists? static-path)
-    (log-cli-info "copying static folder into target folder")
+    (log-koyo-info "copying static folder into target folder")
     (define target-static-path
       (build-path target-path "static"))
 
@@ -190,7 +190,7 @@
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
 
 ;; TODO: Make it possible to control the verbosity?
-(void (start-logger #:levels '((cli . debug))))
+(void (start-logger #:levels '((koyo . debug))))
 
 (define all-commands
   (hasheq 'dist  handle-dist
