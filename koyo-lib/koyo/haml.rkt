@@ -90,12 +90,12 @@
              #:with attributes (selector-attributes (syntax-e #'selector))))
 
   (define-syntax-class attribute
-    (pattern attribute:id
-             #:when (attribute? (syntax-e #'attribute))
-             #:with name (attribute-name (syntax-e #'attribute))))
+    (pattern attr:id
+             #:when (attribute? (syntax-e #'attr))
+             #:with name (attribute-name (syntax-e #'attr))))
 
   (define-syntax-class attribute-definition
-    (pattern attr:attribute
+    (pattern (attr:attribute)
              #:with name #'attr.name
              #:with value "")
 
@@ -117,10 +117,7 @@
              #:with xexpr #'lit))
 
   (define-syntax-class element
-    (pattern lit:literal
-             #:with xexpr #'lit.xexpr)
-
-    (pattern (sel:selector (attr:attribute-definition ...) child:element ...)
+    (pattern (sel:selector (attr:attribute-definition ...+) child:element ...)
              #:with xexpr (with-syntax ([attrs
                                          (append
                                           (syntax-e #'sel.attributes)
@@ -130,18 +127,21 @@
     (pattern (sel:selector child:element ...)
              #:with xexpr #'(sel.tag sel.attributes child.xexpr ...))
 
-    (pattern ((~datum unless) condition child ...+)
+    (pattern ((~datum unless) condition:expr child:expr ...+)
              #:with xexpr #',@(if (not condition)
-                                  (list (haml child) ...)
+                                  (list child ...)
                                   (list)))
 
-    (pattern ((~datum when) condition child ...+)
+    (pattern ((~datum when) condition:expr child:expr ...+)
              #:with xexpr #',@(if condition
-                                  (list (haml child) ...)
+                                  (list child ...)
                                   (list)))
 
-    (pattern ((~datum @) (e ...+))
-             #:with xexpr #',@(e ...))
+    (pattern ((~datum @) e)
+             #:with xexpr #',@e)
+
+    (pattern lit:literal
+             #:with xexpr #'lit.xexpr)
 
     (pattern e:expr
              #:with xexpr #',e)))

@@ -91,6 +91,16 @@
        '(div () (a () "test")))
 
       (check-equal?
+       (haml (:div
+              [(:data-carousel)]
+              (:div [(:data-carousel-item)] "1")
+              (:div [(:data-carousel-item)] "1")))
+       '(div
+         [(data-carousel "")]
+         (div [(data-carousel-item "")] "1")
+         (div [(data-carousel-item "")] "1")))
+
+      (check-equal?
        (haml
         (.container
          (.hero
@@ -118,7 +128,26 @@
           (a
            [(class "button")
             (up-target "body")]
-           "Shop")))))
+           "Shop"))))
+
+      (check-equal?
+       (haml
+        (:html
+         (:head
+          (:title "HAML")
+          (:link [(:rel "stylesheet") (:href "/screen.css")]))
+         (:body
+          (:h1 "Hello!"))))
+       '(html
+         []
+         (head
+          []
+          (title [] "HAML")
+          (link [(rel "stylesheet")
+                 (href "/screen.css")]))
+         (body
+          []
+          (h1 [] "Hello!")))))
 
     (test-case "elements can contain arbitrary expressions"
       (check-equal?
@@ -153,8 +182,8 @@
        (haml
         (.container
          (when #t
-           (.child-1)
-           (.child-2))))
+           (haml (.child-1))
+           (haml (.child-2)))))
        `(div
          [(class "container")]
          (div [(class "child-1")])
@@ -164,8 +193,8 @@
        (haml
         (.container
          (when #f
-           (.child-1)
-           (.child-2))))
+           (haml (.child-1))
+           (haml (.child-2)))))
        `(div
          [(class "container")]))
 
@@ -173,8 +202,8 @@
        (haml
         (.container
          (unless #t
-           (.child-1)
-           (.child-2))))
+           (haml (.child-1))
+           (haml (.child-2)))))
        `(div
          [(class "container")]))
 
@@ -182,8 +211,8 @@
        (haml
         (.container
          (unless (not #t)
-           (.child-1)
-           (.child-2))))
+           (haml (.child-1))
+           (haml (.child-2)))))
        `(div
          [(class "container")]
          (div [(class "child-1")])
