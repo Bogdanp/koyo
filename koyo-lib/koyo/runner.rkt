@@ -6,8 +6,7 @@
          racket/list
          racket/match
          racket/path
-         racket/system
-         "logging.rkt")
+         racket/system)
 
 (provide
  run-forever)
@@ -53,9 +52,6 @@
 
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
-
-  (start-logger #:levels '((watcher . debug))
-                #:output-port (current-error-port))
 
   (define stop #f)
   (define (run)

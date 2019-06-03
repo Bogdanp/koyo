@@ -190,7 +190,8 @@
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
 
 ;; TODO: Make it possible to control the verbosity?
-(void (start-logger #:levels '((koyo . debug))))
+(void (start-logger #:levels '((koyo    . debug)
+                               (watcher . debug))))
 
 (define all-commands
   (hasheq 'dist  handle-dist
