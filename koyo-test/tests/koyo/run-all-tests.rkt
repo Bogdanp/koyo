@@ -8,6 +8,7 @@
          "database.rkt"
          "dispatch.rkt"
          "flash.rkt"
+         "haml.rkt"
          "l10n.rkt"
          "mime.rkt"
          "profiler.rkt"
@@ -26,6 +27,7 @@
    database-tests
    dispatch-tests
    flash-tests
+   haml-tests
    l10n-tests
    mime-tests
    profiler-tests

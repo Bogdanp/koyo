@@ -15,6 +15,7 @@
  "database.rkt"
  "dispatch.rkt"
  "flash.rkt"
+ "haml.rkt"
  "l10n.rkt"
  "logging.rkt"
  "mail.rkt"
