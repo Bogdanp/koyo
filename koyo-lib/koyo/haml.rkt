@@ -28,7 +28,7 @@
              (string-prefix? s:str "."))))
 
   (define selector-tag-re
-    #px"(:[^.#]+)?(.+)?")
+    #px"(:[^#.]+)?(.+)?")
 
   (define (selector-tag s)
     (match (regexp-match selector-tag-re (symbol->string s))
@@ -62,7 +62,7 @@
          attrs)]))
 
   (define attribute-re
-    #px"^:([a-zA-Z0-9][a-zA-Z0-9_-]*)$")
+    #px"^:([:a-zA-Z0-9_][:a-zA-Z0-9_-]*)$")
 
   (define (attribute? s)
     (regexp-match? attribute-re (symbol->string s)))

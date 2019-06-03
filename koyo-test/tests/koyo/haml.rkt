@@ -60,14 +60,16 @@
        (check-false (attribute? 'class))
        (check-false (attribute? ':class.foo))
        (check-true (attribute? ':class))
-       (check-true (attribute? ':data-foo))))
+       (check-true (attribute? ':data-foo))
+       (check-true (attribute? ':cdr:license))))
 
     (test-suite
      "attribute-name"
 
      (test-case "extracts names from attributes"
        (check-equal? (attribute-name ':class) 'class)
-       (check-equal? (attribute-name ':data-value) 'data-value))))
+       (check-equal? (attribute-name ':data-value) 'data-value)
+       (check-equal? (attribute-name ':cdr:license) 'cdr:license))))
 
    (test-suite
     "haml"
