@@ -140,7 +140,7 @@
                                   (list (haml child) ...)
                                   (list)))
 
-    (pattern ((~datum @) e ...+)
+    (pattern ((~datum @) (e ...+))
              #:with xexpr #',@(e ...))
 
     (pattern e:expr

@@ -192,7 +192,7 @@
     (test-case "expressions can be spliced into elements"
       (check-equal?
        (haml
-        (.articles (@ map symbol->string '(a b c))))
+        (.articles (@ (map symbol->string '(a b c)))))
        '(div
          ([class "articles"])
          "a" "b" "c"))))))
