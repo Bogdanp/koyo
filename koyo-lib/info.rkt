@@ -17,3 +17,4 @@
 
 (define setup-collects '("koyo"))
 (define compile-omit-paths '("blueprints"))
+(define test-omit-paths '("blueprints"))
