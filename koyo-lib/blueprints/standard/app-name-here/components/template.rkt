@@ -54,8 +54,8 @@
   (haml
    (:li.nav__item
     (:a
-     [(:href uri)
-      (:up-target "body")]
+     ([:href uri]
+      [:up-target "body"])
      label))))
 
 (define (page #:subtitle [subtitle #f]
@@ -73,8 +73,8 @@
        (:html
         (:head
          (:title (if subtitle (~a subtitle " - AppNameHere") "AppNameHere"))
-         (:link [(:rel "stylesheet") (:href (static-uri "css/screen.css"))])
-         (:link [(:rel "stylesheet") (:href (static-uri "vendor/unpoly.min.css"))]))
+         (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
+         (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
         (:body
          (when show-nav?
            (if (current-user)
@@ -91,12 +91,12 @@
               (@ (for/list ([flash (current-flash-messages)])
                    (haml
                     (:li
-                     [(:class (format "flash__item flash__item--~a" (car flash)))]
+                     ([:class (format "flash__item flash__item--~a" (car flash))])
                      (cdr flash)))))))))
 
          (.content (@ content))
 
-         (:script [(:src (static-uri "vendor/unpoly.min.js"))])))))
+         (:script ([:src (static-uri "vendor/unpoly.min.js")]))))))
 
     (response
      200

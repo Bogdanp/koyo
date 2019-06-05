@@ -94,13 +94,13 @@
 
       (check-equal?
        (haml (:div
-              [(:data-carousel)]
-              (:div [(:data-carousel-item)] "1")
-              (:div [(:data-carousel-item)] "1")))
+              ([:data-carousel])
+              (:div ([:data-carousel-item]) "1")
+              (:div ([:data-carousel-item]) "1")))
        '(div
-         [(data-carousel "")]
-         (div [(data-carousel-item "")] "1")
-         (div [(data-carousel-item "")] "1")))
+         ([data-carousel ""])
+         (div ([data-carousel-item ""]) "1")
+         (div ([data-carousel-item ""]) "1")))
 
       (check-equal?
        (haml
@@ -109,11 +109,11 @@
           (:h1.hero__title.upcase
            "Hello!"))))
        '(div
-         [(class "container")]
+         ([class "container"])
          (div
-          [(class "hero")]
+          ([class "hero"])
           (h1
-           [(class "hero__title upcase")]
+           ([class "hero__title upcase"])
            "Hello!"))))
 
       (check-equal?
@@ -121,15 +121,15 @@
         (.container
          (.hero
           (:a.button
-           [(:up-target "body")]
+           ([:up-target "body"])
            "Shop"))))
        '(div
-         [(class "container")]
+         ([class "container"])
          (div
-          [(class "hero")]
+          ([class "hero"])
           (a
-           [(class "button")
-            (up-target "body")]
+           ([class "button"]
+            [up-target "body"])
            "Shop"))))
 
       (check-equal?
@@ -137,7 +137,8 @@
         (:html
          (:head
           (:title "HAML")
-          (:link [(:rel "stylesheet") (:href "/screen.css")]))
+          (:link ([:rel "stylesheet"]
+                  [:href "/screen.css"])))
          (:body
           (:h1 "Hello!"))))
        '(html
@@ -145,8 +146,8 @@
          (head
           []
           (title [] "HAML")
-          (link [(rel "stylesheet")
-                 (href "/screen.css")]))
+          (link ([rel "stylesheet"]
+                 [href "/screen.css"])))
          (body
           []
           (h1 [] "Hello!")))))
@@ -156,17 +157,17 @@
        (haml
         (:a.button (translate 'shop)))
        `(a
-         [(class "button")]
+         ([class "button"])
          ,(translate 'shop)))
 
       (check-equal?
        (haml
         (:a.button
-         [(:up-target (string-upcase "body"))]
+         ([:up-target (string-upcase "body")])
          "Shop"))
        `(a
-         [(class "button")
-          (up-target ,(string-upcase "body"))]
+         ([class "button"]
+          [up-target ,(string-upcase "body")])
          "Shop"))
 
       (check-equal?
@@ -187,9 +188,9 @@
            (haml (.child-1))
            (haml (.child-2)))))
        `(div
-         [(class "container")]
-         (div [(class "child-1")])
-         (div [(class "child-2")])))
+         ([class "container"])
+         (div ([class "child-1"]))
+         (div ([class "child-2"]))))
 
       (check-equal?
        (haml
@@ -198,7 +199,7 @@
            (haml (.child-1))
            (haml (.child-2)))))
        `(div
-         [(class "container")]))
+         ([class "container"])))
 
       (check-equal?
        (haml
@@ -207,7 +208,7 @@
            (haml (.child-1))
            (haml (.child-2)))))
        `(div
-         [(class "container")]))
+         ([class "container"])))
 
       (check-equal?
        (haml
@@ -216,9 +217,9 @@
            (haml (.child-1))
            (haml (.child-2)))))
        `(div
-         [(class "container")]
-         (div [(class "child-1")])
-         (div [(class "child-2")]))))
+         ([class "container"])
+         (div ([class "child-1"]))
+         (div ([class "child-2"])))))
 
     (test-case "expressions can be spliced into elements"
       (check-equal?
