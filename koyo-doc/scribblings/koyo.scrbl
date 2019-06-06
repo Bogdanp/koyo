@@ -24,6 +24,7 @@ what you use.
 
 @local-table-of-contents[]
 
+@include-section["getting-started.scrbl"]
 @include-section["haml.scrbl"]
 
 @index-section[]
