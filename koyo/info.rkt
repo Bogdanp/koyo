@@ -2,5 +2,7 @@
 
 (define collection 'multi)
 
-(define deps '("koyo-lib"))
-(define implies '("koyo-lib"))
+(define deps '("koyo-doc"
+               "koyo-lib"))
+(define implies '("koyo-doc"
+                  "koyo-lib"))
