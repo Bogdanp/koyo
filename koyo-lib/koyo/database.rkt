@@ -66,7 +66,7 @@
   (make-parameter #f))
 
 (define/contract (call-with-database-connection database proc)
-  (-> database? (-> connection? any/c) any/c)
+  (-> database? (-> connection? any) any)
   (with-timing 'database "call-with-database-connection"
     (define-values (connection disconnecter)
       (cond
@@ -92,13 +92,13 @@
           (disconnecter))))))
 
 (define/contract (call-with-database-transaction database proc #:isolation [isolation #f])
-  (->* (database? (-> connection? any/c))
+  (->* (database? (-> connection? any))
        (#:isolation (or/c false/c
                           'serializable
                           'repeatable-read
                           'read-committed
                           'read-uncommitted))
-       any/c)
+       any)
   (with-timing 'database "call-with-database-transaction"
     (with-database-connection [conn database]
       (call-with-transaction conn
