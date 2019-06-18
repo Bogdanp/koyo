@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          component
+         db
          koyo/database
          koyo/flash
          koyo/l10n
@@ -35,11 +36,12 @@
 (define-system prod
   [app (auth db flashes mailer sessions users) make-app]
   [auth (sessions users) make-auth-manager]
-  [db (make-database-factory #:database config:db-name
-                             #:username config:db-username
-                             #:password config:db-password
-                             #:host config:db-host
-                             #:port config:db-port)]
+  [db (make-database-factory (lambda ()
+                               (postgresql-connect #:database config:db-name
+                                                   #:user     config:db-username
+                                                   #:password config:db-password
+                                                   #:server   config:db-host
+                                                   #:port     config:db-port)))]
   [flashes (sessions) make-flash-manager]
   [mailer (make-mailer-factory #:adapter mail-adapter
                                #:sender config:support-email

@@ -94,9 +94,10 @@
 
   (define-system test
     [auth (sessions users) auth-manager]
-    [db (make-database-factory #:database config:test-db-name
-                               #:username config:test-db-username
-                               #:password config:test-db-password)]
+    [db (make-database-factory (lambda ()
+                                 (postgresql-connect #:database config:test-db-name
+                                                     #:user     config:test-db-username
+                                                     #:password config:test-db-password)))]
     [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
                                             #:shelf-life config:session-shelf-life
                                             #:secret-key config:session-secret-key

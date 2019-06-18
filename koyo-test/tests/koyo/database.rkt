@@ -11,9 +11,10 @@
 
 (define db
   (component-start
-   ((make-database-factory #:database "koyo"
-                           #:username "koyo"
-                           #:password "koyo"))))
+   ((make-database-factory (lambda ()
+                             (postgresql-connect #:database "koyo"
+                                                 #:user     "koyo"
+                                                 #:password "koyo"))))))
 
 (define database-tests
   (test-suite

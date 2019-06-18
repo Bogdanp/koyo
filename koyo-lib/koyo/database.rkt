@@ -29,50 +29,19 @@
                   [connection-pool (connection-pool
                                     #:max-connections (hash-ref options 'max-connections)
                                     #:max-idle-connections (hash-ref options 'max-idle-connections)
-                                    (lambda ()
-                                      (define socket-path (hash-ref options 'socket-path #f))
-                                      (if socket-path
-                                          (connect
-                                           #:database (hash-ref options 'database)
-                                           #:user     (hash-ref options 'username)
-                                           #:password (hash-ref options 'password)
-                                           #:socket   socket-path)
-                                          (connect
-                                           #:database (hash-ref options 'database)
-                                           #:user     (hash-ref options 'username)
-                                           #:password (hash-ref options 'password)
-                                           #:server   (hash-ref options 'host)
-                                           #:port     (hash-ref options 'port)))))]))
+                                    connect)]))
 
    (define (component-stop a-database)
      (struct-copy database a-database [connection-pool #f]))])
 
-(define/contract ((make-database-factory #:connector [connector postgresql-connect]
-                                         #:database database-name
-                                         #:username username
-                                         #:password password
-                                         #:host [host "127.0.0.1"]
-                                         #:port [port 5432]
-                                         #:socket-path [socket-path #f]
+(define/contract ((make-database-factory connector
                                          #:max-connections [max-connections 16]
                                          #:max-idle-connections [max-idle-connections 2]))
-  (->* (#:database string?
-        #:username string?
-        #:password string?)
-       (#:connector (-> any/c ... connection?)
-        #:host string?
-        #:port (integer-in 0 65535)
-        #:socket-path (or/c false/c path-string? 'guess)
-        #:max-connections exact-positive-integer?
+  (->* ((-> connection?))
+       (#:max-connections exact-positive-integer?
         #:max-idle-connections exact-positive-integer?)
        (-> database?))
   (database #f (hasheq 'connector connector
-                       'database database-name
-                       'username username
-                       'password password
-                       'host host
-                       'port port
-                       'socket-path socket-path
                        'max-connections max-connections
                        'max-idle-connections max-idle-connections)))
 
