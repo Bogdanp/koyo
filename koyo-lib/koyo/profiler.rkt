@@ -6,6 +6,7 @@
          racket/format
          web-server/servlet
          xml
+         "haml.rkt"
          "util.rkt")
 
 
@@ -133,42 +134,36 @@
 
   (define (render-timing timing)
     (define toggle-id (format "uprofiler-timing-toggle-~a" (timing-id timing)))
-    `(div
-      ((class "uprofiler-timing"))
-      (input
-       ((class "uprofiler-timing-toggle")
-        (type "checkbox")
-        (id ,toggle-id)))
-      (label
-       ((for ,toggle-id))
-       (span
-        ((class "uprofiler-timing-label"))
-        ,(symbol->string (timing-label timing)))
-       (span ((class "uprofiler-timing-description")) (code ,(timing-description timing)))
-       (span ((class "uprofiler-timing-duration")) ,(format-duration (timing-duration timing))))
-      ,@(map render-timing (profile-find-children profile timing))))
+    (haml
+     (.uprofiler-timing
+      (:input.uprofiler-timing-toggle
+       ([:id toggle-id]
+        [:type "checkbox"]))
+      (:label
+       ([:for toggle-id])
+       (:span.uprofiler-timing-label
+        (symbol->string (timing-label timing)))
+       (:span.uprofiler-timing-description
+        (:code (timing-description timing)))
+       (:span.uprofiler-timing-duration
+        (format-duration (timing-duration timing))))
+      (@ (map render-timing (profile-find-children profile timing))))))
 
   (unless (null? roots)
     (define content
-      `(div
-        ((class "uprofiler-content"))
-        (input
-         ((class "uprofiler-toggle")
-          (id "uprofiler-toggle")
-          (type "checkbox")))
-        (label
-         ((class "uprofiler-label")
-          (for "uprofiler-toggle"))
-         ,(format-duration (apply + (map timing-duration roots))))
-        (div
-         ((class "uprofiler-timings"))
-         (div
-          ((class "uprofiler-timings-inner"))
-          ,@(map render-timing roots))
-         (label
-          ((class "uprofiler-close")
-           (for "uprofiler-toggle"))
-          "Close"))))
+      (haml
+       (.uprofiler-content
+        (:input.uprofiler-toggle#uprofiler-toggle
+         ([:type "checkbox"]))
+        (:label.uprofiler-label
+         ([:for "uprofiler-toggle"])
+         (format-duration (apply + (map timing-duration roots))))
+        (.uprofiler-timings
+         (.uprofiler-timings-inner
+          (@ (map render-timing roots)))
+         (:label.uprofiler-close
+          ([:for "uprofiler-toggle"])
+          "Close")))))
 
     (write-xml/content (xexpr->xml content) out)))
 
