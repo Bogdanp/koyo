@@ -16,6 +16,7 @@
  "dispatch.rkt"
  "flash.rkt"
  "haml.rkt"
+ "http.rkt"
  "l10n.rkt"
  "logging.rkt"
  "mail.rkt"

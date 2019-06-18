@@ -9,6 +9,7 @@
          "dispatch.rkt"
          "flash.rkt"
          "haml.rkt"
+         "http.rkt"
          "l10n.rkt"
          "mime.rkt"
          "profiler.rkt"
@@ -28,6 +29,7 @@
    dispatch-tests
    flash-tests
    haml-tests
+   http-tests
    l10n-tests
    mime-tests
    profiler-tests
