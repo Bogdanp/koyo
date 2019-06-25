@@ -34,7 +34,7 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth db flashes mailer sessions users) make-app]
+  [app (auth flashes mailer sessions users) make-app]
   [auth (sessions users) make-auth-manager]
   [db (make-database-factory (lambda ()
                                (postgresql-connect #:database config:db-name
