@@ -43,7 +43,7 @@
      "mailer-send-welcome-email"
 
      (test-case "welcome emails contain valid verification urls"
-       (define a-user (user++ #:id 1 #:username "someone@example.com"))
+       (define a-user (make-user #:id 1 #:username "someone@example.com"))
        (mailer-send-welcome-email mailer a-user)
        (check-equal?
         (~> (car (stub-mail-adapter-outbox adapter))

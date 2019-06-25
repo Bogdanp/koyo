@@ -18,7 +18,8 @@
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- (struct-out user) user++)
+ (struct-out user)
+ (rename-out [user++ make-user]))
 
 (struct++ user
   ([id maybe-id/c]
