@@ -3,57 +3,40 @@
 (require (for-syntax racket/base
                      syntax/parse)
          component
-         crypto
-         crypto/argon2
          db
          gregor
          koyo/database
          koyo/profiler
-         openssl/md5
+         koyo/random
          racket/contract
          racket/function
-         racket/port
-         racket/random
          racket/string
          sql
-         struct-plus-plus)
+         struct-plus-plus
+         "hash.rkt")
 
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  (struct-out user) user++)
 
-;; https://password-hashing.net/argon2-specs.pdf
-(define ARGON2-CONFIG
-  '((p 8)    ;; parallelism, adjust according to number of cores
-    (t 512)  ;; iterations, adjust based on duration
-    (m 4096) ;; memory per p in kb, adjust based on available memory
-    ))
-
 (struct++ user
   ([id maybe-id/c]
    [username non-empty-string? string-downcase]
    [(password-hash #f) (or/c false/c non-empty-string?)]
    [(verified? #f) boolean?]
-   [(verification-code (generate-verification-code)) non-empty-string?]
+   [(verification-code (generate-random-string)) non-empty-string?]
    [(created-at (now/moment)) moment?]
    [(updated-at (now/moment)) moment?])
   #:transparent)
 
-(define (generate-verification-code [strength 8192])
-  (call-with-input-bytes (crypto-random-bytes strength) md5))
+(define/contract (set-user-password u p)
+  (-> user? string? user?)
+  (set-user-password-hash u (make-password-hash p)))
 
-(define (set-user-password u p)
-  (define password-hash
-    (parameterize ([crypto-factories (list argon2-factory)])
-      (pwhash 'argon2id (string->bytes/utf-8 p) ARGON2-CONFIG)))
-
-  (set-user-password-hash u password-hash))
-
-(define (user-password-valid? u p)
-  (with-timing 'user "user-password-valid?"
-    (parameterize ([crypto-factories (list argon2-factory)])
-      (pwhash-verify #f (string->bytes/utf-8 p) (user-password-hash u)))))
+(define/contract (user-password-valid? u p)
+  (-> user? string? boolean?)
+  (hash-matches? (user-password-hash u) p))
 
 
 ;; user-manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
