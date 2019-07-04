@@ -3,6 +3,7 @@
 (require forms
          koyo/flash
          koyo/haml
+         koyo/http
          koyo/l10n
          koyo/url
          racket/contract
@@ -25,16 +26,14 @@
   (-> auth-manager? (-> request? response?))
 
   (define return-url
-    (and~> (bindings-assq #"return" (request-bindings/raw req))
-           (binding:form-value)
-           (bytes->string/utf-8)))
+    (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'dashboard-page)))
 
   (let loop ([req req])
     (send/suspend/dispatch
      (lambda (embed/url)
        (define (render render-widget [error-message #f])
          (page
-          #:subtitle "Log in"
+          #:subtitle (translate 'subtitle-log-in)
           (container
            (render-login-form (embed/url loop) render-widget error-message))))
 
@@ -45,7 +44,7 @@
                              (render render-widget (translate 'error-verify-email)))])
             (cond
               [(auth-manager-login! auth username password)
-               (redirect-to (or return-url (reverse-uri 'dashboard-page)))]
+               (redirect-to return-url)]
 
               [else
                (render render-widget (translate 'error-invalid-credentials))]))]
@@ -99,7 +98,7 @@
    (lambda (embed/url)
      (define (render render-widget [error-message #f])
        (page
-        #:subtitle "Sign up"
+        #:subtitle (translate 'subtitle-sign-up)
         (container
          (render-signup-form (embed/url (signup-page auth mailer users)) render-widget error-message))))
 
@@ -117,15 +116,16 @@
 
 (define (post-signup-page req)
   (page
-   #:subtitle "Signed up"
-   (container
-    '(h1 "You've been signed up")
-    '(p "You need to confirm your e-mail address before you can log in."))))
+   #:subtitle (translate 'subtitle-signed-up)
+   (haml
+    (.container
+     (:h1 (translate 'subtitle-signed-up))
+     (:p (translate 'message-post-sign-up))))))
 
 (define/contract ((verify-page flashes users) req user-id verification-code)
   (-> flash-manager? user-manager? (-> request? integer? string? response?))
   (user-manager-verify users user-id verification-code)
-  (flash flashes 'success "You have successfully verified your e-mail address!")
+  (flash flashes 'success (translate 'message-email-verified))
   (redirect-to (reverse-uri 'login-page)))
 
 (define signup-form

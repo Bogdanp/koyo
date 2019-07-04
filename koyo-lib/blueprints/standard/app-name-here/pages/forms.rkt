@@ -16,7 +16,8 @@
     (:label label (widget name value errors))
     (@ ((widget-errors #:class "form__errors") name value errors)))))
 
-(define (username-field [label (translate 'label-username)] [placeholder "bogdan@example.com"])
+(define (username-field [label (translate 'label-username)]
+                        [placeholder "you@example.com"])
   (field-group label (curry widget-email #:attributes `((placeholder ,placeholder)))))
 
 (define (password-field [label (translate 'label-password)])

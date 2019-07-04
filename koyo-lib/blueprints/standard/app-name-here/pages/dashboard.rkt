@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/contract
+(require koyo/haml
+         racket/contract
          web-server/http
          "../components/auth.rkt"
          "../components/user.rkt"
@@ -12,6 +13,6 @@
 (define/contract (dashboard-page req)
   (-> request? response?)
   (page
-   (container
-    '(h1 "Dashboard")
-    `(p "Hi " ,(user-username (current-user)) "!"))))
+   (haml
+    (.container
+     (:h1 "Hello World!")))))

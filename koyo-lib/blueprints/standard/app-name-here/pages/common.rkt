@@ -1,6 +1,8 @@
 #lang racket/base
 
 (require koyo/flash
+         koyo/haml
+         koyo/l10n
          net/url
          racket/contract
          web-server/http
@@ -13,10 +15,11 @@
 (define/contract (not-found-page req)
   (-> request? response?)
   (page
-   #:subtitle "Page Not Found"
-   (container
-    '(h1 "Page Not Found")
-    '(p "Couldn't find nothing, " (em "nothing") " I tell ya!"))))
+   #:subtitle (translate 'subtitle-not-found)
+   (haml
+    (.container
+     (:h1 (translate 'subtitle-not-found))
+     (:p (translate 'message-not-found))))))
 
 (define/contract ((expired-page flashes) req)
   (-> flash-manager? (-> request? response?))
@@ -29,5 +32,5 @@
     (let ([scrubbed-params (map path/param-scrub (url-path the-url))])
       (struct-copy url the-url [path scrubbed-params])))
 
-  (flash flashes 'warning "Sorry! Your session expired. Please try again.")
+  (flash flashes 'warning (translate 'message-session-expired))
   (redirect-to (url->string scrubbed-url)))
