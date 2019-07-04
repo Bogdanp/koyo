@@ -2,18 +2,18 @@
 
 (require forms
          koyo/flash
+         koyo/haml
          koyo/l10n
          koyo/url
-         koyo/xexpr
          racket/contract
          racket/match
          threading
          web-server/servlet
          "../components/auth.rkt"
          "../components/mail.rkt"
+         "../components/template.rkt"
          "../components/user.rkt"
-         "../components/template.rkt")
-
+         "forms.rkt")
 
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -64,31 +64,27 @@
     (list username password)))
 
 (define (render-login-form target render-widget [error-message #f])
-  (define render-username-field
-    (make-labeled-field (translate 'label-username) "username" (widget-email #:attributes '((placeholder "bruce@waye.co")))))
-  (define render-password-field
-    (make-labeled-field (translate 'label-password) "password" (widget-password #:attributes '((placeholder "••••••••••••••••")))))
+  (haml
+   (:form.form.form--login
+    ([:action target]
+     [:method "POST"])
+    (when error-message
+      (haml
+       (:ul.form__errors
+        (:li error-message))))
 
-  `(form
-    ((action ,target)
-     (method "POST")
-     (class "form form--login"))
+    (:h1.form__title (translate 'subtitle-login))
 
-    ,@(xexpr-when error-message
-        `(ul
-          ((class "form__errors"))
-          (li ,error-message)))
+    (render-widget "username" (username-field))
+    (render-widget "password" (password-field))
 
-    ,(render-username-field render-widget)
-    ,(render-password-field render-widget)
+    (:button.button.button--primary
+     ([:type "submit"])
+     (translate 'action-log-in))
 
-    (button ((class "button button--primary")
-             (type "submit"))
-            ,(translate 'action-log-in))
-
-    (a ((class "button button--secondary")
-        (href ,(reverse-uri 'signup-page)))
-       ,(translate 'action-sign-up-no-account))))
+    (:a.button.button--secondary
+     ([:href (reverse-uri 'signup-page)])
+     (translate 'action-sign-up-no-account)))))
 
 
 ;; signup & verify ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -138,34 +134,25 @@
     (list username password)))
 
 (define (render-signup-form target render-widget [error-message #f])
-  (define render-username-field
-    (make-labeled-field (translate 'label-username) "username" (widget-email #:attributes '((placeholder "bruce@waye.co")))))
-  (define render-password-field
-    (make-labeled-field (translate 'label-password) "password" (widget-password #:attributes '((placeholder "••••••••••••••••")))))
+  (haml
+   (:form.form.form--signup
+    ([:action target]
+     [:method "POST"])
 
-  `(form
-    ((action ,target)
-     (method "POST")
-     (class "form form--signup"))
+    (:h1.form__title (translate 'subtitle-sign-up))
 
-    ,@(xexpr-when error-message
-        `(ul
-          ((class "form__errors"))
-          (li ,error-message)))
+    (when error-message
+      (haml
+       (:ul.form__errors
+        (:li error-message))))
 
-    ,(render-username-field render-widget)
-    ,(render-password-field render-widget)
+    (render-widget "username" (username-field))
+    (render-widget "password" (password-field))
 
-    (button ((class "button button--primary")
-             (type "submit"))
-            ,(translate 'action-sign-up))
+    (:button.button.button--primary
+     ([:type "submit"])
+     (translate 'action-sign-up))
 
-    (a ((class "button button--secondary")
-        (href ,(reverse-uri 'login-page)))
-       ,(translate 'action-log-in-signed-up))))
-
-(define ((make-labeled-field label name widget) render-widget)
-  `(div
-    ((class "form__group"))
-    (label ,label ,(render-widget name widget))
-    ,@(render-widget name (widget-errors #:class "form__errors"))))
+    (:a.button.button--secondary
+     ([:href (reverse-uri 'login-page)])
+     (translate 'action-log-in-signed-up)))))
