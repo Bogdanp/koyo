@@ -1,32 +1,21 @@
 #lang racket/base
 
-(require (for-syntax racket/base)
-         component
+(require component
          db
          koyo/database
          koyo/flash
-         koyo/l10n
          koyo/logging
          koyo/server
          koyo/session
-         koyo/url
          postmark
          racket/contract
-         racket/runtime-path
          "components/app.rkt"
          "components/auth.rkt"
          "components/mail.rkt"
          "components/user.rkt"
          (prefix-in config: "config.rkt"))
 
-
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define-runtime-path locales-path
-  (build-path 'up "resources" "locales"))
-
-(current-locale-specifier 'app-name-here)
-(load-locales! locales-path)
 
 (define mail-adapter
   (if config:postmark-token

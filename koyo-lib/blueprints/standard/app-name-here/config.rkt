@@ -1,9 +1,23 @@
 #lang racket/base
 
-(require koyo/config
+(require (for-syntax racket/base)
+         koyo/config
+         koyo/l10n
          koyo/profiler
          koyo/url
+         racket/runtime-path
          web-server/http/id-cookie)
+
+;; locales ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-runtime-path locales-path
+  (build-path 'up "resources" "locales"))
+
+(current-locale-specifier 'app-name-here)
+(load-locales! locales-path)
+
+
+;; config values ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (current-option-name-prefix "APP_NAME_HERE")
 
@@ -65,7 +79,6 @@
 
 (provide common-mail-variables)
 (define common-mail-variables
-
   (hasheq 'product_url     (make-application-url)
           'product_name    product-name
           'company_name    company-name

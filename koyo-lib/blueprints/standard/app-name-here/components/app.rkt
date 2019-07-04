@@ -57,11 +57,22 @@
   (-> auth-manager? flash-manager? mailer? session-manager? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
-     [("") #:roles (user) dashboard-page]
-     [("login") (login-page auth)]
-     [("logout") (logout-page auth)]
-     [("signup") (signup-page auth mailer users)]
-     [("verify" (integer-arg) (string-arg)) (verify-page flashes users)]
+     [("")
+      #:roles (user)
+      dashboard-page]
+
+     [("login")
+      (login-page auth)]
+
+     [("logout")
+      (logout-page auth)]
+
+     [("signup")
+      (signup-page auth mailer users)]
+
+     [("verify" (integer-arg) (string-arg))
+      (verify-page flashes users)]
+
      [else not-found-page]))
 
   (current-reverse-uri-fn reverse-uri)
