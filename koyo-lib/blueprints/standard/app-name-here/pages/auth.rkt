@@ -72,7 +72,7 @@
        (:ul.form__errors
         (:li error-message))))
 
-    (:h1.form__title (translate 'subtitle-login))
+    (:h1.form__title (translate 'subtitle-log-in))
 
     (render-widget "username" (username-field))
     (render-widget "password" (password-field))
