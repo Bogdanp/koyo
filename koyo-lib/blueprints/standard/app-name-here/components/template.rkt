@@ -47,6 +47,7 @@
 (define (nav . items)
   (haml
    (.nav
+    ([:up-nav ""])
     (container
      (haml (.nav__items (@ items)))))))
 
@@ -55,7 +56,7 @@
    (:li.nav__item
     (:a
      ([:href uri]
-      [:up-target "body"])
+      [:up-alias uri])
      label))))
 
 (define (page #:subtitle [subtitle #f]
@@ -72,6 +73,9 @@
       (haml
        (:html
         (:head
+         (:meta ([:charset "utf-8"]))
+         (:meta ([:name "viewport"] [:content "width=device-width, initial-scale=1"]))
+
          (:title (if subtitle (~a subtitle " - AppNameHere") "AppNameHere"))
          (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
          (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
