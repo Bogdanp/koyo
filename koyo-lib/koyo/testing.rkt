@@ -1,12 +1,28 @@
 #lang racket/base
 
-(require net/url
+(require db
+         net/url
          racket/contract
          racket/function
          racket/match
          racket/promise
          racket/string
-         web-server/http)
+         web-server/http
+         "database.rkt")
+
+;; db ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ truncate-tables!)
+
+(define/contract (truncate-tables! db . tables)
+  (-> database? (or/c string? symbol?) ... void?)
+  (with-database-connection [conn db]
+    (for ([table tables])
+      (query-exec conn (format "truncate table ~a cascade" table)))))
+
+
+;; http ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  make-test-request)
