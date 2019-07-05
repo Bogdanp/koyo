@@ -26,16 +26,3 @@
   (call-with-semaphore hasher-place-mu
     (lambda _
       (place-channel-put/get hasher-place-ch (list 'verify s h)))))
-
-(module+ test
-  (require rackunit
-           rackunit/text-ui)
-
-  (run-tests
-   (test-suite
-    "hash"
-
-    (test-case "passwords can be hashed and then verified"
-      (define h (make-password-hash "supersecret"))
-      (check-false (hash-matches? h "invalid"))
-      (check-true (hash-matches? h "supersecret"))))))

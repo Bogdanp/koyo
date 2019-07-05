@@ -24,29 +24,3 @@
                       'action_url action-url
                       'name (user-username user)
                       'username (user-username user))))
-
-(module+ test
-  (require rackunit
-           rackunit/text-ui
-           threading)
-
-  (define adapter (make-stub-mail-adapter))
-  (define mailer ((make-mailer-factory #:adapter adapter
-                                       #:sender "support@example.com"
-                                       #:common-variables (hasheq))))
-
-  (run-tests
-   (test-suite
-    "mail"
-
-    (test-suite
-     "mailer-send-welcome-email"
-
-     (test-case "welcome emails contain valid verification urls"
-       (define a-user (make-user #:id 1 #:username "someone@example.com"))
-       (mailer-send-welcome-email mailer a-user)
-       (check-equal?
-        (~> (car (stub-mail-adapter-outbox adapter))
-            (hash-ref 'template-model)
-            (hash-ref 'action_url))
-        (make-application-url "verify" "1" (user-verification-code a-user))))))))

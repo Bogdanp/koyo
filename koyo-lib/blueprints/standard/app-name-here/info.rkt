@@ -13,4 +13,4 @@
                "struct-plus-plus"
                "threading-lib"
                "web-server-lib"))
-(define build-deps '("rackunit-lib"))
+(define build-deps '())

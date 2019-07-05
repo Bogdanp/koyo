@@ -14,7 +14,7 @@
          web-server/http
          "user.rkt")
 
-;; Manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; auth-manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  current-user
@@ -84,66 +84,3 @@
            (parameterize ([current-user user])
              (handler req))
            (redirect-to (make-application-url "login" #:query `((return . ,(url->string (request-uri req)))))))])))
-
-(module+ test
-  (require db
-           koyo/database
-           rackunit
-           rackunit/text-ui
-           (prefix-in config: "../config.rkt"))
-
-  (define-system test
-    [auth (sessions users) auth-manager]
-    [db (make-database-factory (lambda ()
-                                 (postgresql-connect #:database config:test-db-name
-                                                     #:user     config:test-db-username
-                                                     #:password config:test-db-password)))]
-    [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
-                                            #:shelf-life config:session-shelf-life
-                                            #:secret-key config:session-secret-key
-                                            #:store (make-memory-session-store))]
-    [users (db) make-user-manager])
-
-  (define auth #f)
-  (define users #f)
-  (define user #f)
-
-  (run-tests
-   (test-suite
-    "auth-manager"
-    #:before
-    (lambda _
-      (system-start test-system)
-      (with-database-connection [conn (system-get test-system 'db)]
-        (query-exec conn "truncate table users"))
-
-      (set! auth (system-get test-system 'auth))
-      (set! users (system-get test-system 'users))
-      (set! user (user-manager-create! users "bogdan" "hunter2")))
-
-    #:after
-    (lambda _
-      (system-stop test-system))
-
-    (test-suite
-     "auth-manager-login"
-
-     (test-case "returns #f if the user does not exist"
-       (check-false
-        (auth-manager-login! auth "idontexist" "hunter2")))
-
-     (test-case "returns #f if the password is wrong"
-       (check-false
-        (auth-manager-login! auth "bogdan" "invalid")))
-
-     (test-case "fails if the user is not verified"
-       (check-exn
-        exn:fail:auth-manager:unverified?
-        (lambda _
-          (auth-manager-login! auth "bogdan" "hunter2"))))
-
-     (test-case "returns the user when verified"
-       (parameterize ([current-session-id "fake"])
-         (user-manager-verify users (user-id user) (user-verification-code user))
-         (check-equal? (user-id user)
-                       (user-id (auth-manager-login! auth "bogdan" "hunter2")))))))))
