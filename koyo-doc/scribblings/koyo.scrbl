@@ -9,22 +9,23 @@
 
 @section[#:tag "intro"]{Introduction}
 
-@(define web-server-docs
-   '(lib "web-server/scribblings/web-server.scrbl"))
-
-@(define component-docs
-   '(lib "component/component.scrbl"))
+@(define web-server-link
+   (seclink "top"
+            #:doc '(lib "web-server/scribblings/web-server.scrbl")
+            #:indirect? #t
+            "Racket's built-in web-server"))
 
 koyo is a web application development toolkit that expands upon
-Racket's built-in @other-doc[web-server-docs] with all the
-functionality that a web app typically needs in a complete package.
+@web-server-link with all the functionality that a web app typically
+needs in a complete package.
 
 All of koyo's components are decoupled so you get to pick and choose
-what you use.
+exactly which parts you want to use.
 
 @local-table-of-contents[]
 
 @include-section["getting-started.scrbl"]
+@include-section["architecture.scrbl"]
 @include-section["haml.scrbl"]
 
 @index-section[]

@@ -1,11 +1,18 @@
 #lang racket/base
 
-(require racket/sandbox
+(require (for-syntax racket/base)
+         racket/runtime-path
+         racket/sandbox
          scribble/example
          scribble/manual)
+
 (provide (all-from-out scribble/example
                        scribble/manual)
+         media-path
          sandbox)
+
+(define-runtime-path media-path
+  (build-path 'up "media"))
 
 (define sandbox
   (call-with-trusted-sandbox-configuration
@@ -43,8 +50,7 @@
 
      (symbol &name)
 
-     (attributes ((attribute-name maybe-expr) ...))
-     (attribute-name :attribute-name)
+     (attributes ((:attribute-name maybe-expr) ...))
 
      (unless (unless cond-expr e0 e ...))
      (when (when cond-expr e0 e ...))
