@@ -5,7 +5,7 @@
 @title[#:tag "architecture"]{Architecture}
 
 @(define components
-    (seclink "top"
+    (seclink "intro"
              #:doc '(lib "component/component.scrbl")
              #:indirect? #t
              "components"))
