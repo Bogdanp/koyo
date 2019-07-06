@@ -1,6 +1,6 @@
 #lang info
 
-(define collection 'multi)
+(define collection "tests")
 
 (define deps '())
 (define build-deps '("base"
