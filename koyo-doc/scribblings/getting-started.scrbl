@@ -20,7 +20,7 @@ runs @exec{raco koyo run} based on the configuration in
 @filepath{Procfile.dev}) in order to be able to both compile your
 assets and run the web server from the same terminal session.
 
-@section{Standard Project Structure}
+@section{Project Structure}
 
 Running @exec{raco koyo new example} generates the following project
 structure in the current directory:
