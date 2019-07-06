@@ -40,5 +40,4 @@
         (user (? exact-positive-integer?) "bogdan@example.com" _ _ _ _ _))))))
 
 (module+ test
-  (require rackunit/text-ui)
-  (run-tests user-tests))
+  (run-db-tests user-tests))

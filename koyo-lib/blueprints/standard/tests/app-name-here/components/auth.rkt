@@ -1,11 +1,12 @@
 #lang racket/base
 
-(require app-name-here/components/auth
-         app-name-here/components/user
-         component/testing
+(require component/testing
          koyo/session
          koyo/testing
          rackunit
+
+         app-name-here/components/auth
+         app-name-here/components/user
          "../common.rkt")
 
 (provide
@@ -46,5 +47,4 @@
                        (user-id (auth-manager-login! auth "bogdan" "hunter2"))))))))
 
 (module+ test
-  (require rackunit/text-ui)
-  (run-tests auth-tests))
+  (run-db-tests auth-tests))

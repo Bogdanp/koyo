@@ -3,6 +3,7 @@
 (require db
          koyo/database
          koyo/session
+         rackunit/text-ui
 
          app-name-here/components/mail
          app-name-here/components/user
@@ -12,13 +13,25 @@
 ;; database ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- make-test-database)
+ make-test-database
+ run-db-tests)
+
+(define (make-test-database-connection)
+  (postgresql-connect #:database config:test-db-name
+                      #:user     config:test-db-username
+                      #:password config:test-db-password))
 
 (define (make-test-database)
-  ((make-database-factory (lambda ()
-                            (postgresql-connect #:database config:test-db-name
-                                                #:user     config:test-db-username
-                                                #:password config:test-db-password)))))
+  ((make-database-factory make-test-database-connection)))
+
+(define (run-db-tests test [verbosity 'normal])
+  (define conn (make-test-database-connection))
+  (query-exec conn "create table if not exists __test_mutex()")
+  (call-with-transaction conn
+    #:isolation 'serializable
+    (lambda _
+      (query-exec conn "lock table __test_mutex")
+      (run-tests test verbosity))))
 
 
 ;; mail ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
