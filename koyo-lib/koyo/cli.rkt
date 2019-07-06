@@ -158,6 +158,15 @@
    (build-path root "app-name-here")
    (build-path root project-name))
 
+  (define project-tests-path (build-path root "app-name-here-tests"))
+  (when (directory-exists? project-tests-path)
+    (rename-file-or-directory
+     (build-path project-tests-path "app-name-here")
+     (build-path project-tests-path project-name))
+    (rename-file-or-directory
+     project-tests-path
+     (build-path root (~a project-name "-tests"))))
+
   (for ([path (find-files (compose not directory-exists?) root)])
     (define contents (file->string path))
     (define replaced-contents
