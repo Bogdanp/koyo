@@ -12,3 +12,9 @@ what you use.
     $ raco pkg install koyo
     $ raco koyo new example  # or raco koyo new -b minimal example
     $ cd example && cat README.md
+
+## Documentation
+
+The documentation is available on the [Package Server][docs].
+
+[docs]: https://docs.racket-lang.org/koyo@koyo-doc/index.html
