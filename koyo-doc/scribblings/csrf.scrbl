@@ -8,7 +8,6 @@
 
 @defmodule[koyo/csrf]
 
-
 @(define csrf
    (hyperlink "https://en.wikipedia.org/wiki/Cross-site_request_forgery" "CSRF"))
 
