@@ -14,9 +14,9 @@ get you set up with a basic web application.  From there, you should
 follow the instructions in the generated @filepath{README.md} file and
 take a look at the generated source code.
 
-You can then use @exec{raco koyo run} to run your application,
+You can then use @exec{raco koyo serve} to run your application,
 although, generally, it's more convenient to use @honcho (which iself
-runs @exec{raco koyo run} based on the configuration in
+runs @exec{raco koyo serve} based on the configuration in
 @filepath{Procfile.dev}) in order to be able to both compile your
 assets and run the web server from the same terminal session.
 
