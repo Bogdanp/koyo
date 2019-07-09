@@ -28,6 +28,7 @@ exactly which parts you want to use.
 @include-section["architecture.scrbl"]
 @include-section["config.scrbl"]
 @include-section["cors.scrbl"]
+@include-section["csrf.scrbl"]
 @include-section["haml.scrbl"]
 
 @index-section[]

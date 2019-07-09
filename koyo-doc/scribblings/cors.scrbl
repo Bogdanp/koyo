@@ -1,6 +1,8 @@
 #lang scribble/doc
 
-@(require (for-label web-server/http)
+@(require (for-label racket/base
+                     racket/string
+                     web-server/http)
           "koyo.rkt")
 
 @title[#:tag "cors"]{CORS}

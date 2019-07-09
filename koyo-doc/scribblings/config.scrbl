@@ -1,6 +1,7 @@
 #lang scribble/doc
 
-@(require "koyo.rkt")
+@(require (for-label racket/base)
+          "koyo.rkt")
 
 @title[#:tag "config"]{Configuration}
 
