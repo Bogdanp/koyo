@@ -31,5 +31,6 @@ exactly which parts you want to use.
 @include-section["csrf.scrbl"]
 @include-section["haml.scrbl"]
 @include-section["random.scrbl"]
+@include-section["server.scrbl"]
 
 @index-section[]
