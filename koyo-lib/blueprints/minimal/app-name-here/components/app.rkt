@@ -32,8 +32,6 @@
      [("") home-page]
      [else not-found-page]))
 
-  (current-reverse-uri-fn reverse-uri)
-
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
     (~> handler
@@ -42,6 +40,9 @@
         (wrap-preload)
         (wrap-cors)
         (wrap-profiler)))
+
+  (current-continuation-wrapper stack)
+  (current-reverse-uri-fn reverse-uri)
 
   (define manager
     (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 128)))

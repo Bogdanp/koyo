@@ -25,6 +25,7 @@
  current-continuation-key-cookie-path
  current-continuation-key-cookie-secure?
  current-continuation-mismatch-handler
+ current-continuation-wrapper
  protect-continuation
  wrap-protect-continuations
 
@@ -57,6 +58,11 @@
       #:message #"Forbidden"
       '(h1 "Forbidden")))))
 
+(define/contract current-continuation-wrapper
+  (parameter/c (-> (-> request? response?)
+                   (-> request? response?)))
+  (make-parameter values))
+
 (define continuation-key-cookie?
   (compose1 (curry string=? continuation-key-cookie-name) client-cookie-name))
 
@@ -82,7 +88,10 @@
 (define/contract ((protect-continuation k) req)
   (-> (-> request? can-be-response?)
       (-> request? can-be-response?))
-  (k (protect-request req)))
+  (define wrapped-k
+    ((current-continuation-wrapper) k))
+
+  (wrapped-k (protect-request req)))
 
 (define/contract ((wrap-protect-continuations handler) req)
   (-> (-> request? can-be-response?)
