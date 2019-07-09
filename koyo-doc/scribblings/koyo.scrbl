@@ -7,8 +7,6 @@
 
 @defmodule[koyo]
 
-@section[#:tag "intro"]{Introduction}
-
 @(define web-server-link
    (seclink "top"
             #:doc '(lib "web-server/scribblings/web-server.scrbl")
