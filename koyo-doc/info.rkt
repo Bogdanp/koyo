@@ -7,6 +7,7 @@
 (define build-deps '("koyo-lib"
                      "sandbox-lib"
                      "scribble-lib"
+                     "web-server-lib"
 
                      "racket-doc"
                      "web-server-doc"))
