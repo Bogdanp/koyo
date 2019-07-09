@@ -1,6 +1,7 @@
 #lang scribble/doc
 
 @(require (for-label racket/base
+                     racket/contract
                      racket/string
                      web-server/dispatchers/dispatch
                      web-server/http)

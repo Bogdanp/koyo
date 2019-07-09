@@ -1,6 +1,8 @@
 #lang scribble/doc
 
-@(require (for-label racket/string
+@(require (for-label racket/base
+                     racket/contract
+                     racket/string
                      web-server/http)
           "koyo.rkt")
 
