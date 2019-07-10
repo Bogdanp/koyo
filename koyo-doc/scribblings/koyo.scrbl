@@ -29,6 +29,7 @@ exactly which parts you want to use.
 @include-section["continuations.scrbl"]
 @include-section["csrf.scrbl"]
 @include-section["haml.scrbl"]
+@include-section["http.scrbl"]
 @include-section["logging.scrbl"]
 @include-section["mime.scrbl"]
 @include-section["random.scrbl"]
