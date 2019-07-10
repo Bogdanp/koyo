@@ -60,7 +60,8 @@
         #:host string?
         #:port (integer-in 0 65535)
         #:path string?
-        #:query (listof (cons/c symbol? (or/c false/c string?))))
+        #:query (listof (cons/c symbol? (or/c false/c string?)))
+        #:client-ip string?)
        request?)
 
   (let ([method (maybe-stringy->bytes method)]
