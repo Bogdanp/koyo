@@ -24,8 +24,9 @@ exactly which parts you want to use.
 
 @include-section["getting-started.scrbl"]
 @include-section["architecture.scrbl"]
-@include-section["config.scrbl"]
 @include-section["cors.scrbl"]
+@include-section["config.scrbl"]
+@include-section["continuations.scrbl"]
 @include-section["csrf.scrbl"]
 @include-section["haml.scrbl"]
 @include-section["logging.scrbl"]
