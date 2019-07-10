@@ -5,7 +5,7 @@
                      web-server/http)
           "koyo.rkt")
 
-@title[#:tag "preload"]{Preload}
+@title[#:tag "preload"]{Preloading}
 
 @defmodule[koyo/preload]
 
