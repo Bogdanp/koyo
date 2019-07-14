@@ -5,12 +5,12 @@
                "component-lib"
                "crypto-lib"
                "db-lib"
+               "deta-lib"
                "forms-lib"
                "gregor-lib"
                "koyo-lib"
                "postmark-client"
                "sql"
-               "struct-plus-plus"
                "threading-lib"
                "web-server-lib"))
 (define build-deps '())

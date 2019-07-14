@@ -25,7 +25,7 @@
      (test-case "creates users"
        (check-match
         the-user
-        (user (? exact-positive-integer?) "bogdan@example.com" _ #f _ _ _))))
+        (user _ (? exact-positive-integer?) "bogdan@example.com" _ #f _ _ _))))
 
     (test-suite
      "user-manager-login"
@@ -37,7 +37,7 @@
      (test-case "returns a user upon successful login"
        (check-match
         (user-manager-login users "bogdan@example.com" "hunter2")
-        (user (? exact-positive-integer?) "bogdan@example.com" _ _ _ _ _))))))
+        (user _ (? exact-positive-integer?) "bogdan@example.com" _ _ _ _ _))))))
 
 (module+ test
   (run-db-tests user-tests))

@@ -7,7 +7,7 @@ create table users(
   id serial primary key,
   username text not null unique,
   password_hash text not null,
-  verified boolean not null default false,
+  is_verified boolean not null default false,
   verification_code text not null,
   created_at timestamptz not null default current_timestamp,
   updated_at timestamptz not null default current_timestamp,

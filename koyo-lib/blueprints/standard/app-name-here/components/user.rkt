@@ -4,6 +4,7 @@
                      syntax/parse)
          component
          db
+         deta
          gregor
          koyo/database
          koyo/profiler
@@ -11,25 +12,22 @@
          racket/contract
          racket/function
          racket/string
-         sql
-         struct-plus-plus
+         threading
          "hash.rkt")
 
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- (struct-out user)
- (rename-out [user++ make-user]))
+ (schema-out user))
 
-(struct++ user
-  ([id maybe-id/c]
-   [username non-empty-string? string-downcase]
-   [(password-hash #f) (or/c false/c non-empty-string?)]
-   [(verified? #f) boolean?]
-   [(verification-code (generate-random-string)) non-empty-string?]
-   [(created-at (now/moment)) moment?]
-   [(updated-at (now/moment)) moment?])
-  #:transparent)
+(define-schema user
+  ([id id/f #:primary-key #:auto-increment]
+   [username string/f #:contract non-empty-string? #:wrapper string-downcase]
+   [password-hash string/f #:nullable]
+   [(verified? #f) boolean/f]
+   [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
+   [(created-at (now/moment)) datetime-tz/f]
+   [(updated-at (now/moment)) datetime-tz/f]))
 
 (define/contract (set-user-password u p)
   (-> user? string? user?)
@@ -69,51 +67,32 @@
 
 (define/contract (user-manager-create! um username password)
   (-> user-manager? string? string? user?)
-  (define user (set-user-password (user++ #:id #f #:username username) password))
-  (define id
-    (with-handlers ([exn:fail:sql:constraint-violation?
-                     (lambda _
-                       (raise (exn:fail:user-manager:username-taken
-                               (format "username '~a' is taken" username)
-                               (current-continuation-marks))))])
-      (with-database-transaction [conn (user-manager-db um)]
-        (query-exec conn (insert #:into users
-                                 #:set
-                                 [username ,(user-username user)]
-                                 [password_hash ,(user-password-hash user)]
-                                 [verification_code ,(user-verification-code user)]
-                                 [created_at ,(->sql-timestamp (user-created-at user))]
-                                 [updated_at ,(->sql-timestamp (user-updated-at user))]))
-        (query-value conn (select (lastval))))))
 
-  (set-user-id user id))
+  (define user
+    (~> (make-user #:username username)
+        (set-user-password password)))
 
-(define-syntax (user-manager-lookup stx)
-  (syntax-parse stx
-    [(_ user-manager e ...)
-     #'(with-database-connection [conn (user-manager-db user-manager)]
-         (for/first ([(id username password-hash verified? verification-code created-at updated-at)
-                      (in-row conn (select id username password_hash
-                                           verified verification_code
-                                           created_at updated_at
-                                           #:from users e ...))])
-           (user++ #:id id
-                   #:username username
-                   #:password-hash password-hash
-                   #:verified? verified?
-                   #:verification-code verification-code
-                   #:created-at created-at
-                   #:updated-at updated-at)))]))
+  (with-handlers ([exn:fail:sql:constraint-violation?
+                   (lambda _
+                     (raise (exn:fail:user-manager:username-taken
+                             (format "username '~a' is taken" username)
+                             (current-continuation-marks))))])
+    (with-database-transaction [conn (user-manager-db um)]
+      (insert-one! conn user))))
 
 (define/contract (user-manager-lookup/id um id)
   (-> user-manager? exact-positive-integer? (or/c false/c user?))
   (with-timing 'user-manager (format "(user-manager-lookup/id ~v)" id)
-    (user-manager-lookup um #:where (= id ,id))))
+    (with-database-connection [conn (user-manager-db um)]
+      (lookup conn (~> (from user #:as u)
+                       (where (= u.id ,id)))))))
 
 (define/contract (user-manager-lookup/username um username)
   (-> user-manager? string? (or/c false/c user?))
   (with-timing 'user-manager (format "(user-manager-lookup/username ~v)" username)
-    (user-manager-lookup um #:where (= username ,username))))
+    (with-database-connection [conn (user-manager-db um)]
+      (lookup conn (~> (from user #:as u)
+                       (where (= u.username ,username)))))))
 
 (define/contract (user-manager-login um username password)
   (-> user-manager? string? string? (or/c false/c user?))
@@ -126,7 +105,7 @@
   (with-timing 'user-manager "user-manager-verify"
     (void
      (with-database-transaction [conn (user-manager-db um)]
-       (query-exec conn (update users
-                                #:set [verified ,#t]
-                                #:where (and (= id ,id)
-                                             (= verification_code ,verification-code))))))))
+       (query-exec conn (~> (from user #:as u)
+                            (update [verified? #t])
+                            (where (and (= u.id ,id)
+                                        (= u.verification-code ,verification-code)))))))))
