@@ -10,7 +10,6 @@
                "gregor-lib"
                "koyo-lib"
                "postmark-client"
-               "sql"
                "threading-lib"
                "web-server-lib"))
 (define build-deps '())

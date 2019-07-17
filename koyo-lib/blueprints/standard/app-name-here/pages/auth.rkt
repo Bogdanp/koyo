@@ -124,7 +124,7 @@
 
 (define/contract ((verify-page flashes users) req user-id verification-code)
   (-> flash-manager? user-manager? (-> request? integer? string? response?))
-  (user-manager-verify users user-id verification-code)
+  (user-manager-verify! users user-id verification-code)
   (flash flashes 'success (translate 'message-email-verified))
   (redirect-to (reverse-uri 'login-page)))
 

@@ -42,7 +42,7 @@
 
      (test-case "returns the user when verified"
        (parameterize ([current-session-id "fake"])
-         (user-manager-verify users (user-id user) (user-verification-code user))
+         (user-manager-verify! users (user-id user) (user-verification-code user))
          (check-equal? (user-id user)
                        (user-id (auth-manager-login! auth "bogdan" "hunter2"))))))))
 

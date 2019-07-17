@@ -28,6 +28,52 @@
         (user _ (? exact-positive-integer?) "bogdan@example.com" _ #f _ _ _))))
 
     (test-suite
+     "user-manager-create-reset-token!"
+
+     (test-case "returns #f given an invalid username"
+       (define-values (_ token)
+         (user-manager-create-reset-token! users
+                                           #:username "idontexist"
+                                           #:ip-address "127.0.0.1"
+                                           #:user-agent "Mozilla"))
+       (check-false token))
+
+     (test-case "returns a token given a valid user"
+       (define-values (_ token)
+         (user-manager-create-reset-token! users
+                                           #:username (user-username the-user)
+                                           #:ip-address "127.0.0.1"
+                                           #:user-agent "Mozilla"))
+
+       (check-not-false token)
+
+       (test-case "invalidates old tokens"
+         (define-values (_ token*)
+           (user-manager-create-reset-token! users
+                                             #:username (user-username the-user)
+                                             #:ip-address "127.0.0.1"
+                                             #:user-agent "Mozilla"))
+
+         (check-false
+          (user-manager-reset-password! users
+                                        #:user-id (user-id the-user)
+                                        #:token token
+                                        #:password "new-password"))
+
+         (check-true
+          (user-manager-reset-password! users
+                                        #:user-id (user-id the-user)
+                                        #:token token*
+                                        #:password "hunter2"))
+
+         (test-case "tokens cannot be reused"
+           (check-false
+            (user-manager-reset-password! users
+                                          #:user-id (user-id the-user)
+                                          #:token token*
+                                          #:password "hunter2"))))))
+
+    (test-suite
      "user-manager-login"
 
      (test-case "returns #f when given invalid login data"
