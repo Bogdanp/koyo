@@ -101,7 +101,8 @@ body {
 
 .form {
   &--login,
-  &--signup {
+  &--signup,
+  &--password-reset {
     background: $white;
     border: 1px solid $cool-grey-8;
     border-radius: 4px;

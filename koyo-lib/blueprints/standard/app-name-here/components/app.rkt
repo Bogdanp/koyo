@@ -67,6 +67,12 @@
      [("logout")
       (logout-page auth)]
 
+     [("password-reset")
+      (request-password-reset-page flashes mailer users)]
+
+     [("password-reset" (integer-arg) (string-arg))
+      (password-reset-page flashes mailer users)]
+
      [("signup")
       (signup-page auth mailer users)]
 

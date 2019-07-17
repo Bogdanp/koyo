@@ -1,6 +1,8 @@
 #lang racket/base
 
 (require forms
+         koyo/continuation
+         koyo/database
          koyo/flash
          koyo/haml
          koyo/http
@@ -8,6 +10,7 @@
          koyo/url
          racket/contract
          racket/match
+         racket/string
          threading
          web-server/servlet
          "../components/auth.rkt"
@@ -29,7 +32,7 @@
     (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'dashboard-page)))
 
   (let loop ([req req])
-    (send/suspend/dispatch
+    (send/suspend/dispatch/protect
      (lambda (embed/url)
        (define (render render-widget [error-message #f])
          (page
@@ -94,7 +97,7 @@
 
 (define/contract ((signup-page auth mailer users) req)
   (-> auth-manager? mailer? user-manager? (-> request? response?))
-  (send/suspend/dispatch
+  (send/suspend/dispatch/protect
    (lambda (embed/url)
      (define (render render-widget [error-message #f])
        (page
@@ -156,3 +159,103 @@
     (:a.button.button--secondary
      ([:href (reverse-uri 'login-page)])
      (translate 'action-log-in-signed-up)))))
+
+
+;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ request-password-reset-page
+ password-reset-page)
+
+(define/contract ((request-password-reset-page flashes mailer users) req)
+  (-> flash-manager? mailer? user-manager? (-> request? response?))
+  (let loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (match (form-run request-password-reset-form req)
+         [(list 'passed username render-widget)
+          (define-values (user token)
+            (user-manager-create-reset-token! users
+                                              #:username username
+                                              #:ip-address (request-client-ip req)
+                                              #:user-agent (or (and~> (request-headers/raw req)
+                                                                      (headers-assq* #"user-agent" _)
+                                                                      (header-value)
+                                                                      (bytes->string/utf-8))
+                                                               "Unknown")))
+
+          (when (and user token)
+            (mailer-send-password-reset-email mailer user token))
+
+          (flash flashes 'success (translate 'message-password-reset-requested))
+          (redirect/get/forget/protect)
+          (redirect-to (reverse-uri 'login-page))]
+
+         [(list _ _ render-widget)
+          (page
+           #:subtitle (translate 'subtitle-request-password-reset)
+           (haml
+            (.container
+             (render-request-password-reset-form (embed/url loop) render-widget))))])))))
+
+(define request-password-reset-form
+  (form* ([username (ensure binding/email (required))])
+    username))
+
+(define (render-request-password-reset-form target render-widget)
+  (haml
+   (:form.form.form--password-reset
+    ([:action target]
+     [:method "POST"])
+
+    (:h1.form__title (translate 'subtitle-request-password-reset))
+
+    (render-widget "username" (username-field))
+
+    (:button.button.button--primary
+     ([:type "submit"])
+     (translate 'action-request-password-reset)))))
+
+(define/contract ((password-reset-page flashes mailer users) req user-id token)
+  (-> flash-manager? mailer? user-manager? (-> request? id/c non-empty-string? response?))
+  (let loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (match (form-run password-reset-form req)
+         [(list 'passed password render-widget)
+          (define reset?
+            (user-manager-reset-password! users
+                                          #:user-id user-id
+                                          #:token token
+                                          #:password password))
+
+          (if reset?
+              (flash flashes 'success (translate 'message-password-reset-success))
+              (flash flashes 'error (translate 'message-password-reset-error)))
+
+          (redirect-to (reverse-uri 'login-page))]
+
+         [(list _ _ render-widget)
+          (page
+           #:subtitle (translate 'subtitle-reset-password)
+           (haml
+            (.container
+             (render-password-reset-form (embed/url loop) render-widget))))])))))
+
+(define password-reset-form
+  (form* ([password (ensure binding/text (required) (longer-than 7))])
+    password))
+
+(define (render-password-reset-form target render-widget)
+  (haml
+   (:form.form.form--password-reset
+    ([:action target]
+     [:method "POST"])
+
+    (:h1.form__title (translate 'subtitle-reset-password))
+
+    (render-widget "password" (password-field))
+
+    (:button.button.button--primary
+     ([:type "submit"])
+     (translate 'action-reset-password)))))
