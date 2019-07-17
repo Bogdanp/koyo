@@ -23,7 +23,7 @@
 (define-schema user
   ([id id/f #:primary-key #:auto-increment]
    [username string/f #:contract non-empty-string? #:wrapper string-downcase]
-   [password-hash string/f #:nullable]
+   [(password-hash "") string/f]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
    [(created-at (now/moment)) datetime-tz/f]
