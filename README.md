@@ -15,6 +15,14 @@ what you use.
 
 ## Documentation
 
-The documentation is available on the [Package Server][docs].
+You can find the documentation on the [Racket package server][docs].
+The package server only updates once every 24 hours so if you want the
+absolute most recent docs, then you can visit [koyo.defn.io][docs-master].
+
+## License
+
+    koyo is licensed under the 3-Clause BSD license.
+
 
 [docs]: https://docs.racket-lang.org/koyo@koyo-doc/index.html
+[docs-master]: https://koyo.defn.io
