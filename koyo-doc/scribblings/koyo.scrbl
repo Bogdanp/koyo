@@ -2,7 +2,7 @@
 
 @(require "koyo.rkt")
 
-@title{koyo - web app development toolkit}
+@title{@exec{koyo}: Web Development Toolkit}
 @author[(author+email "Bogdan Popa" "bogdan@defn.io")]
 
 @defmodule[koyo]
