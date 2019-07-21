@@ -1,6 +1,7 @@
 #lang scribble/doc
 
-@(require "koyo.rkt")
+@(require (for-label koyo)
+          "koyo.rkt")
 
 @title[#:tag "getting-started"]{Getting Started}
 

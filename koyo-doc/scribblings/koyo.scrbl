@@ -1,6 +1,7 @@
 #lang scribble/manual
 
-@(require "koyo.rkt")
+@(require (for-label koyo)
+          "koyo.rkt")
 
 @title{@exec{koyo}: Web Development Toolkit}
 @author[(author+email "Bogdan Popa" "bogdan@defn.io")]

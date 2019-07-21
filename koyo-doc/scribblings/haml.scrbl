@@ -1,6 +1,6 @@
 #lang scribble/doc
 
-@(require (for-label koyo/haml)
+@(require (for-label koyo)
           "koyo.rkt")
 
 @title[#:tag "haml"]{HAML}
