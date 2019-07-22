@@ -48,7 +48,7 @@
   (-> auth-manager? non-empty-string? non-empty-string? (or/c false/c user?))
   (match (user-manager-login (auth-manager-user-manager am) username password)
     [#f #f]
-    [(and (user _ id _ _ verified? _ _ _) user)
+    [(and (struct* user ([id id] [verified? verified?])) user)
      (unless verified?
        (raise (exn:fail:auth-manager:unverified "this user is not verified" (current-continuation-marks))))
 

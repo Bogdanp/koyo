@@ -2,6 +2,7 @@
 
 (require component/testing
          koyo/testing
+         racket/match
          rackunit
 
          app-name-here/components/user
@@ -25,7 +26,9 @@
      (test-case "creates users"
        (check-match
         the-user
-        (user _ (? exact-positive-integer?) "bogdan@example.com" _ #f _ _ _))))
+        (struct* user ([id (? exact-positive-integer?)]
+                       [username "bogdan@example.com"]
+                       [verified? #f])))))
 
     (test-suite
      "user-manager-create-reset-token!"
@@ -83,7 +86,8 @@
      (test-case "returns a user upon successful login"
        (check-match
         (user-manager-login users "bogdan@example.com" "hunter2")
-        (user _ (? exact-positive-integer?) "bogdan@example.com" _ _ _ _ _))))))
+        (struct* user ([id (? exact-positive-integer?)]
+                       [username "bogdan@example.com"])))))))
 
 (module+ test
   (run-db-tests user-tests))
