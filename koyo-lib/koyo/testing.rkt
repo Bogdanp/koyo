@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require db
+         net/uri-codec
          net/url
          racket/contract
          racket/function
@@ -64,15 +65,19 @@
         #:client-ip string?)
        request?)
 
-  (let ([method (maybe-stringy->bytes method)]
-        [url (url scheme #f host port #t (map (curryr path/param null) (string-split path "/")) query #f)]
-        [headers (for/list ([header headers])
-                   (match header
-                     [(? header?) header]
-                     [(cons name value) (make-header (stringy->bytes name)
-                                                     (stringy->bytes value))]))]
-        [bindings (delay (append bindings (for/list ([param query])
-                                            (make-binding:form (string->bytes/utf-8 (symbol->string (car param)))
-                                                               (string->bytes/utf-8 (cdr param))))))]
-        [content (maybe-stringy->bytes content)])
+  (let* ([method (maybe-stringy->bytes method)]
+         [path (map (lambda (segment)
+                      (define segment/split (string-split segment ";"))
+                      (path/param (car segment/split) (map form-urlencoded-decode (cdr segment/split))))
+                    (string-split path "/"))]
+         [url (url scheme #f host port #t path query #f)]
+         [headers (for/list ([header headers])
+                    (match header
+                      [(? header?) header]
+                      [(cons name value) (make-header (stringy->bytes name)
+                                                      (stringy->bytes value))]))]
+         [bindings (delay (append bindings (for/list ([param query])
+                                             (make-binding:form (string->bytes/utf-8 (symbol->string (car param)))
+                                                                (string->bytes/utf-8 (cdr param))))))]
+         [content (maybe-stringy->bytes content)])
     (request method url headers bindings content host port client-ip)))
