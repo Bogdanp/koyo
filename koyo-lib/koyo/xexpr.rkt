@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/function
                      syntax/parse)
          (prefix-in h: html)
          racket/contract
@@ -121,6 +122,9 @@
 
 (define-syntax (xexpr-select stx)
   (syntax-parse stx
+    [(_ e:expr s:str)
+     #'((make-xexpr-selector (parse-selectors s)) e)]
+
     [(_ e:expr s:selector ...+)
      #'((make-xexpr-selector (list (list 's.tag 's.attrs) ...)) e)]))
 
@@ -147,3 +151,88 @@
      #'(if condition
            (list e ...)
            (list))]))
+
+
+;; dynamic selectors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (alphanumeric? c)
+  (or (char=? c #\-)
+      (char=? c #\_)
+      (char-alphabetic? c)
+      (char-numeric? c)))
+
+(define (read-while p)
+  (let loop ([next (peek-char)])
+    (when (and (not (eof-object? next)) (p next))
+      (display (read-char))
+      (loop (peek-char)))))
+
+(define (read-tag)
+  (with-output-to-string
+    (lambda _
+      (read-while alphanumeric?))))
+
+(define (read-class)
+  (with-output-to-string
+    (lambda _
+      (unless (char=? #\. (peek-char))
+        (raise-user-error 'read-class "classes must start with a period"))
+
+      (read-char)
+      (read-while alphanumeric?))))
+
+(define (read-id)
+  (with-output-to-string
+    (lambda _
+      (unless (char=? #\# (peek-char))
+        (raise-user-error 'read-id "ids must start with a pound sign"))
+
+      (read-char)
+      (read-while alphanumeric?))))
+
+(struct dyn:selector (tag attributes)
+  #:transparent)
+
+(define (parse-selectors sel)
+  (define selectors
+    (with-input-from-string sel
+      (lambda _
+        (let loop ([current-selector (dyn:selector #f null)]
+                   [selectors null])
+          (match (peek-char)
+            [(? eof-object?)
+             (reverse (cons current-selector selectors))]
+
+            [#\.
+             (loop (struct-copy dyn:selector current-selector
+                                [attributes (append (dyn:selector-attributes current-selector)
+                                                    (list (cons 'class (read-class))))])
+                   selectors)]
+
+            [#\#
+             (loop (struct-copy dyn:selector current-selector
+                                [attributes (append (dyn:selector-attributes current-selector)
+                                                    (list (cons 'id (read-id))))])
+                   selectors)]
+
+            [#\space
+             (read-char)
+             (loop (dyn:selector #f null)
+                   (cons current-selector selectors))]
+
+            [_
+             (loop (struct-copy dyn:selector current-selector
+                                [tag (string->symbol (read-tag))])
+                   selectors)])))))
+
+  (for/list ([selector (in-list selectors)])
+    (define attributes
+      (for*/fold ([attributes (hash)])
+                 ([pair      (in-list (dyn:selector-attributes selector))]
+                  [attribute (in-value (car pair))]
+                  [value     (in-value (cdr pair))])
+        (hash-update attributes attribute (curry cons value) null)))
+
+    `(,(or (dyn:selector-tag selector) '*)
+      (,@(for/list ([(name value) (in-hash attributes)])
+           `(,name ,(string-join (reverse value) " ")))))))

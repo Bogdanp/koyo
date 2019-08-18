@@ -33,9 +33,9 @@
       (check-equal? (xexpr->text '(h1 "Hello" "there")) "Hello there")
       (check-equal? (xexpr->text '(h1 ((class "heading")) "Hi")) "Hi")
       (check-equal? (xexpr->text '(div
-                                   ((class "container"))
+                                   ([class "container"])
                                    (h1
-                                    ((class "title"))
+                                    ([class "title"])
                                     "A" (strong "good") "title.")
                                    (p
                                     "And some content!")))
@@ -80,31 +80,39 @@
       (define tree
         '(div
           (header
-           (a [(class "findme")
-               (data-extra "")]))
+           (a ([class "findme"]
+               [data-extra ""])))
           (footer
            (a))))
 
       (check-equal?
        (xexpr-select tree (a [(class "findme")]))
-       '((a [(class "findme") (data-extra "")]))))
+       '((a ([class "findme"] [data-extra ""]))))
+
+      (check-equal?
+       (xexpr-select tree "a.findme")
+       '((a ([class "findme"] [data-extra ""])))))
 
     (test-case "finds elements by their attributes in a path containing a wildcard"
       (define tree
         '(div
           (header
-           (a [(class "findme")]))
+           (a ([class "findme"])))
           (footer
-           (h1 [(class "findme")]))))
+           (h1 ([class "findme"])))))
 
       (check-equal?
        (xexpr-select tree (* [(class "findme")]))
-       '((a [(class "findme")])
-         (h1 [(class "findme")])))
+       '((a ([class "findme"]))
+         (h1 ([class "findme"]))))
 
       (check-equal?
        (xexpr-select tree footer (* [(class "findme")]))
-       '((h1 [(class "findme")]))))
+       '((h1 ([class "findme"]))))
+
+      (check-equal?
+       (xexpr-select tree "footer .findme")
+       '((h1 ([class "findme"])))))
 
     (test-suite
      "xexpr-select-text"
