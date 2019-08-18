@@ -8,6 +8,7 @@
          racket/function
          racket/match
          racket/port
+         racket/set
          racket/string
          xml)
 
@@ -53,18 +54,32 @@
   (listof (or/c symbol?
                 (listof (list/c symbol? string?)))))
 
-(define (list-subset? xs ys)
-  (andmap (curryr member xs) ys))
+(define (attribute-pairs->hash xs)
+  (for/hash ([pair (in-list xs)])
+    (values (car pair) (list->set (string-split (cadr pair) " ")))))
+
+(define (attributes-subset? xs ys)
+  (define xs:hash (attribute-pairs->hash xs))
+  (define ys:hash (attribute-pairs->hash ys))
+
+  (for/fold ([res #t])
+            ([(name value) (in-hash ys:hash)])
+    (and res (cond
+               [(hash-ref xs:hash name #f) => (curry subset? value)]
+               [else #f]))))
+
+(define attribute-list?
+  (non-empty-listof (list/c any/c any/c)))
 
 (define xexpr-select-matches?
   (match-lambda**
    [((list '* selector-attrs)
-     (and (list _ element-attrs e ...) xexpr))
-    (list-subset? element-attrs selector-attrs)]
+     (list _ element-attrs e ...))
+    (attributes-subset? (if (attribute-list? element-attrs) element-attrs null) selector-attrs)]
 
    [((list tag selector-attrs)
-     (and (list tag element-attrs e ...) xexpr))
-    (list-subset? element-attrs selector-attrs)]
+     (list tag element-attrs e ...))
+    (attributes-subset? (if (attribute-list? element-attrs) element-attrs null) selector-attrs)]
 
    [(_ _) #f]))
 

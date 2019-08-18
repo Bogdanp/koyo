@@ -93,6 +93,31 @@
        (xexpr-select tree "a.findme")
        '((a ([class "findme"] [data-extra ""])))))
 
+    (test-case "finds elements by subsets of their attributes in a path"
+      (define tree
+        '(div
+          (header
+           (a ([class "findme or-findme or-findme-instead"]
+               [data-extra ""])))
+          (footer
+           (a))))
+
+      (check-equal?
+       (xexpr-select tree (a [(class "findme")]))
+       '((a ([class "findme or-findme or-findme-instead"] [data-extra ""]))))
+
+      (check-equal?
+       (xexpr-select tree "a.findme")
+       '((a ([class "findme or-findme or-findme-instead"] [data-extra ""]))))
+
+      (check-equal?
+       (xexpr-select tree "a.or-findme")
+       '((a ([class "findme or-findme or-findme-instead"] [data-extra ""]))))
+
+      (check-equal?
+       (xexpr-select tree "a.but-not-me")
+       '()))
+
     (test-case "finds elements by their attributes in a path containing a wildcard"
       (define tree
         '(div
