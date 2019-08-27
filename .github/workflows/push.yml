@@ -1,0 +1,23 @@
+on: push
+name: main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: build
+      uses: docker://bogdanp/racket:7.3
+      with:
+        entrypoint: /github/workspace/ci/build.sh
+    - name: test
+      uses: docker://bogdanp/racket:7.3
+      with:
+        entrypoint: /github/workspace/ci/test.sh
+    - name: docs
+      uses: docker://bogdanp/racket:7.3
+      env:
+        KOYO_DOCS_DEPLOY_KEY_PASSPHRASE: ${{ secrets.KOYO_DOCS_DEPLOY_KEY_PASSPHRASE }}
+        KOYO_DOCS_SSH_HOST: ${{ secrets.KOYO_DOCS_SSH_HOST }}
+        KOYO_DOCS_SSH_PORT: ${{ secrets.KOYO_DOCS_SSH_PORT }}
+      with:
+        entrypoint: /github/workspace/ci/docs.sh
