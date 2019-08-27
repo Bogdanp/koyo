@@ -6,7 +6,7 @@ apt-get update
 apt-get install -y --no-install-recommends gettext-base gpg ssh rsync
 
 pushd /github/workspace
-scribble +m --dest doc --html-tree 2 --redirect 'http://docs.racket-lang.org/' koyo-doc/scribblings/koyo.scrbl
+scribble +m --dest doc --html-tree 2 --redirect-main 'http://docs.racket-lang.org/' koyo-doc/scribblings/koyo.scrbl
 
 mkdir -p /tmp/secrets
 gpg -q --batch --yes --decrypt --passphrase="$KOYO_DOCS_DEPLOY_KEY_PASSPHRASE" -o /tmp/secrets/deploy ci/deploy.gpg
