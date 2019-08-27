@@ -14,6 +14,7 @@
  "csrf.rkt"
  "database.rkt"
  "dispatch.rkt"
+ "error.rkt"
  "flash.rkt"
  "haml.rkt"
  "http.rkt"

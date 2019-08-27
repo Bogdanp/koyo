@@ -8,6 +8,7 @@
                "compatibility-lib"
                "component-lib"
                "db-lib"
+               "errortrace-lib"
                "gregor-lib"
                "html-lib"
                "postmark-client"

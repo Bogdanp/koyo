@@ -31,6 +31,7 @@ exactly which parts you want to use.
 @include-section["csrf.scrbl"]
 @include-section["database.scrbl"]
 @include-section["dispatch.scrbl"]
+@include-section["error.scrbl"]
 @include-section["flash.scrbl"]
 @include-section["haml.scrbl"]
 @include-section["http.scrbl"]
