@@ -1,2 +1,2 @@
-assets: npm run watch
+assets: npm run serve
 web: raco koyo serve

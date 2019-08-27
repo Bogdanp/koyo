@@ -44,7 +44,7 @@
   (begin0 url-host
     (current-application-url-host url-host)))
 
-(define-option url-port #:default "8000"
+(define-option url-port #:default "3000"
   (begin0 url-port
     (current-application-url-port (string->number url-port))))
 
@@ -68,6 +68,8 @@
 (define-option session-secret-key-path #:default "/tmp/app-name-here-secret-key")
 (define-option session-secret-key
   (or session-secret-key (make-secret-salt/file session-secret-key-path)))
+
+(define-option browsersync #:default #t)
 
 (define-option postmark-token)
 

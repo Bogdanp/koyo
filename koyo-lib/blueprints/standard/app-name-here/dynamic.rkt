@@ -22,6 +22,15 @@
       (make-postmark-mail-adapter (postmark config:postmark-token))
       (make-stub-mail-adapter)))
 
+(define (sync-page)
+  (displayln "reloading in browser-sync")
+  (http-conn-send!
+    (http-conn-open
+      "localhost"
+      #:port 3000) 
+    "/__browser_sync__?method=reload")
+)
+
 (define-system prod
   [app (auth flashes mailer sessions users) make-app]
   [auth (sessions users) make-auth-manager]
@@ -64,6 +73,9 @@
                 (system               . ,config:log-level))))
 
   (system-start prod-system)
+
+  (when config:browsersync
+    (sync-page))
 
   (lambda ()
     (system-stop prod-system)

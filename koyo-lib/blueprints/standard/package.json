@@ -1,16 +1,17 @@
 {
   "devDependencies": {
-    "broccoli": "^3.0.0",
-    "broccoli-cli": "^1.0.0",
-    "broccoli-concat": "^3.7.3",
-    "broccoli-funnel": "^2.0.2",
-    "broccoli-merge-trees": "^3.0.2",
-    "broccoli-sass": "^0.7.0",
-    "broccoli-uglify-sourcemap": "^3.1.1",
+    "browser-sync": "^2.26.7",
+    "del": "^5.0.0",
     "eslint": "^5.15.0",
+    "gulp": "^4.0.2",
+    "gulp-concat": "^2.6.1",
+    "gulp-livereload": "^4.0.1",
+    "gulp-sass": "^4.0.2",
+    "gulp-sourcemaps": "^2.6.5",
     "prettier": "^1.16.4"
   },
   "scripts": {
-    "watch": "broccoli b --output-path static --watch"
+    "serve": "gulp serve",
+    "watch": "gulp watch"
   }
 }
