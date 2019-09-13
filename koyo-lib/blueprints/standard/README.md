@@ -29,6 +29,13 @@ Copy `.env.default` to `.env`.  [honcho] will automatically load the
 variables defined in this file into the environment of the
 subprocesses defined in the `Procfile` whenever it is run.
 
+Please note that in order for the webapp to work properly, you should
+run the app behind an SSL terminated connection, even for local
+development (for example, behind an nginx instance using a self-signed
+cert). You can disable this requirement by adding the function call
+`(current-continuation-key-cookie-secure? #f)` to the make-app
+function in _app_name_/components/app.rkt.
+
 ## Running the app locally
 
     $ nvm use
