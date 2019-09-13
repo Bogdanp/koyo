@@ -29,6 +29,12 @@ Copy `.env.default` to `.env`.  [honcho] will automatically load the
 variables defined in this file into the environment of the
 subprocesses defined in the `Procfile` whenever it is run.
 
+The app expects to be run behind an SSL terminated connection (for
+example, behind an nginx instance using a self-signed cert), even for
+local development .  You can disable this requirement by setting
+`current-continuation-key-cookie-secure?` parameter to `#f` before the
+application is started.
+
 ## Running the app locally
 
     $ nvm use
