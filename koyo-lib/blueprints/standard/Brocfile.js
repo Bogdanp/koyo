@@ -2,8 +2,11 @@
 import BroccoliConcat from "broccoli-concat";
 import BroccoliFunnel from "broccoli-funnel";
 import BroccoliMergeTrees from "broccoli-merge-trees";
-import BroccoliSass from "broccoli-sass";
+import BroccoliSassSourceMaps from "broccoli-sass-source-maps";
 import BroccoliUglify from "broccoli-uglify-sourcemap";
+import Sass from "node-sass";
+
+const BroccoliSass = BroccoliSassSourceMaps(Sass);
 
 const FOR_PRODUCTION = process.env.NODE_ENV === "production";
 
