@@ -17,7 +17,7 @@ what you use.
 
 You can find the documentation on the [Racket package server][docs].
 The package server only updates once every 24 hours so if you want the
-absolute most recent docs, then you can visit [koyo.defn.io][docs-master].
+absolute most recent docs, then you can visit [koyoweb.org][docs-master].
 
 ## License
 
@@ -25,4 +25,4 @@ absolute most recent docs, then you can visit [koyo.defn.io][docs-master].
 
 
 [docs]: https://docs.racket-lang.org/koyo@koyo-doc/index.html
-[docs-master]: https://koyo.defn.io
+[docs-master]: https://koyoweb.org
