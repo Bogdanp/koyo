@@ -5,7 +5,7 @@
 
 @title[#:tag "getting-started"]{Getting Started}
 
-@(define honcho (hyperlink "https://honcho.readthedocs.io/en/latest/" "honcho"))
+@(define chief (hyperlink "https://github.com/Bogdanp/racket-chief" "chief"))
 
 koyo comes with a command line utility which you can use to get
 started quickly.
@@ -16,10 +16,10 @@ follow the instructions in the generated @filepath{README.md} file and
 take a look at the generated source code.
 
 You can then use @exec{raco koyo serve} to run your application,
-although, generally, it's more convenient to use @honcho (which iself
+although, generally, it's more convenient to use @chief (which iself
 runs @exec{raco koyo serve} based on the configuration in
 @filepath{Procfile.dev}) in order to be able to both compile your
-assets and run the web server from the same terminal session.
+assets and run the web server from a single terminal session.
 
 @section{Project Structure}
 
@@ -45,9 +45,8 @@ structure in the current directory:
         (list @filepath{.env.default}   "A list of default environment variables for your application.  Generally committed to source control.")
         (list @filepath{.nvmrc}         "Contains the node version required to work on your application.  This is used by nvm to set up the environment appropriately for that respective version.")
         (list @filepath{Brocfile.js}    "The asset pipeline (Broccoli) configuration file.  Describes how (and which) assets are to be preprocessed before being copied into the static/ folder.")
-        (list @filepath{Procfile.dev}   "The process configuration file.  Used by honcho to determine which processes to run when it starts a development server.  By default, it runs a process to build the assets on change and the application web server.")
-        (list @filepath{package.json}   "Describes the node dependencies for the asset pipeline.")
-        (list @filepath{requirements.*} "Describes the python development dependencies, such as the process runner (honcho)."))]
+        (list @filepath{Procfile.dev}   "The process configuration file.  Used by chief to determine which processes to run when it starts a development server.  By default, it runs a process to build the assets on change and the application web server.")
+        (list @filepath{package.json}   "Describes the node dependencies for the asset pipeline."))]
 
 The application folder is further subdivided into:
 
