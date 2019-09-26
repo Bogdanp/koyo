@@ -90,7 +90,9 @@
 
 (define (render-stack-frame frame)
   (match-define (cons name location) frame)
-  (render-frame name (srcloc-source location) (srcloc-line location)))
+  (if location
+      (render-frame name (srcloc-source location) (srcloc-line location))
+      (render-frame name #f #f)))
 
 (define (render-frame expr source line)
   (haml
