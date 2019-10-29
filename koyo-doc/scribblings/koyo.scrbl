@@ -35,6 +35,7 @@ exactly which parts you want to use.
 @include-section["flash.scrbl"]
 @include-section["haml.scrbl"]
 @include-section["http.scrbl"]
+@include-section["json.scrbl"]
 @include-section["l10n.scrbl"]
 @include-section["logging.scrbl"]
 @include-section["mail.scrbl"]

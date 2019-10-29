@@ -18,6 +18,7 @@
  "flash.rkt"
  "haml.rkt"
  "http.rkt"
+ "json.rkt"
  "l10n.rkt"
  "logging.rkt"
  "mail.rkt"
