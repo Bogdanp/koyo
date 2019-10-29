@@ -73,5 +73,6 @@
 (module+ main
   (define stop (start))
   (with-handlers ([exn:break? (lambda _
-                                (stop))])
+                                (stop)
+                                (sync/enable-break (system-idle-evt)))])
     (sync/enable-break never-evt)))
