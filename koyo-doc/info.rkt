@@ -4,7 +4,9 @@
 (define scribblings '(("scribblings/koyo.scrbl" (multi-page))))
 
 (define deps '("base"))
-(define build-deps '("koyo-lib"
+(define build-deps '("component-lib"
+                     "koyo-lib"
+                     "postmark-client"
                      "sandbox-lib"
                      "scribble-lib"
                      "web-server-lib"
