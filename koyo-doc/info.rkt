@@ -5,12 +5,14 @@
 
 (define deps '("base"))
 (define build-deps '("component-lib"
+                     "db-lib"
                      "koyo-lib"
                      "postmark-client"
                      "sandbox-lib"
                      "scribble-lib"
                      "web-server-lib"
 
+                     "db-doc"
                      "racket-doc"
                      "web-server-doc"))
 
