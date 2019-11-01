@@ -36,7 +36,7 @@ application is started.
 ## Running the app locally
 
     $ nvm use
-    $ raco chief -f Procfile.dev
+    $ raco chief start
 
 
 [Postgres]: https://www.postgresql.org/
