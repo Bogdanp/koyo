@@ -51,4 +51,6 @@ application against @csrf attacks.
   CSRF tokens are automatically generated and stored in each users'
   @racket[sessions].  If a user's session already contains a CSRF
   token, then it is reused until the session expires.
+
+  This wrapper must be applied after @racket[wrap-session].
 }

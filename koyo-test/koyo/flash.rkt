@@ -2,6 +2,7 @@
 
 (require component
          koyo/flash
+         (submod koyo/flash private)
          koyo/session
          rackunit)
 
@@ -33,6 +34,19 @@
         (flash (system-get test-system 'flashes) 'error "Error message 1.")
         (flash (system-get test-system 'flashes) 'info "Info message 1.")
         (flash (system-get test-system 'flashes) 'info "Info message 2.")
+
+        (check-equal?
+         (session-manager-ref (system-get test-system 'sessions) 'flash.messages)
+         '((info . "Info message 2.")
+           (info . "Info message 1.")
+           (error . "Error message 1.")))))
+
+    (test-case "can add messages using the implicit argument"
+      (parameterize ([current-flash-manager (system-get test-system 'flashes)]
+                     [current-session-id "another-session-id"])
+        (flash 'error "Error message 1.")
+        (flash 'info "Info message 1.")
+        (flash 'info "Info message 2.")
 
         (check-equal?
          (session-manager-ref (system-get test-system 'sessions) 'flash.messages)

@@ -26,16 +26,27 @@
   (-> session-manager? flash-manager?)
   (flash-manager sessions))
 
+(define current-flash-manager
+  (make-parameter #f))
+
 (define/contract current-flash-messages
   (parameter/c (listof (cons/c symbol? string?)))
   (make-parameter null))
 
-(define (flash fm key message)
-  (with-timing 'flash "flash"
-    (session-manager-update! (flash-manager-session-manager fm)
-                             session-key
-                             (curry cons (cons key message))
-                             null)))
+(define flash
+  (case-lambda
+    [(key message)
+     (flash (current-flash-manager) key message)]
+
+    [(fm key message)
+     (with-timing 'flash "flash"
+       (session-manager-update! (flash-manager-session-manager fm)
+                                session-key
+                                (curry cons (cons key message))
+                                null))]))
+
+(module+ private
+  (provide current-flash-manager))
 
 
 ;; Middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -53,5 +64,6 @@
     (define flash-messages (session-manager-ref sessions session-key null))
     (session-manager-remove! sessions session-key)
 
-    (parameterize ([current-flash-messages flash-messages])
+    (parameterize ([current-flash-manager fm]
+                   [current-flash-messages flash-messages])
       (handler req))))
