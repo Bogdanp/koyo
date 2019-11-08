@@ -68,6 +68,8 @@ audio/ogg                             ogg
 audio/x-m4a                           m4a
 audio/x-realaudio                     ra
 
+javascript/esm                        mjs
+
 video/3gpp                            3gpp 3gp
 video/mp2t                            ts
 video/mp4                             mp4
