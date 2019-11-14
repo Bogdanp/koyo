@@ -2,7 +2,6 @@
 
 @(require (for-label component
                      koyo
-                     postmark
                      racket/base
                      racket/contract
                      racket/string
@@ -87,13 +86,11 @@ can send e-mail.
   using @racket[stub-mail-adapter-outbox].
 }
 
+
+@subsection{Other Adapters}
+
+@(define koyo-postmark-url "https://pkgd.racket-lang.org/pkgn/package/koyo-postmark")
 @(define postmark-url "https://postmarkapp.com")
 
-@deftogether[(
-  @defproc[(make-postmark-mail-adapter [client postmark?]) mail-adapter?]
-  @defproc[(postmark-mail-adapter? [v any/c]) boolean?]
-)]{
-
-  A @tech{mail adapter} that uses the @link[postmark-url]{Postmark}
-  API to send e-mail.
-}
+@link[koyo-postmark-url]{koyo-postmark} provides a @tech{mail adapter}
+for interfacing with the @link[postmark-url]{Postmark} API.

@@ -5,9 +5,9 @@
          koyo/database
          koyo/flash
          koyo/logging
+         koyo/mail/postmark
          koyo/server
          koyo/session
-         postmark
          racket/contract
          "components/app.rkt"
          "components/auth.rkt"

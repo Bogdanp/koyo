@@ -9,7 +9,7 @@
                "forms-lib"
                "gregor-lib"
                "koyo-lib"
-               "postmark-client"
+               "koyo-postmark"
                "threading-lib"
                "web-server-lib"))
 (define build-deps '())

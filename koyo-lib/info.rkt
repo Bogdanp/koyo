@@ -11,7 +11,6 @@
                "errortrace-lib"
                "gregor-lib"
                "html-lib"
-               "postmark-client"
                "srfi-lite-lib"
                "web-server-lib"))
 (define build-deps '("at-exp-lib"))
