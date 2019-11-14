@@ -15,9 +15,10 @@
 
 ### First-time Setup
 
-    $ nvm use && npm install
+    $ nvm use && npm install && npm run build
     $ raco pkg install chief
     $ raco pkg install app-name-here/                                    # install and build the application and its deps
+    $ raco pkg install app-name-here-tests/                              # install and build the tests and their deps
     $ raco north migrate -f -u postgres://127.0.0.1/app_name_here        # migrate the local database
     $ raco north migrate -f -u postgres://127.0.0.1/app_name_here_tests  # migrate the tests database
 

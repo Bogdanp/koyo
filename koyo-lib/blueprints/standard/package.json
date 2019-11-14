@@ -12,6 +12,7 @@
     "prettier": "^1.16.4"
   },
   "scripts": {
+    "build": "broccoli b --output-path static",
     "watch": "broccoli b --output-path static --watch"
   }
 }
