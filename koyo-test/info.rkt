@@ -4,6 +4,7 @@
 
 (define deps '())
 (define build-deps '("base"
+                     "at-exp-lib"
                      "component-lib"
                      "db-lib"
                      "gregor-lib"
