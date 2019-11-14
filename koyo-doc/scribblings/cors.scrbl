@@ -34,7 +34,7 @@ This module provides a wrapper function and parameters for handling
 
   When @racket[current-cors-origin] is @racket[#f], the origin is
   based upon @racket[current-application-url-scheme] and
-  @racket[current-applicatoin-url-host].
+  @racket[current-application-url-host].
 }
 
 @defproc[(wrap-cors [handler (-> request? response?)]) (-> request? response?)]{
