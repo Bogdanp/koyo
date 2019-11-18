@@ -16,6 +16,8 @@
  make-database-factory
  call-with-database-connection
  call-with-database-transaction
+ database-borrow-connection
+ database-release-connection
 
  with-database-connection
  with-database-transaction)
@@ -88,6 +90,14 @@
         #:isolation isolation
         (lambda ()
           (proc conn))))))
+
+(define/contract (database-borrow-connection database)
+  (-> database? connection?)
+  (connection-pool-lease (database-connection-pool database)))
+
+(define/contract (database-release-connection database conn)
+  (-> database? connection? void?)
+  (disconnect conn))
 
 (define-syntax (with-database-connection stx)
   (syntax-parse stx
