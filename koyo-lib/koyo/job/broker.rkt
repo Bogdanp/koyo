@@ -2,9 +2,7 @@
 
 (require component
          db
-         racket/class
          racket/contract
-         racket/sequence
          "../database.rkt"
          "query.rkt"
          "schema.rkt"
@@ -21,6 +19,7 @@
  broker-mark-done!
  broker-mark-failed!
  broker-mark-for-retry!
+ broker-perform-maintenance!
  broker-register-worker!
  broker-unregister-worker!)
 
@@ -58,8 +57,9 @@
       id)))
 
 (define (broker-dequeue! broker worker-id queue [n 1])
-  (with-database-connection [conn (broker-database broker)]
-    (query-rows conn dequeue-stmt worker-id queue n)))
+  (with-database-transaction [conn (broker-database broker)]
+    (begin0 (query-rows conn dequeue-stmt worker-id queue n)
+      (query-exec conn heartbeat-stmt worker-id))))
 
 (define (broker-mark-done! broker id)
   (with-database-connection [conn (broker-database broker)]
@@ -73,12 +73,17 @@
   (with-database-connection [conn (broker-database broker)]
     (query-exec conn mark-for-retry-stmt id (->sql-timestamp moment))))
 
-;; TODO: maintenance on register
+(define (broker-perform-maintenance! broker id)
+  (with-database-transaction [conn (broker-database broker)]
+    (query-exec conn heartbeat-stmt id)
+    (query-exec conn unregister-stale-workers-stmt)))
+
 (define (broker-register-worker! broker pid hostname)
-  (with-database-connection [conn (broker-database broker)]
-    (query-value conn register-worker-stmt pid hostname)))
+  (with-database-transaction [conn (broker-database broker)]
+    (define id (query-value conn register-worker-stmt pid hostname))
+    (begin0 id
+      (broker-perform-maintenance! broker id))))
 
 (define (broker-unregister-worker! broker id)
-  (with-database-transaction [conn (broker-database broker)]
-    (query-exec conn release-worker-jobs-stmt id)
+  (with-database-connection [conn (broker-database broker)]
     (query-exec conn unregister-worker-stmt id)))

@@ -49,8 +49,8 @@
   (syntax-parse stx
     [(_ (~or (id:id arg ...)
              (id:id arg ... . rest-id:id))
-        (~alt (~optional (~seq #:queue queue:str) #:name "#:queue keyword")
-              (~optional (~seq #:priority priority:number) #:name "#:priority keyword")) ...
+        (~alt (~optional (~seq #:queue queue:str) #:name "#:queue parameter")
+              (~optional (~seq #:priority priority:number) #:name "#:priority parameter")) ...
         e:expr ...+)
      #'(define id
          (make-job #:id 'id

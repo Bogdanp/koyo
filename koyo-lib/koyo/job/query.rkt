@@ -24,9 +24,10 @@
 
 (define-stmt dequeue)
 (define-stmt enqueue)
+(define-stmt heartbeat)
 (define-stmt mark-done)
 (define-stmt mark-failed)
 (define-stmt mark-for-retry)
 (define-stmt register-worker)
-(define-stmt release-worker-jobs)
+(define-stmt unregister-stale-workers)
 (define-stmt unregister-worker)

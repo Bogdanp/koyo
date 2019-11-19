@@ -151,9 +151,9 @@
   (set-listener-conn! listener #f))
 
 (define (listener-jobs-evt the-listener limit)
-  (match-define (listener broker id queue conn) the-listener)
-  (cond
-    [conn
+  (match the-listener
+    [(listener broker id queue #f) never-evt]
+    [(listener broker id queue conn)
      (choice-evt
       (cond
         [(zero? limit) never-evt]
@@ -173,13 +173,12 @@
            [ready? (broker-dequeue! broker id queue limit)]
            [else null])))
 
-      ;; TODO: heartbeats
-      ;; TODO: maintenace every (random-range 300 900) seconds
       (handle-evt
-       (alarm-evt (+ (current-inexact-milliseconds) 5000))
-       (lambda _ null)))]
-
-    [else never-evt]))
+       (alarm-evt (+ (current-inexact-milliseconds)
+                     (* (random 30 300) 1000)))
+       (lambda _
+         (begin0 null
+           (broker-perform-maintenance! broker id)))))]))
 
 (define (make-worker-pool size source system-id)
   (define pool
