@@ -12,8 +12,9 @@
          "profiler.rkt")
 
 (provide
- database?
+ current-database-connection
  make-database-factory
+ database?
  call-with-database-connection
  call-with-database-transaction
  database-borrow-connection
