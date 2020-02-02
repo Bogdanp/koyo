@@ -187,6 +187,7 @@
           (write-string replaced-contents out))))))
 
 (define (handle-serve)
+  (define recompile? #t)
   (define errortrace? #t)
   (define dynamic-module-path
     (command-line
@@ -194,10 +195,13 @@
      #:once-each
      [("--disable-errortrace") "run the application without error trace"
                                (set! errortrace? #f)]
+     [("--disable-recompile") "don't recompile changed files on reload"
+                              (set! recompile? #f)]
      #:args ([dynamic-module-path #f])
      (or dynamic-module-path (infer-dynamic-module-path))))
 
   (run-forever (path->complete-path dynamic-module-path)
+               #:recompile? recompile?
                #:errortrace? errortrace?))
 
 (define ((handle-unknown command))
