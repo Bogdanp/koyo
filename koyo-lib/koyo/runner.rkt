@@ -21,23 +21,30 @@
   (define (collect-tracked-files)
     (map simplify-path (find-files track-file? path)))
 
-  (let loop ([tracked-files (collect-tracked-files)])
-    (parameterize ([current-custodian (make-custodian)])
-      (sync
-       (handle-evt
-        (filesystem-change-evt path)
-        (lambda (e)
-          (loop (collect-tracked-files))))
+  (define parent-custodian
+    (current-custodian))
 
-       (handle-evt
-        (apply choice-evt (filter-map
-                           (lambda (p)
-                             (and (file-exists? p)
-                                  (handle-evt (filesystem-change-evt p) (const p))))
-                           tracked-files))
-        (lambda (p)
-          (handler p)
-          (loop tracked-files)))))))
+  (let loop ([tracked-files (collect-tracked-files)])
+    (parameterize ([current-custodian (make-custodian parent-custodian)])
+      (define new-tracked-files
+        (sync
+         (handle-evt
+          (filesystem-change-evt path)
+          (lambda _
+            (collect-tracked-files)))
+
+         (handle-evt
+          (apply choice-evt (filter-map
+                             (lambda (p)
+                               (and (file-exists? p)
+                                    (handle-evt (filesystem-change-evt p) (const p))))
+                             tracked-files))
+          (lambda (p)
+            (begin0 tracked-files
+              (handler p))))))
+
+      (custodian-shutdown-all (current-custodian))
+      (loop new-tracked-files))))
 
 (define (watch #:path path
                #:handler handler)
