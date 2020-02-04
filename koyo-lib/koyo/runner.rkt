@@ -6,6 +6,7 @@
          racket/list
          racket/match
          racket/path
+         racket/string
          racket/system)
 
 (provide
@@ -15,11 +16,19 @@
 (define-logger watcher)
 
 (define (track-file? p)
-  (equal? (path-get-extension p) #".rkt"))
+  (if (directory-exists? p)
+      (match/values (split-path p)
+        [(_ (app path->string (regexp "^\\.")) _) #f]
+        [(_ (app path->string "node_modules")  _) #f]
+        [(_ _                                  _) #t])
+      (case (path-get-extension p)
+        [(#".rkt" #".rktd" #".ss") #t]
+        [(#".html" #".sql")        #t]
+        [else                      #f])))
 
 (define (track path handler)
   (define (collect-tracked-files)
-    (map simplify-path (find-files track-file? path)))
+    (map simplify-path (find-files track-file? path #:skip-filtered-directory? #t)))
 
   (define parent-custodian
     (current-custodian))
@@ -87,16 +96,16 @@
      (lambda ()
        (control 'interrupt))))
 
-  (define (make path)
-    (process* (find-executable-path "raco") "make" (path->string path)))
+  (define (make!)
+    (system*/exit-code (find-executable-path "raco") "make" "-v" dynamic-module-path))
 
   (log-runner-info "starting application process")
   (watch
-   #:path (simplify-path (build-path dynamic-module-path 'up))
+   #:path (simplify-path (build-path dynamic-module-path 'up 'up))
    #:handler (lambda (changed-path)
-               (when (and recompile? (equal? (path-get-extension changed-path) #".rkt"))
-                 (log-runner-info (format "recompiling '~a'" changed-path))
-                 (make changed-path))
+               (when recompile?
+                 (log-runner-info (format "recompiling because '~a' changed" changed-path))
+                 (make!))
                (when stop
                  (log-runner-info "stopping application process")
                  (stop))))
