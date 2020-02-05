@@ -13,6 +13,7 @@
          racket/string
          racket/system
          raco/command-name
+         "console.rkt"
          "logging.rkt"
          "runner.rkt")
 
@@ -57,11 +58,19 @@
    "usage: raco koyo <command> <option> ... <arg> ..."
    ""
    "available commands:"
-   "  dist   generate a deployable distribution of the application"
-   "  graph  generate a graph of all the components in the current application"
-   "  help   display this help message"
-   "  new    generate a new koyo-based project from a blueprint"
-   "  serve  run a server for the current application"))
+   "  console  run a REPL for the current application"
+   "  dist     generate a deployable distribution of the application"
+   "  graph    generate a graph of all the components in the current application"
+   "  help     display this help message"
+   "  new      generate a new koyo-based project from a blueprint"
+   "  serve    run a server for the current application"))
+
+(define (handle-console)
+  (start-console
+   (command-line
+    #:program (current-program-name)
+    #:args ([dynamic-module-path #f])
+    (or dynamic-module-path (infer-dynamic-module-path)))))
 
 (define (handle-dist)
   (define target-path "dist")
@@ -213,11 +222,12 @@
                                (watcher . debug))))
 
 (define all-commands
-  (hasheq 'dist  handle-dist
-          'graph handle-graph
-          'help  handle-help
-          'new   handle-new
-          'serve handle-serve))
+  (hasheq 'console handle-console
+          'dist    handle-dist
+          'graph   handle-graph
+          'help    handle-help
+          'new     handle-new
+          'serve   handle-serve))
 
 (define-values (command handler args)
   (match (current-command-line-arguments)
