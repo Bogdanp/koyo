@@ -99,6 +99,10 @@
   (define (make!)
     (system*/exit-code (find-executable-path "raco") "make" "-v" dynamic-module-path))
 
+  (when recompile?
+    (log-runner-info "compiling application")
+    (make!))
+
   (log-runner-info "starting application process")
   (watch
    #:path (simplify-path (build-path dynamic-module-path 'up 'up))
