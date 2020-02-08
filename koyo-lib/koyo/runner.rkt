@@ -55,8 +55,7 @@
       (custodian-shutdown-all (current-custodian))
       (loop new-tracked-files))))
 
-(define (watch #:path path
-               #:handler handler)
+(define (watch path handler)
   (thread
    (lambda ()
      (log-watcher-debug "starting watcher for path ~v" (path->string path))
@@ -104,15 +103,14 @@
     (make!))
 
   (log-runner-info "starting application process")
-  (watch
-   #:path (simplify-path (build-path dynamic-module-path 'up 'up))
-   #:handler (lambda (changed-path)
-               (when recompile?
-                 (log-runner-info (format "recompiling because '~a' changed" changed-path))
-                 (make!))
-               (when stop
-                 (log-runner-info "stopping application process")
-                 (stop))))
+  (watch (simplify-path (build-path dynamic-module-path 'up 'up))
+         (lambda (changed-path)
+           (when recompile?
+             (log-runner-info (format "recompiling because '~a' changed" changed-path))
+             (make!))
+           (when stop
+             (log-runner-info "stopping application process")
+             (stop))))
 
   (let loop ()
     (define-values (stopped-evt stop-process)
