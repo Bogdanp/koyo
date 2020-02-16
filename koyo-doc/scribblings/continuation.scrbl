@@ -11,7 +11,7 @@
 
 @defmodule[koyo/continuation]
 
-Continuations in a web context are super valuable when it comes
+Continuations in a web context are super valuable when it comes to
 quickly prototyping certain functionality.  However, because it stores
 continuation ids within URLs, the web server is succeptible to session
 hijacking.  This is @bold{by design}.  For some use cases it makes
