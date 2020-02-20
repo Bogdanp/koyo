@@ -74,6 +74,7 @@
 
 (define (handle-dist)
   (define target-path "dist")
+  (define included-langs null)
   (define dynamic-module-path
     (command-line
      #:program (current-program-name)
@@ -81,6 +82,10 @@
      [("-t" "--target") target-path
                         "where to put the distribution"
                         (set! target-path target-path)]
+     #:multi
+     [("++lang") lang
+                 "additional #langs to include into the executable"
+                 (set! included-langs (cons lang included-langs))]
      #:args ([dynamic-module-path #f])
      (or dynamic-module-path (infer-dynamic-module-path))))
 
@@ -98,9 +103,13 @@
 
   (log-koyo-info "building executable")
   (unless (zero?
-           (system*/exit-code (find-executable-path "raco")
-                              "exe" "-o" temp-exe-path
-                              dynamic-module-path))
+           (apply system*/exit-code
+                  (find-executable-path "raco")
+                  "exe" "-o" temp-exe-path
+                  (append
+                   (flatten (for/list ([l (in-list included-langs)])
+                              (list "++lang" l)))
+                   (list dynamic-module-path))))
     (exit-with-errors! @~a{error: failed to build racket executable from application}))
 
   (log-koyo-info "creating distribution")
