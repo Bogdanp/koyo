@@ -9,6 +9,7 @@
                "forms-lib"
                "gregor-lib"
                "koyo-lib"
+               "koyo-north"
                "koyo-postmark"
                "threading-lib"
                "web-server-lib"))
