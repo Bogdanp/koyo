@@ -1,14 +1,17 @@
 #lang racket/base
 
-(require component
+(require (for-syntax racket/base)
+         component
          db
          koyo/database
+         koyo/database/migrator
          koyo/flash
          koyo/logging
          koyo/mail/postmark
          koyo/server
          koyo/session
          racket/contract
+         racket/runtime-path
          "components/app.rkt"
          "components/auth.rkt"
          "components/mail.rkt"
@@ -17,13 +20,16 @@
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-runtime-path migrations-path
+  (build-path 'up "migrations"))
+
 (define mail-adapter
   (if config:postmark-token
       (make-postmark-mail-adapter (postmark config:postmark-token))
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth flashes mailer sessions users) make-app]
+  [app (auth flashes mailer migrator sessions users) make-app]
   [auth (sessions users) make-auth-manager]
   [db (make-database-factory (lambda ()
                                (postgresql-connect #:database config:db-name
@@ -35,6 +41,7 @@
   [mailer (make-mailer-factory #:adapter mail-adapter
                                #:sender config:support-email
                                #:common-variables config:common-mail-variables)]
+  [migrator (db) (make-migrator-factory migrations-path)]
   [server (app) (compose1 (make-server-factory #:host config:http-host
                                                #:port config:http-port) app-dispatcher)]
   [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
@@ -59,6 +66,7 @@
      #:levels `((app                  . ,config:log-level)
                 (mail-adapter         . ,config:log-level)
                 (memory-session-store . ,config:log-level)
+                (north-adapter        . ,config:log-level)
                 (server               . ,config:log-level)
                 (session              . ,config:log-level)
                 (system               . ,config:log-level))))

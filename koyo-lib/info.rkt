@@ -1,10 +1,9 @@
 #lang info
 
-(define version "0.3.0")
+(define version "0.4.0")
 (define collection 'multi)
 
 (define deps '("base"
-               "north"
                "compatibility-lib"
                "component-lib"
                "db-lib"

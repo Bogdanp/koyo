@@ -4,6 +4,7 @@
          component
          koyo/continuation
          koyo/cors
+         koyo/database/migrator
          koyo/dispatch
          koyo/flash
          koyo/l10n
@@ -53,8 +54,8 @@
   [(define component-start identity)
    (define component-stop identity)])
 
-(define/contract (make-app auth flashes mailer sessions users)
-  (-> auth-manager? flash-manager? mailer? session-manager? user-manager? app?)
+(define/contract (make-app auth flashes mailer migrator sessions users)
+  (-> auth-manager? flash-manager? mailer? migrator? session-manager? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
