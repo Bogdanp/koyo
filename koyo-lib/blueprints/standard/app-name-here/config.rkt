@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          koyo/config
+         koyo/database-url
          koyo/l10n
          koyo/profiler
          koyo/url
@@ -48,11 +49,14 @@
   (begin0 url-port
     (current-application-url-port (string->number url-port))))
 
-(define-option db-name #:default "app_name_here")
-(define-option db-username #:default "app_name_here")
-(define-option db-password #:default "app_name_here")
-(define-option db-host #:default "127.0.0.1")
-(define-option db-port #:default "5432"
+(define-values (_ default-db-host default-db-port default-db-name default-db-username default-db-password)
+  (parse-database-url (or (getenv "DATABASE_URL") "postgres://app_name_here:app_name_here@127.0.0.1:5432/app_name_here")))
+
+(define-option db-name #:default default-db-name)
+(define-option db-username #:default default-db-username)
+(define-option db-password #:default default-db-password)
+(define-option db-host #:default default-db-host)
+(define-option db-port #:default (number->string default-db-port)
   (string->number db-port))
 
 (define-option test-db-name #:default "app_name_here_tests")
