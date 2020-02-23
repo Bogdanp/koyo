@@ -6,7 +6,6 @@
          racket/list
          racket/match
          racket/path
-         racket/string
          racket/system)
 
 (provide

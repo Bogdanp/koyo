@@ -3,10 +3,8 @@
 (require (for-syntax racket/base
                      syntax/parse)
          racket/function
-         racket/match
          web-server/dispatch
-         web-server/dispatchers/dispatch
-         web-server/http)
+         web-server/dispatchers/dispatch)
 
 (provide
  dispatch-rules+roles)

@@ -4,7 +4,6 @@
          net/uri-codec
          net/url
          racket/contract
-         racket/function
          racket/match
          racket/promise
          racket/string
@@ -37,7 +36,8 @@
 (define (stringy->bytes s)
   (cond
     [(bytes?  s) s]
-    [(string? s) (string->bytes/utf-8 s)]))
+    [(string? s) (string->bytes/utf-8 s)]
+    [else (raise-argument-error 'stringy->bytes "(or/c string? bytes?)" s)]))
 
 (define (maybe-stringy->bytes s)
   (and s (stringy->bytes s)))

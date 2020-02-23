@@ -63,7 +63,7 @@
 
 (define/contract current-reverse-uri-fn
   (parameter/c (-> symbol? any/c ... string?))
-  (make-parameter (lambda args
+  (make-parameter (lambda (name . args)
                     (error "current-reverse-uri-fn not installed"))))
 
 (define (reverse-uri . args)

@@ -2,13 +2,11 @@
 
 (require component
          racket/contract
-         racket/format
          racket/function
          racket/generic
          racket/hash
          racket/list
          racket/string
-         "url.rkt"
          "util.rkt")
 
 
@@ -81,8 +79,8 @@
 
 (struct mailer (adapter sender common-variables)
   #:methods gen:component
-  [(define component-start identity)
-   (define component-stop identity)])
+  [(define component-start values)
+   (define component-stop values)])
 
 (define/contract ((make-mailer-factory #:adapter adapter
                                        #:sender sender
