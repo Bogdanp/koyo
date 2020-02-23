@@ -2,7 +2,6 @@
 
 (require component
          racket/contract
-         racket/function
          web-server/servlet
          "profiler.rkt"
          "session.rkt")
@@ -19,8 +18,8 @@
 
 (struct flash-manager (session-manager)
   #:methods gen:component
-  [(define component-start identity)
-   (define component-stop identity)])
+  [(define component-start values)
+   (define component-stop values)])
 
 (define/contract (make-flash-manager sessions)
   (-> session-manager? flash-manager?)
@@ -42,7 +41,8 @@
      (with-timing 'flash "flash"
        (session-manager-update! (flash-manager-session-manager fm)
                                 session-key
-                                (curry cons (cons key message))
+                                (lambda (flashes)
+                                  (cons (cons key message) flashes))
                                 null))]))
 
 (module+ private

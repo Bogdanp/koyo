@@ -67,11 +67,11 @@
    (test-suite
     "session-manager"
     #:before
-    (lambda _
+    (lambda ()
       (component-start session-manager))
 
     #:after
-    (lambda _
+    (lambda ()
       (component-stop session-manager))
 
     (parameterize ([current-session-id "a"])

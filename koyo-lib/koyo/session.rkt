@@ -154,6 +154,9 @@
 
 (define-logger session)
 
+(define current-session-manager
+  (make-parameter #f))
+
 (define/contract current-session-id
   (parameter/c (or/c false/c non-empty-string?))
   (make-parameter #f))
@@ -251,6 +254,27 @@
                   #:max-age (session-manager-shelf-life sm)))
 
 
+;; Simplified API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ session-ref
+ session-set!
+ session-remove!
+ session-update!)
+
+(define (session-ref . args)
+  (apply session-manager-ref (current-session-manager) args))
+
+(define (session-set! . args)
+  (apply session-manager-set! (current-session-manager) args))
+
+(define (session-remove! . args)
+  (apply session-manager-remove! (current-session-manager) args))
+
+(define (session-update! . args)
+  (apply session-manager-update! (current-session-manager) args))
+
+
 ;; Middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
@@ -268,7 +292,8 @@
                              #:shelf-life (session-manager-shelf-life sm))
           (session-store-generate-id! store)))
 
-    (parameterize ([current-session-id session-id])
+    (parameterize ([current-session-manager sm]
+                   [current-session-id session-id])
       (define resp (handler req))
       (define headers
         (cons (cookie->header (session-manager-cookie sm session-id))

@@ -39,34 +39,57 @@ browser session.
   with the given options.
 }
 
-@defproc*[
-  ([(session-manager-ref [sm session-manager?] [k symbol?]) any/c]
-   [(session-manager-ref [sm session-manager?] [k symbol?] [d any/c]) any/c])]{
+@deftogether[(
+  @defproc*[
+    ([(session-ref [k symbol?]) any/c]
+     [(session-ref [k symbol?] [d any/c]) any/c]
+  )]
+  @defproc*[
+    ([(session-manager-ref [sm session-manager?] [k symbol?]) any/c]
+     [(session-manager-ref [sm session-manager?] [k symbol?] [d any/c]) any/c]
+  )]
+)]{
 
   Looks up @racket[k] in the current session, returning @racket[d] if
   the key is not found.  If @racket[d] is not provided, then a user
   error is raised.
 }
 
-@defproc[(session-manager-set! [sm session-manager?] [k symbol?] [v serializable?]) void?]{
+@deftogether[(
+  @defproc[(session-set! [k symbol?] [v serializable?]) void?]
+  @defproc[(session-manager-set! [sm session-manager?] [k symbol?] [v serializable?]) void?]
+)]{
   Stores @racket[v] under the @racket[k] key in the current session.
 }
 
-@defproc*[
-  ([(session-manager-update! [sm session-manager?]
-                             [k symbol?]
-                             [p (-> any/c serializable?)]) serializable?]
-   [(session-manager-update! [sm session-manager?]
-                             [k symbol?]
-                             [p (-> any/c serializable?)]
-                             [d any/c]) serializable?])]{
+@deftogether[(
+  @defproc*[(
+    [(session-update! [k symbol?]
+                      [p (-> any/c serializable?)]) serializable?]
+    [(session-update! [k symbol?]
+                      [p (-> any/c serializable?)]
+                      [d any/c]) serializable?]
+  )]
+  @defproc*[(
+    [(session-manager-update! [sm session-manager?]
+                              [k symbol?]
+                              [p (-> any/c serializable?)]) serializable?]
+    [(session-manager-update! [sm session-manager?]
+                              [k symbol?]
+                              [p (-> any/c serializable?)]
+                              [d any/c]) serializable?]
+  )]
+)]{
 
   Updates @racket[k] in the current session by applying @racket[p] to
   it.  If @racket[k] is not set then @racket[d] is used as the default
   value.  If @racket[d] is not provided, then a user error is raised.
 }
 
-@defproc[(session-manager-remove! [sm session-manager?] [k symbol?]) void?]{
+@deftogether[(
+  @defproc[(session-remove! [k symbol?]) void?]
+  @defproc[(session-manager-remove! [sm session-manager?] [k symbol?]) void?]
+)]{
   Removes @racket[k] from the current session.  Does nothing if
   @racket[k] is not set in the current session.
 }
@@ -79,7 +102,7 @@ browser session.
   If the current visitor doesn't have a session cookie then a new one
   is generated and added to the response.
 
-  Each session's lifetime is extended with every subsequent visit.
+  Each session's lifetime is extended with every page load.
 }
 
 @section{Session Stores}
