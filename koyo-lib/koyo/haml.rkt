@@ -117,6 +117,7 @@
              #:with xexpr #'lit))
 
   (define-syntax-class element
+    #:datum-literals (@ unquote-splicing)
     (pattern (sel:selector (attr:attribute-definition ...+) child:element ...)
              #:with xexpr (with-syntax ([attrs
                                          (append
@@ -137,7 +138,10 @@
                                   (list child ...)
                                   (list)))
 
-    (pattern ((~datum @) e)
+    (pattern (unquote-splicing e)
+             #:with xexpr #',@e)
+
+    (pattern (@ e)
              #:with xexpr #',@e)
 
     (pattern lit:literal

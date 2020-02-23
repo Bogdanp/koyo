@@ -77,9 +77,9 @@ Tag names are optional if a class name is provided:
     (:h1.title "Hello World")))
 ]
 
-Lists of elements can be spliced in using the @haml-at-syntax syntax:
+Lists of elements can be spliced in using the @racket[(unquote-splicing e)] syntax:
 
-@haml-at-syntax-example
+@haml-splicing-syntax-example
 
 All expressions that don't parse as an element are evaluated in place
 at runtime.

@@ -27,11 +27,11 @@
 
 (provide
  haml-form
- haml-at-syntax
- haml-at-syntax-example)
+ haml-splicing-syntax-example)
 
 (define haml-form
   (defform
+    #:literals (unquote-splicing unless when)
     (haml element)
     #:grammar
     [(element (selector attributes element ...)
@@ -55,17 +55,14 @@
      (unless (unless cond-expr e0 e ...))
      (when (when cond-expr e0 e ...))
 
-     (splice (@ e))]
+     (splice (unquote-splicing e))]
     "Produces an x-expression."))
 
-(define haml-at-syntax
-  (literal "(@ e)"))
-
-(define haml-at-syntax-example
+(define haml-splicing-syntax-example
   (examples #:eval sandbox
             #:label #f
             (haml
              (.content
               (:ul.items
-               (@ (for/list ([it (list "a" "b" "c")])
-                    (haml (:li it)))))))))
+               ,@(for/list ([it (list "a" "b" "c")])
+                   (haml (:li it))))))))
