@@ -19,6 +19,7 @@
   (if (directory-exists? p)
       (match/values (split-path p)
         [(_ (app path->string (regexp "^\\.")) _) #f]
+        [(_ (app path->string "migrations")    _) #f]
         [(_ (app path->string "node_modules")  _) #f]
         [(_ _                                  _) #t])
       (case (path-get-extension p)
