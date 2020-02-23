@@ -7,7 +7,6 @@
          koyo/url
          net/url
          racket/contract
-         racket/function
          racket/match
          racket/string
          threading
@@ -28,6 +27,8 @@
  exn:fail:auth-manager?
  exn:fail:auth-manager:unverified?)
 
+(define session-key 'uid)
+
 (define/contract current-user
   (parameter/c (or/c false/c user?))
   (make-parameter #f))
@@ -37,8 +38,8 @@
 
 (struct auth-manager (session-manager user-manager)
   #:methods gen:component
-  [(define component-start identity)
-   (define component-stop identity)])
+  [(define component-start values)
+   (define component-stop values)])
 
 (define/contract (make-auth-manager sessions users)
   (-> session-manager? user-manager? auth-manager?)
@@ -53,11 +54,11 @@
        (raise (exn:fail:auth-manager:unverified "this user is not verified" (current-continuation-marks))))
 
      (begin0 user
-       (session-manager-set! (auth-manager-session-manager am) 'uid (number->string id)))]))
+       (session-set! session-key (number->string id)))]))
 
-(define/contract (auth-manager-logout! am)
+(define/contract (auth-manager-logout! _am)
   (-> auth-manager? void?)
-  (session-manager-remove! (auth-manager-session-manager am) 'uid))
+  (session-remove! session-key))
 
 (define/contract (((wrap-auth-required am req-roles) handler) req)
   (-> auth-manager?
@@ -71,16 +72,15 @@
       [(null? roles)
        (handler req)]
 
-      [else
-       (define user
-         (and~>> (session-manager-ref (auth-manager-session-manager am) 'uid #f)
-                 (string->number)
-                 (user-manager-lookup/id (auth-manager-user-manager am))))
+      ;; NOTE: Roles are not actually checked beyond this point.  If you
+      ;; implement roles other than 'user then you're going to want to
+      ;; change this.
+      [(and~>> (session-ref session-key #f)
+               (string->number)
+               (user-manager-lookup/id (auth-manager-user-manager am)))
+       => (lambda (user)
+            (parameterize ([current-user user])
+              (handler req)))]
 
-       ;; NOTE: Roles are not actually checked beyond this point.  If you
-       ;; implement roles other than 'user then you're going to want to
-       ;; change this.
-       (if user
-           (parameterize ([current-user user])
-             (handler req))
-           (redirect-to (make-application-url "login" #:query `((return . ,(url->string (request-uri req)))))))])))
+      [else
+       (redirect-to (make-application-url "login" #:query `((return . ,(url->string (request-uri req))))))])))

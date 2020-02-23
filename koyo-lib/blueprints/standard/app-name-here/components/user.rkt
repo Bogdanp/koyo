@@ -1,8 +1,6 @@
 #lang racket/base
 
-(require (for-syntax racket/base
-                     syntax/parse)
-         component
+(require component
          db
          deta
          gregor
@@ -10,8 +8,6 @@
          koyo/profiler
          koyo/random
          racket/contract
-         racket/function
-         racket/match
          racket/string
          threading
          "hash.rkt")
@@ -76,8 +72,8 @@
 (struct user-manager (db)
   #:transparent
   #:methods gen:component
-  [(define component-start identity)
-   (define component-stop identity)])
+  [(define component-start values)
+   (define component-stop values)])
 
 (define/contract (make-user-manager db)
   (-> database? user-manager?)
@@ -169,14 +165,14 @@
     (with-database-transaction [conn (user-manager-db um)]
       (cond
         [(lookup-password-reset conn user-id token)
-         => (lambda (pr)
-              (clear-password-reset! conn user-id)
-              (and~> (lookup conn
-                             (~> (from user #:as u)
-                                 (where (= u.id ,user-id))))
-                     (set-user-password password)
-                     (update! conn _)
-                     ((const #t))))]
+         => (lambda (_pr)
+              (begin0 #t
+                (clear-password-reset! conn user-id)
+                (and~> (lookup conn
+                               (~> (from user #:as u)
+                                   (where (= u.id ,user-id))))
+                       (set-user-password password)
+                       (update! conn _))))]
 
 
         [else #f]))))

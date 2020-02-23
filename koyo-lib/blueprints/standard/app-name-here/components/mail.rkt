@@ -44,5 +44,5 @@
                       'username (user-username user))))
 
 ;; Local Variables:
-;; eval: (put 'mailer-merge-common-variables 'racket-indent-function #'defun)
+;; eval: (put 'mailer-merge-common-variables 'racket-indent-function #'begin)
 ;; End:

@@ -10,9 +10,7 @@
          koyo/preload
          koyo/profiler
          koyo/url
-         koyo/xexpr
          racket/format
-         racket/runtime-path
          web-server/http
          xml
          (prefix-in config: "../config.rkt")
@@ -32,14 +30,17 @@
 
 (define-syntax (static-uri stx)
   (syntax-parse stx
-    [(static-uri path:string)
+    [(_ path:string)
      (unless (member (string->path (syntax->datum #'path))
                      (syntax-local-value #'known-static-files))
        (raise-syntax-error 'static-uri (format "static file ~v not found" (syntax->datum #'path))))
 
-     #'(let ([p (format "/static/~a?rev=~a" path config:version)])
-         (track-preload-dependency! p)
-         p)]))
+     #'(make-static-uri path)]))
+
+(define (make-static-uri path)
+  (define path/full (format "/static/~a?rev=~a" path config:version))
+  (begin0 path/full
+    (track-preload-dependency! path/full)))
 
 (define (container . content)
   (haml (.container (@ content))))

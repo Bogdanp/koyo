@@ -9,7 +9,6 @@
          koyo/session
          koyo/url
          racket/contract
-         racket/function
          threading
          web-server/managers/lru
          web-server/servlet-dispatch
@@ -22,12 +21,12 @@
 
 (struct app (dispatcher)
   #:methods gen:component
-  [(define component-start identity)
-   (define component-stop identity)])
+  [(define component-start values)
+   (define component-stop values)])
 
 (define/contract (make-app sessions)
   (-> session-manager? app?)
-  (define-values (dispatch reverse-uri req-roles)
+  (define-values (dispatch reverse-uri _req-roles)
     (dispatch-rules+roles
      [("") home-page]
      [else not-found-page]))

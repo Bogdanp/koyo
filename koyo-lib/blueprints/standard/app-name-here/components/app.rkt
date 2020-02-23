@@ -15,7 +15,6 @@
          koyo/url
          net/url
          racket/contract
-         racket/function
          racket/runtime-path
          threading
          web-server/dispatch
@@ -51,10 +50,10 @@
 
 (struct app (dispatcher)
   #:methods gen:component
-  [(define component-start identity)
-   (define component-stop identity)])
+  [(define component-start values)
+   (define component-stop values)])
 
-(define/contract (make-app auth flashes mailer migrator sessions users)
+(define/contract (make-app auth flashes mailer _migrator sessions users)
   (-> auth-manager? flash-manager? mailer? migrator? session-manager? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
