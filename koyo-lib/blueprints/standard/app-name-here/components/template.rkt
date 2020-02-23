@@ -1,10 +1,6 @@
 #lang racket/base
 
-(require (for-syntax racket/base
-                     racket/file
-                     racket/path
-                     syntax/parse)
-         koyo/flash
+(require koyo/flash
          koyo/haml
          koyo/l10n
          koyo/preload
@@ -21,23 +17,7 @@
  container
  page)
 
-(define-syntax known-static-files
-  (let* ([current-dir (build-path (syntax-source #'here) 'up)]
-         [static-path (simplify-path (build-path current-dir 'up 'up "static"))])
-    (map (lambda (p)
-           (find-relative-path static-path p))
-         (find-files (compose1 not directory-exists?) static-path))))
-
-(define-syntax (static-uri stx)
-  (syntax-parse stx
-    [(_ path:string)
-     (unless (member (string->path (syntax->datum #'path))
-                     (syntax-local-value #'known-static-files))
-       (raise-syntax-error 'static-uri (format "static file ~v not found" (syntax->datum #'path))))
-
-     #'(make-static-uri path)]))
-
-(define (make-static-uri path)
+(define (static-uri path)
   (define path/full (format "/static/~a?rev=~a" path config:version))
   (begin0 path/full
     (track-preload-dependency! path/full)))
