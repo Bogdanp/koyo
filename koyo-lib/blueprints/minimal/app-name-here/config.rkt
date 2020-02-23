@@ -30,7 +30,7 @@
   (begin0 url-host
     (current-application-url-host url-host)))
 
-(define-option url-port #:default "8000"
+(define-option url-port #:default (or (getenv "PORT") "8000")
   (begin0 url-port
     (current-application-url-port (string->number url-port))))
 
