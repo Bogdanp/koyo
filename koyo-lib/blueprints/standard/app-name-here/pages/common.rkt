@@ -32,5 +32,5 @@
     (let ([scrubbed-params (map path/param-scrub (url-path the-url))])
       (struct-copy url the-url [path scrubbed-params])))
 
-  (flash flashes 'warning (translate 'message-session-expired))
+  (flash 'warning (translate 'message-session-expired))
   (redirect-to (url->string scrubbed-url)))

@@ -128,7 +128,7 @@
 (define/contract ((verify-page flashes users) req user-id verification-code)
   (-> flash-manager? user-manager? (-> request? integer? string? response?))
   (user-manager-verify! users user-id verification-code)
-  (flash flashes 'success (translate 'message-email-verified))
+  (flash 'success (translate 'message-email-verified))
   (redirect-to (reverse-uri 'login-page)))
 
 (define signup-form
@@ -187,7 +187,7 @@
           (when (and user token)
             (mailer-send-password-reset-email mailer user token))
 
-          (flash flashes 'success (translate 'message-password-reset-requested))
+          (flash 'success (translate 'message-password-reset-requested))
           (redirect/get/forget/protect)
           (redirect-to (reverse-uri 'login-page))]
 
@@ -230,8 +230,8 @@
                                           #:password password))
 
           (if reset?
-              (flash flashes 'success (translate 'message-password-reset-success))
-              (flash flashes 'error (translate 'message-password-reset-error)))
+              (flash 'success (translate 'message-password-reset-success))
+              (flash 'error (translate 'message-password-reset-error)))
 
           (redirect-to (reverse-uri 'login-page))]
 
