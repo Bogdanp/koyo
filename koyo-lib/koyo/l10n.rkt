@@ -51,6 +51,7 @@
   (-> date-provider? string?)
   (match (current-language)
     ['ro (~t d "dd MMMM, yyyy")]
+    ['de (~t d "dd.MM.yyyy")]
     [_   (~t d "MMMM dd, yyyy")]))
 
 
