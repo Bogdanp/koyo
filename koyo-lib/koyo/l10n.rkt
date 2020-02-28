@@ -93,7 +93,7 @@
         (string->symbol (string-downcase (or country language)))))
 
 (define/contract (language-header->locale header)
-  (-> string? (or/c false/c string?))
+  (-> string? (or/c false/c (cons/c symbol? symbol?)))
   (define specs
     (for/list ([spec (string-split header ",")])
       (match-define (list _ language country weight)
