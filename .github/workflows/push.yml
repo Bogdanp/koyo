@@ -3,6 +3,18 @@ name: CI/CD
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:12.2
+        env:
+          POSTGRES_USER: example
+          POSTGRES_PASSWORD: example
+          POSTGRES_DB: example
+        ports:
+          - 5432/tcp
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
     steps:
     - name: Checkout
       uses: actions/checkout@master
@@ -15,8 +27,17 @@ jobs:
     - name: Install pkg and deps
       run: raco pkg install --batch --auto koyo-lib/ koyo-doc/ koyo-test/ koyo/
 
-    - name: Run tests
+    - name: Run tests for koyo itself
       run: raco test -j 4 koyo-test/
+
+    - name: Run tests for standard blueprint
+      run: ci/test-standard-blueprint.sh
+      env:
+        EXAMPLE_TEST_DB_HOST: 127.0.0.1
+        EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
+        EXAMPLE_TEST_DB_NAME: example
+        EXAMPLE_TEST_DB_USERNAME: example
+        EXAMPLE_TEST_DB_PASSWORD: example
 
     - name: Deploy docs
       run: ci/docs.sh

@@ -5,6 +5,7 @@
          koyo/database
          koyo/database/migrator
          koyo/session
+         racket/runtime-path
          rackunit/text-ui
 
          app-name-here/components/mail
@@ -16,20 +17,24 @@
 
 (provide
  make-test-database
+ make-test-migrator
  run-db-tests)
 
 (define-runtime-path migrations-path
-  (build-path 'up 'up "mgirations"))
+  (build-path 'up 'up "migrations"))
 
 (define (make-test-database-connection)
-  (postgresql-connect #:database config:test-db-name
-                      #:user     config:test-db-username
-                      #:password config:test-db-password))
+  (postgresql-connect
+   #:server   config:test-db-host
+   #:port     config:test-db-port
+   #:database config:test-db-name
+   #:user     config:test-db-username
+   #:password config:test-db-password))
 
 (define (make-test-database)
   ((make-database-factory make-test-database-connection)))
 
-(define (make-test-migrator db)
+(define make-test-migrator
   (make-migrator-factory migrations-path))
 
 (define (run-db-tests test [verbosity 'normal])
