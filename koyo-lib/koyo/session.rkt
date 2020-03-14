@@ -144,6 +144,7 @@
 ;; Session manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ current-session-manager
  current-session-id
  session-manager?
  make-session-manager-factory
