@@ -11,6 +11,7 @@
          racket/list
          racket/match
          racket/place
+         racket/port
          racket/string
          "../database.rkt"
          "broker.rkt"
@@ -210,13 +211,18 @@
   (let loop ()
     (match (sync ch)
       [(list 'stop)
+       (with-handlers ([exn:fail?
+                        (lambda (e)
+                          (log-worker-error "system failed to stop with exception:\n~a" (exn->string e)))])
+         (system-stop (current-system)))
+
        (place-channel-put ch '(stopped))]
 
       [(list 'load source system-id)
        ;; Worker places dynamically require the source module that
        ;; started the worker so that jobs get added to the registry.
-       ;; Additionaly, they parameterize current-system so that jobs can
-       ;; grab components off of it.
+       ;; Additionally, they parameterize current-system so that jobs
+       ;; can grab components off of it.
        (current-system
         (dynamic-require
          source
@@ -224,15 +230,28 @@
          (lambda _
            (place-channel-put ch (list 'error "failed to load system")))))
 
+       (with-handlers ([exn:fail?
+                        (lambda (e)
+                          (place-channel-put ch (list 'error "failed to start system"))
+                          (log-worker-error "system failed to start with exception:\n~a" (exn->string e)))])
+         (system-start (current-system)))
+
        (place-channel-put ch '(ok))
        (loop)]
 
       [(list 'exec (and (vector id queue job arguments attempts) data))
        (with-handlers ([(lambda _ #t)
                         (lambda (e)
-                          (place-channel-put ch (list 'fail data (exn-message e))))])
+                          (place-channel-put ch (list 'fail data (exn-message e)))
+                          (log-worker-error "job ~a (~.s) raised an exception:\n~a" id job (exn->string e)))])
          (define proc (job-proc (lookup (format "~a.~a" queue job))))
          (apply keyword-apply proc (deserialize arguments))
          (place-channel-put ch (list 'done data)))
 
        (loop)])))
+
+(define (exn->string e)
+  (call-with-output-string
+   (lambda (out)
+     (parameterize ([current-error-port out])
+       ((error-display-handler) (exn-message e) e)))))
