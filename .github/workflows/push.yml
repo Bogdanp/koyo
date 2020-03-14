@@ -1,23 +1,26 @@
 on: [push, pull_request]
-name: main
+name: CI/CD
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: build
-      uses: docker://bogdanp/racket:7.3
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Install Racket
+      uses: Bogdanp/setup-racket@master
       with:
-        entrypoint: /github/workspace/ci/build.sh
-    - name: test
-      uses: docker://bogdanp/racket:7.3
-      with:
-        entrypoint: /github/workspace/ci/test.sh
-    - name: docs
-      uses: docker://bogdanp/racket:7.3
+        version: "7.6"
+
+    - name: Install pkg and deps
+      run: raco pkg install --batch --auto koyo-lib/ koyo-doc/ koyo-test/ koyo/
+
+    - name: Run tests
+      run: raco test -j 4 koyo-test/
+
+    - name: Deploy docs
+      run: ci/docs.sh
       env:
         KOYO_DOCS_DEPLOY_KEY_PASSPHRASE: ${{ secrets.KOYO_DOCS_DEPLOY_KEY_PASSPHRASE }}
         KOYO_DOCS_SSH_HOST: ${{ secrets.KOYO_DOCS_SSH_HOST }}
         KOYO_DOCS_SSH_PORT: ${{ secrets.KOYO_DOCS_SSH_PORT }}
-      with:
-        entrypoint: /github/workspace/ci/docs.sh
