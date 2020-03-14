@@ -16,6 +16,7 @@
 (define auth-tests
   (system-test-suite auth ([auth (sessions users) make-auth-manager]
                            [db make-test-database]
+                           [migrator (db) make-test-migrator]
                            [sessions make-test-session-manager]
                            [users (db) make-user-manager])
     #:before

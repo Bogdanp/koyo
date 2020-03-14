@@ -14,7 +14,8 @@
 (define the-user #f)
 (define user-tests
   (system-test-suite user ([db make-test-database]
-                           [users (db) make-user-manager])
+                           [users (db) make-user-manager]
+                           [migrator (db) make-test-migrator])
     #:before
     (lambda _
       (truncate-tables! db 'users)

@@ -1,7 +1,9 @@
 #lang racket/base
 
-(require db
+(require (for-syntax racket/base)
+         db
          koyo/database
+         koyo/database/migrator
          koyo/session
          rackunit/text-ui
 
@@ -16,6 +18,9 @@
  make-test-database
  run-db-tests)
 
+(define-runtime-path migrations-path
+  (build-path 'up 'up "mgirations"))
+
 (define (make-test-database-connection)
   (postgresql-connect #:database config:test-db-name
                       #:user     config:test-db-username
@@ -23,6 +28,9 @@
 
 (define (make-test-database)
   ((make-database-factory make-test-database-connection)))
+
+(define (make-test-migrator db)
+  (make-migrator-factory migrations-path))
 
 (define (run-db-tests test [verbosity 'normal])
   (define conn (make-test-database-connection))
