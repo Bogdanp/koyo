@@ -25,7 +25,7 @@
         (:head
          (:title (if subtitle (~a subtitle " - AppNameHere") "AppNameHere")))
         (:body
-         (@ content)))))
+         ,@content))))
 
     (response
      200

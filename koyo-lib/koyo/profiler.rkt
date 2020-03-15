@@ -147,7 +147,7 @@
         (:code (timing-description timing)))
        (:span.uprofiler-timing-duration
         (format-duration (timing-duration timing))))
-      (@ (map render-timing (profile-find-children profile timing))))))
+      ,@(map render-timing (profile-find-children profile timing)))))
 
   (unless (null? roots)
     (define content
@@ -160,7 +160,7 @@
          (format-duration (apply + (map timing-duration roots))))
         (.uprofiler-timings
          (.uprofiler-timings-inner
-          (@ (map render-timing roots)))
+          ,@(map render-timing roots))
          (:label.uprofiler-close
           ([:for "uprofiler-toggle"])
           "Close")))))

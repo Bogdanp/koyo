@@ -221,7 +221,7 @@
          (div ([class "child-1"]))
          (div ([class "child-2"])))))
 
-    (test-case "expressions can be spliced into elements"
+    (test-case "expressions can be spliced into elements using (@ ...) syntax"
       (check-equal?
        (haml
         (.articles (@ (map symbol->string '(a b c)))))
@@ -229,7 +229,7 @@
          ([class "articles"])
          "a" "b" "c")))
 
-    (test-case "expressions can be spliced into elements"
+    (test-case "expressions can be spliced into elements using unquote splicing"
       (check-equal?
        (haml
         (.articles ,@(map symbol->string '(a b c))))

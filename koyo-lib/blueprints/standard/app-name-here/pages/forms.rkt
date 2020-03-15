@@ -14,7 +14,7 @@
   (haml
    (.form__group
     (:label label (widget name value errors))
-    (@ ((widget-errors #:class "form__errors") name value errors)))))
+    ,@((widget-errors #:class "form__errors") name value errors))))
 
 (define (username-field [label (translate 'label-username)]
                         [placeholder "you@example.com"])

@@ -76,13 +76,13 @@
 (define (render-stack-trace e)
   (haml
    (:ul.stack-trace
-    (@ (remove-repeats
-        (for/list ([frame (in-list (continuation-mark-set->list (exn-continuation-marks e) errortrace-key))]
-                   #:unless (null? frame))
-          (render-errortrace-frame frame))))
-    (@ (remove-repeats
-        (for/list ([frame (in-list (continuation-mark-set->context (exn-continuation-marks e)))])
-          (render-stack-frame frame)))))))
+    ,@(remove-repeats
+       (for/list ([frame (in-list (continuation-mark-set->list (exn-continuation-marks e) errortrace-key))]
+                  #:unless (null? frame))
+         (render-errortrace-frame frame)))
+    ,@(remove-repeats
+       (for/list ([frame (in-list (continuation-mark-set->context (exn-continuation-marks e)))])
+         (render-stack-frame frame))))))
 
 (define (render-errortrace-frame frame)
   (match-define (list stx source line column position span) frame)

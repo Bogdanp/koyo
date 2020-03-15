@@ -23,14 +23,14 @@
     (track-preload-dependency! path/full)))
 
 (define (container . content)
-  (haml (.container (@ content))))
+  (haml (.container ,@content)))
 
 (define (nav . items)
   (haml
    (.nav
     ([:up-nav ""])
     (container
-     (haml (.nav__items (@ items)))))))
+     (haml (.nav__items ,@items))))))
 
 (define (nav-item uri label)
   (haml
@@ -73,13 +73,13 @@
            (container
             (haml
              (:ul.flash
-              (@ (for/list ([flash (current-flash-messages)])
-                   (haml
-                    (:li
-                     ([:class (format "flash__item flash__item--~a" (car flash))])
-                     (cdr flash)))))))))
+              ,@(for/list ([flash (current-flash-messages)])
+                  (haml
+                   (:li
+                    ([:class (format "flash__item flash__item--~a" (car flash))])
+                    (cdr flash))))))))
 
-         (.content (@ content))
+         (.content ,@content)
 
          (:script ([:src (static-uri "vendor/unpoly.min.js")]))))))
 
