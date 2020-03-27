@@ -153,9 +153,11 @@
                                (set! blueprint name)
                                (exit-with-errors! @~a{error: no blueprint named '@name'}))]
      #:args (name)
-     (when (or (directory-exists? name)
-               (file-exists? name))
-       (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory}))
+     (cond
+       [(string=? name ".")
+        (exit-with-errors! @~a{error: "." cannot be used as project name})]
+       [(or (directory-exists? name) (file-exists? name))
+        (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory})])
 
      name))
 
