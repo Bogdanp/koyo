@@ -6,7 +6,7 @@
  start-console)
 
 (define preload-modules
-  '(racket component db koyo))
+  '(racket readline component db koyo))
 
 (define preamble
   '(begin
@@ -33,7 +33,7 @@
            [(_ . id)
             #'(#%top . id)])))
 
-     (require readline 'dyn)
+     (require 'dyn)
 
      (define dev-system
        (system-replace prod-system 'server values))
