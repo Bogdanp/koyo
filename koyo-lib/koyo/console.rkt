@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require racket/system
-         readline)
+(require racket/system)
 
 (provide
  start-console)
@@ -34,7 +33,7 @@
            [(_ . id)
             #'(#%top . id)])))
 
-     (require 'dyn)
+     (require readline 'dyn)
 
      (define dev-system
        (system-replace prod-system 'server values))
@@ -55,5 +54,4 @@
       (namespace-require mod))
     (namespace-require module-path)
     (eval preamble)
-    (display "> ")
     (read-eval-print-loop)))
