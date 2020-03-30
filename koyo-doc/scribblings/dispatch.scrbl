@@ -18,7 +18,7 @@ function.
   #:literals (else)
   (dispatch-rules+roles dispatch-clause ... maybe-else-clause)
   #:grammar
-  [(dispatch-caluse [dispatch-pattern maybe-method maybe-roles maybe-name dispatch-fun])
+  [(dispatch-clause [dispatch-pattern maybe-method maybe-roles maybe-name dispatch-fun])
    (dispatch-pattern (code:line ())
                      (string . dispatch-pattern)
                      (bidi-match-expander ... . dispatch-pattern)
