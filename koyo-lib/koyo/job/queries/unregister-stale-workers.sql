@@ -3,7 +3,7 @@ WITH
     DELETE FROM
       koyo_workers
     WHERE
-      heartbeat < CURRENT_TIMESTAMP - '1 hour'::INTERVAL
+      heartbeat < CURRENT_TIMESTAMP - INTERVAL '15 minutes'
     RETURNING
       id
   )
