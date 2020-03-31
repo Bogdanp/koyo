@@ -2,6 +2,7 @@
 
 (require component
          db
+         gregor
          mzlib/os
          racket/async-channel
          racket/class
@@ -14,6 +15,8 @@
          "job.rkt"
          "registry.rkt"
          "serialize.rkt")
+
+;; worker ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  make-worker-factory
@@ -41,6 +44,9 @@
         #:pool-size exact-positive-integer?)
        (-> broker? worker?))
   (worker broker queue pool-size #f))
+
+
+;; reactor ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (make-reactor broker queue pool-size)
   (log-worker-debug "starting reactor...")
@@ -80,8 +86,12 @@
             (broker-mark-done! broker id)
             (loop (cons t idle) (remq t busy))]
 
-           ;; TODO: retries.
-           [(list 'failed t (vector id queue job-id arguments attempts) message)
+           [(list 'retry t (vector id queue job-id arguments attempts) reason delay-ms)
+            (log-worker-debug "job ~a requested retry with delay ~.s" id delay-ms)
+            (broker-mark-for-retry! broker id (+milliseconds (now/moment) delay-ms))
+            (loop (cons t idle) (remq t busy))]
+
+           [(list 'fail t (vector id queue job-id arguments attempts) message)
             (log-worker-warning "job ~a failed: ~a" id message)
             (broker-mark-failed! broker id)
             (loop (cons t idle) (remq t busy))])))))))
@@ -90,6 +100,9 @@
   (log-worker-debug "stopping reactor...")
   (thread-send r '(stop))
   (thread-wait r))
+
+
+;; listener ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (struct listener (broker id queue [conn #:mutable])
   #:transparent)
@@ -103,12 +116,12 @@
   (log-worker-debug "stopping listener...")
   (define broker (listener-broker l))
   (define conn (listener-conn l))
+  (set-listener-conn! l #f)
   (query-exec conn "UNLISTEN *")
-  (broker-release-connection broker conn)
-  (set-listener-conn! l #f))
+  (broker-release-connection broker conn))
 
-(define (listener-jobs-evt the-listener limit)
-  (match the-listener
+(define (listener-jobs-evt l limit)
+  (match l
     [(listener broker id queue #f) never-evt]
     [(listener broker id queue conn)
      (parameterize ([current-database-connection conn])
@@ -133,10 +146,18 @@
 
         (handle-evt
          (alarm-evt (+ (current-inexact-milliseconds)
-                       (* (random 30 300) 1000)))
+                       (* (random 15 60) 1000)))
          (lambda _
            (begin0 null
+             (log-worker-debug "performing maintenance...")
              (broker-perform-maintenance! broker id))))))]))
+
+
+;; worker threads ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A worker pool is just a list of worker threads.  Worker threads
+;; accept messages via their built-in mailboxes and reply via a
+;; response channel that is passed in.
 
 (define (make-worker-pool size ch)
   (for/list ([id (in-range size)])
@@ -156,6 +177,9 @@
       (for-each sync pool)))))
 
 (define (make-worker-thread id ch)
+  (define-syntax-rule (send id arg ...)
+    (async-channel-put ch (list 'id arg ...)))
+
   (define thd
     (thread
      (lambda ()
@@ -167,12 +191,16 @@
 
            [(list 'exec (and (vector id queue job-id arguments attempts) job))
             (log-worker-debug "processing job ~.s..." job)
-            (with-handlers ([exn:fail?
+            (with-handlers ([exn:job:retry?
                              (lambda (e)
-                               (async-channel-put ch (list 'failed thd job) (exn-message e)))])
+                               (send retry thd job (exn-message e) (exn:job:retry-delay-ms e)))]
+
+                            [exn:fail?
+                             (lambda (e)
+                               (send fail thd job (exn-message e)))])
               (define proc (job-proc (lookup (format "~a.~a" queue job-id))))
               (apply keyword-apply proc (deserialize arguments))
-              (async-channel-put ch (list 'done thd job)))
+              (send done thd job))
             (loop)])))))
 
   thd)

@@ -8,20 +8,12 @@
          koyo/job/broker
          koyo/job/serialize
          racket/async-channel
-         racket/class
          racket/match
          rackunit)
 
 (provide
  worker-system
  job-tests)
-
-(define-job (add x y)
-  (+ x y))
-
-(define-job (publish message)
-  (with-database-connection [conn (system-ref worker-system 'database)]
-    (query-exec conn "SELECT PG_NOTIFY('messages', $1)" message)))
 
 (define messages
   (make-async-channel))
@@ -32,27 +24,24 @@
              (lambda ()
                (postgresql-connect #:database "koyo"
                                    #:user     "koyo"
-                                   #:password "koyo"
-                                   #:notification-handler
-                                   (lambda (channel message)
-                                     (when (string=? channel "messages")
-                                       (async-channel-put messages message))))))]
+                                   #:password "koyo")))]
   [worker (broker) (make-worker-factory)])
 
-(define (await-next-message db)
-  (thread
-   (lambda ()
-     (with-database-connection [conn db]
-       (query-exec conn "LISTEN messages")
-       (let loop ()
-         (sync
-          (handle-evt
-           (send+ conn
-                  (get-base)
-                  (async-message-evt))
-           (lambda (ready?)
-             (unless ready?
-               (loop))))))))))
+(define-job (add x y)
+  (+ x y))
+
+(define-job (publish message)
+  (async-channel-put messages message))
+
+(define retried? #f)
+(define-job (do-retry-once)
+  (cond
+    [retried?
+     (async-channel-put messages 'retried)]
+
+    [else
+     (set! retried? #t)
+     (retry 5000)]))
 
 (define job-tests
   (test-suite
@@ -107,9 +96,13 @@
 
       (test-case "jobs can be executed"
         (parameterize ([current-broker broker])
-          (await-next-message database)
-          (publish "hello")
-          (check-equal? (sync messages) "hello")))))))
+          (publish 'hello)
+          (check-equal? (sync messages) 'hello)))
+
+      (test-case "jobs can be retried"
+        (parameterize ([current-broker broker])
+          (do-retry-once)
+          (check-equal? (sync messages) 'retried)))))))
 
 (module+ test
   (require rackunit/text-ui)

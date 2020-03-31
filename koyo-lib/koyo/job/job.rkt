@@ -1,10 +1,30 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/stxparam
                      syntax/parse)
          racket/contract
+         racket/stxparam
          "broker.rkt"
          "registry.rkt")
+
+
+;; retries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ exn:job:retry?
+ exn:job:retry-delay-ms
+ retry)
+
+(struct exn:job exn () #:transparent)
+(struct exn:job:retry exn:job (delay-ms) #:transparent)
+
+(define-syntax-parameter retry
+  (lambda (stx)
+    (raise-syntax-error #f "retry may only be used inside define-job" stx)))
+
+
+;; jobs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  execute-jobs-synchronously?
@@ -53,10 +73,17 @@
               (~optional (~seq #:priority priority:number) #:name "#:priority parameter")) ...
         e:expr ...+)
      #'(define id
-         (make-job #:id 'id
-                   #:queue (~? queue "default")
-                   #:priority (~? priority 50)
-                   #:proc (procedure-rename
-                           (lambda (~? (arg ... . rest-id) (arg ...))
-                             e ...)
-                           'id)))]))
+         (syntax-parameterize ([retry (lambda (stx)
+                                        (syntax-parse stx
+                                          [(_ duration-ms:expr)
+                                           #'(retry "retry" duration-ms)]
+
+                                          [(_ reason:string duration-ms:expr)
+                                           #'(raise (exn:job:retry reason (current-continuation-marks) duration-ms))]))])
+           (make-job #:id 'id
+                     #:queue (~? queue "default")
+                     #:priority (~? priority 50)
+                     #:proc (procedure-rename
+                             (lambda (~? (arg ... . rest-id) (arg ...))
+                               e ...)
+                             'id))))]))

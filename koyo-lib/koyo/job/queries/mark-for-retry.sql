@@ -1,10 +1,13 @@
 WITH
   job AS (
-    UPDATE jobs
+    UPDATE
+      koyo_jobs
     SET
       status = 'ready',
-      scheduled_at = $2
-    WHERE id = $1
+      scheduled_at = $2,
+      attempts = attempts + 1
+    WHERE
+      id = $1
     RETURNING
       id
   )

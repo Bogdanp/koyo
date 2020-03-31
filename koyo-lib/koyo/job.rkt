@@ -8,7 +8,7 @@
  execute-jobs-synchronously?
  define-job
  job?
- job-proc
+ retry
 
  current-broker
  make-broker
