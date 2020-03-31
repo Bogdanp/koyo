@@ -1,8 +1,6 @@
 #lang racket/base
 
-(require (for-syntax racket/base
-                     syntax/parse)
-         component
+(require component
          db
          mzlib/os
          racket/async-channel
@@ -10,8 +8,6 @@
          racket/contract
          racket/list
          racket/match
-         racket/place
-         racket/port
          racket/string
          "../database.rkt"
          "broker.rkt"
@@ -20,123 +16,80 @@
          "serialize.rkt")
 
 (provide
- current-system
- start-worker
- start-worker-place)
+ make-worker-factory
+ worker?)
 
 (define-logger worker)
 
-(define/contract current-system
-  (parameter/c (or/c false/c system?))
-  (make-parameter #f))
+(struct worker (broker queue pool-size reactor)
+  #:transparent
+  #:methods gen:component
+  [(define (component-start w)
+     (define broker (worker-broker w))
+     (define queue (worker-queue w))
+     (define pool-size (worker-pool-size w))
+     (struct-copy worker w [reactor (make-reactor broker queue pool-size)]))
 
-(define-syntax (start-worker stx)
-  (syntax-parse stx
-    [(_ system-id:id
-        (~alt
-         (~optional (~seq #:queue queue:expr) #:name "#:queue parameter")
-         (~optional (~seq #:broker-id broker-id:expr) #:name "#:broker-id parameter")
-         (~optional (~seq #:pool-size pool-size:expr) #:name "#:pool-size parameter")) ...)
-     #:with source (datum->syntax stx (syntax-source stx))
-     #'(start-worker* #:source source
-                      #:system system-id
-                      #:system-id 'system-id
-                      #:broker-id (~? broker-id 'broker)
-                      #:queue (~? queue "default")
-                      #:pool-size (~? pool-size (processor-count)))]))
+   (define (component-stop w)
+     (reactor-stop (worker-reactor w))
+     (struct-copy worker w [reactor #f]))])
 
-(define/contract (start-worker* #:source source
-                                #:system sys
-                                #:system-id [system-id 'prod-system]
-                                #:broker-id [broker-id 'broker]
-                                #:pool-size [pool-size (processor-count)]
-                                #:queue [queue "default"])
-  (->* (#:source path-string?
-        #:system system?)
-       (#:system-id symbol?
-        #:broker-id symbol?
-        #:pool-size exact-positive-integer?
-        #:queue non-empty-string?)
-       (-> void?))
-  (parameterize ([current-custodian (make-custodian)])
-    (system-start sys)
-    (define broker (system-ref sys broker-id))
-    (define reactor (make-reactor source system-id broker queue pool-size))
-    (lambda _
-      (reactor-stop reactor)
-      (system-stop sys))))
+(define/contract ((make-worker-factory #:queue [queue "default"]
+                                       #:pool-size [pool-size 8]) broker)
+  (->* ()
+       (#:queue non-empty-string?
+        #:pool-size exact-positive-integer?)
+       (-> broker? worker?))
+  (worker broker queue pool-size #f))
 
-(struct reactor (ch thd)
-  #:transparent)
-
-(define (make-reactor source system-id broker queue pool-size)
+(define (make-reactor broker queue pool-size)
   (log-worker-debug "starting reactor...")
   (define id (broker-register-worker! broker (getpid) (gethostname)))
-  (define ch (make-async-channel))
-  (define pool (make-worker-pool pool-size source system-id))
+  (define ch (make-async-channel pool-size))
+  (define pool (make-worker-pool pool-size ch))
   (define listener (make-listener broker id queue))
-  (define thd
-    (thread
-     (lambda _
-       (let loop ([pool pool]
-                  [idle pool]
-                  [busy null])
-         (sync
-          (handle-evt
-           (listener-jobs-evt listener (length idle))
-           (lambda (jobs)
-             (loop pool
-                   (drop idle (length jobs))
-                   (for/fold ([busy busy])
-                             ([p (in-list idle)]
-                              [j (in-list jobs)])
-                     (place-channel-put p (list 'exec j))
-                     (cons p busy)))))
-
-          (handle-evt
-           ch
-           (match-lambda
+  (thread
+   (lambda _
+     (let loop ([idle pool]
+                [busy null])
+       (sync
+        (handle-evt
+         (thread-receive-evt)
+         (lambda (_)
+           (match (thread-receive)
              [(list 'stop)
-              (worker-pool-stop pool)
               (listener-stop listener)
-              (loop pool idle busy)]))
+              (worker-pool-stop pool)
+              (broker-unregister-worker! broker id)])))
 
-          (apply
-           choice-evt
-           (for/list ([p (in-list pool)])
-             (handle-evt
-              p
-              (match-lambda
-                [(list 'stopped)
-                 (log-worker-debug "worker-place ~.s stopped" p)
-                 (define pool* (remq p pool))
-                 (cond
-                   [(null? pool*)
-                    (log-worker-debug "all worker places have been stopped")
-                    (broker-unregister-worker! broker id)]
+        (handle-evt
+         (listener-jobs-evt listener (length idle))
+         (lambda (jobs)
+           (loop (drop idle (length jobs))
+                 (for/fold ([busy busy])
+                           ([p (in-list idle)]
+                            [j (in-list jobs)])
+                   (thread-send p (list 'exec j))
+                   (cons p busy)))))
 
-                   [else
-                    (loop pool* idle busy)])]
+        (handle-evt
+         ch
+         (match-lambda
+           [(list 'done t (vector id queue job-id arguments attempts))
+            (log-worker-debug "job ~a done" id)
+            (broker-mark-done! broker id)
+            (loop (cons t idle) (remq t busy))]
 
-                [(list 'done (vector id queue job arguments attempts))
-                 (log-worker-debug "job ~a done" id)
-                 (broker-mark-done! broker id)
-                 (loop pool (cons p idle) (remq p busy))]
+           ;; TODO: retries.
+           [(list 'failed t (vector id queue job-id arguments attempts) message)
+            (log-worker-warning "job ~a failed: ~a" id message)
+            (broker-mark-failed! broker id)
+            (loop (cons t idle) (remq t busy))])))))))
 
-                ;; TODO: retries.
-                [(list 'fail (vector id queue job arguments attempts) message)
-                 (log-worker-warning "job ~a failed: ~a" id message)
-                 (broker-mark-failed! broker id)
-                 (loop pool (cons p idle) (remq p busy))])))))))))
-
-  (log-worker-info "reactor started")
-  (reactor ch thd))
-
-(define (reactor-stop reactor)
+(define (reactor-stop r)
   (log-worker-debug "stopping reactor...")
-  (async-channel-put (reactor-ch reactor) '(stop))
-  (thread-wait (reactor-thd reactor))
-  (log-worker-info "reactor stopped"))
+  (thread-send r '(stop))
+  (thread-wait r))
 
 (struct listener (broker id queue [conn #:mutable])
   #:transparent)
@@ -146,13 +99,13 @@
   (query-exec conn "LISTEN koyo_jobs")
   (listener broker id queue conn))
 
-(define (listener-stop listener)
+(define (listener-stop l)
   (log-worker-debug "stopping listener...")
-  (define broker (listener-broker listener))
-  (define conn (listener-conn listener))
+  (define broker (listener-broker l))
+  (define conn (listener-conn l))
   (query-exec conn "UNLISTEN *")
   (broker-release-connection broker conn)
-  (set-listener-conn! listener #f))
+  (set-listener-conn! l #f))
 
 (define (listener-jobs-evt the-listener limit)
   (match the-listener
@@ -185,73 +138,36 @@
            (begin0 null
              (broker-perform-maintenance! broker id))))))]))
 
-(define (make-worker-pool size source system-id)
-  (define pool
-    (for/list ([_ (in-range size)])
-      (define p (dynamic-place 'koyo/job/worker 'start-worker-place))
-      (begin0 p
-        (place-channel-put p (list 'load source system-id)))))
-
-  (begin0 pool
-    (for ([i (in-naturals 1)]
-          [p (in-list pool)])
-      (match (place-channel-get p)
-        [(list 'ok)
-         (log-worker-debug "worker place ~a ready" i)]
-
-        [(list 'error message)
-         (error 'make-worker-pool "failed to load source ~.s: ~a" source message)]))))
+(define (make-worker-pool size ch)
+  (for/list ([id (in-range size)])
+    (make-worker-thread id ch)))
 
 (define (worker-pool-stop pool)
-  (log-worker-debug "stopping worker pool...")
-  (for ([p (in-list pool)])
-    (place-channel-put p '(stop))))
+  (for ([thd (in-list pool)])
+    (thread-send thd '(stop)))
 
-(define (start-worker-place ch)
-  (let loop ()
-    (match (sync ch)
-      [(list 'stop)
-       (with-handlers ([exn:fail?
-                        (lambda (e)
-                          (log-worker-error "system failed to stop with exception:\n~a" (exn->string e)))])
-         (system-stop (current-system)))
+  ;; TODO: Kill after timeout.
+  (for ([thd (in-list pool)])
+    (thread-wait thd)))
 
-       (place-channel-put ch '(stopped))]
+(define (make-worker-thread id ch)
+  (define thd
+    (thread
+     (lambda ()
+       (log-worker-debug "worker thread ~a started..." id)
+       (let loop ()
+         (match (thread-receive)
+           [(list 'stop)
+            (log-worker-debug "stopping worker thread ~a..." id)]
 
-      [(list 'load source system-id)
-       ;; Worker places dynamically require the source module that
-       ;; started the worker so that jobs get added to the registry.
-       ;; Additionally, they parameterize current-system so that jobs
-       ;; can grab components off of it.
-       (current-system
-        (dynamic-require
-         source
-         system-id
-         (lambda _
-           (place-channel-put ch (list 'error "failed to load system")))))
+           [(list 'exec (and (vector id queue job-id arguments attempts) job))
+            (log-worker-debug "processing job ~.s..." job)
+            (with-handlers ([exn:fail
+                             (lambda (e)
+                               (async-channel-put ch (list 'failed thd job) (exn-message e)))])
+              (define proc (job-proc (lookup (format "~a.~a" queue job-id))))
+              (apply keyword-apply proc (deserialize arguments))
+              (async-channel-put ch (list 'done thd job)))
+            (loop)])))))
 
-       (with-handlers ([exn:fail?
-                        (lambda (e)
-                          (place-channel-put ch (list 'error "failed to start system"))
-                          (log-worker-error "system failed to start with exception:\n~a" (exn->string e)))])
-         (system-start (current-system)))
-
-       (place-channel-put ch '(ok))
-       (loop)]
-
-      [(list 'exec (and (vector id queue job arguments attempts) data))
-       (with-handlers ([(lambda _ #t)
-                        (lambda (e)
-                          (place-channel-put ch (list 'fail data (exn-message e)))
-                          (log-worker-error "job ~a (~.s) raised an exception:\n~a" id job (exn->string e)))])
-         (define proc (job-proc (lookup (format "~a.~a" queue job))))
-         (apply keyword-apply proc (deserialize arguments))
-         (place-channel-put ch (list 'done data)))
-
-       (loop)])))
-
-(define (exn->string e)
-  (call-with-output-string
-   (lambda (out)
-     (parameterize ([current-error-port out])
-       ((error-display-handler) (exn-message e) e)))))
+  thd)

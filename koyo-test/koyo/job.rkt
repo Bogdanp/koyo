@@ -20,8 +20,7 @@
   (+ x y))
 
 (define-job (publish message)
-  (define db (system-ref (current-system) 'database))
-  (with-database-connection [conn db]
+  (with-database-connection [conn (system-ref worker-system 'database)]
     (query-exec conn "SELECT PG_NOTIFY('messages', $1)" message)))
 
 (define messages
@@ -37,7 +36,8 @@
                                    #:notification-handler
                                    (lambda (channel message)
                                      (when (string=? channel "messages")
-                                       (async-channel-put messages message))))))])
+                                       (async-channel-put messages message))))))]
+  [worker (broker) (make-worker-factory)])
 
 (define (await-next-message db)
   (thread
@@ -89,14 +89,13 @@
        (check-equal? (broker-dequeue! broker 0 "default") null)))
 
    (let ([broker #f]
-         [database #f]
-         [stop-worker #f])
+         [database #f])
      (test-suite
       "worker"
 
       #:before
       (lambda _
-        (set! stop-worker (start-worker worker-system))
+        (system-start worker-system)
         (set! broker (system-ref worker-system 'broker))
         (set! database (system-ref worker-system 'database))
         (with-database-connection [conn database]
@@ -104,7 +103,7 @@
 
       #:after
       (lambda _
-        (stop-worker))
+        (system-stop worker-system))
 
       (test-case "jobs can be executed"
         (parameterize ([current-broker broker])
