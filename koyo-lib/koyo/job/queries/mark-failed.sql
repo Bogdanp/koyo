@@ -1,4 +1,5 @@
-UPDATE koyo_jobs
+UPDATE
+  koyo_jobs
 SET
   status = 'failed'
 WHERE

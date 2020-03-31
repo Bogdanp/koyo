@@ -11,5 +11,7 @@ UPDATE
   koyo_jobs
 SET
   status = 'ready'
-FROM stale_workers sw
-WHERE sw.id = worker_id;
+FROM
+  stale_workers sw
+WHERE
+  sw.id = worker_id;
