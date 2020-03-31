@@ -146,9 +146,14 @@
   (for ([thd (in-list pool)])
     (thread-send thd '(stop)))
 
-  ;; TODO: Kill after timeout.
-  (for ([thd (in-list pool)])
-    (thread-wait thd)))
+  (sync
+   (handle-evt
+    (alarm-evt (+ (current-inexact-milliseconds) 60000))
+    (lambda _
+      (for-each kill-thread pool)))
+   (thread
+    (lambda ()
+      (for-each sync pool)))))
 
 (define (make-worker-thread id ch)
   (define thd
@@ -162,7 +167,7 @@
 
            [(list 'exec (and (vector id queue job-id arguments attempts) job))
             (log-worker-debug "processing job ~.s..." job)
-            (with-handlers ([exn:fail
+            (with-handlers ([exn:fail?
                              (lambda (e)
                                (async-channel-put ch (list 'failed thd job) (exn-message e)))])
               (define proc (job-proc (lookup (format "~a.~a" queue job-id))))
