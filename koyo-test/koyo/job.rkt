@@ -41,7 +41,7 @@
 
     [else
      (set! retried? #t)
-     (retry 5000)]))
+     (retry! 5000)]))
 
 (define job-tests
   (test-suite

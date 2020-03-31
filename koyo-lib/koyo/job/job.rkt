@@ -14,12 +14,12 @@
 (provide
  exn:job:retry?
  exn:job:retry-delay-ms
- retry)
+ retry!)
 
 (struct exn:job exn () #:transparent)
 (struct exn:job:retry exn:job (delay-ms) #:transparent)
 
-(define-syntax-parameter retry
+(define-syntax-parameter retry!
   (lambda (stx)
     (raise-syntax-error #f "retry may only be used inside define-job" stx)))
 
@@ -73,13 +73,13 @@
               (~optional (~seq #:priority priority:number) #:name "#:priority parameter")) ...
         e:expr ...+)
      #'(define id
-         (syntax-parameterize ([retry (lambda (stx)
-                                        (syntax-parse stx
-                                          [(_ duration-ms:expr)
-                                           #'(retry "retry" duration-ms)]
+         (syntax-parameterize ([retry! (lambda (stx)
+                                         (syntax-parse stx
+                                           [(_ duration-ms:expr)
+                                            #'(retry! "retry!" duration-ms)]
 
-                                          [(_ reason:string duration-ms:expr)
-                                           #'(raise (exn:job:retry reason (current-continuation-marks) duration-ms))]))])
+                                           [(_ reason:string duration-ms:expr)
+                                            #'(raise (exn:job:retry reason (current-continuation-marks) duration-ms))]))])
            (make-job #:id 'id
                      #:queue (~? queue "default")
                      #:priority (~? priority 50)
