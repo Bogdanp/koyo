@@ -55,7 +55,7 @@
      #'(define id
          (make-job #:id 'id
                    #:queue (~? queue "default")
-                   #:priority (~? priority 0)
+                   #:priority (~? priority 50)
                    #:proc (procedure-rename
                            (lambda (~? (arg ... . rest-id) (arg ...))
                              e ...)
