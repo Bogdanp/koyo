@@ -58,43 +58,59 @@
    (lambda _
      (let loop ([idle pool]
                 [busy null])
-       (sync
-        (handle-evt
-         (thread-receive-evt)
-         (lambda (_)
-           (match (thread-receive)
-             [(list 'stop)
-              (listener-stop listener)
-              (worker-pool-stop pool)
-              (broker-unregister-worker! broker id)])))
+       (define (continue t)
+         (loop (cons t idle) (remq t busy)))
 
-        (handle-evt
-         (listener-jobs-evt listener (length idle))
-         (lambda (jobs)
-           (loop (drop idle (length jobs))
-                 (for/fold ([busy busy])
-                           ([p (in-list idle)]
-                            [j (in-list jobs)])
-                   (thread-send p (list 'exec j))
-                   (cons p busy)))))
+       ;; TODO: The reactor will have to be re-created when errors
+       ;; happen at this level.  Either that or the listener will have
+       ;; to be able to do it.  If, for example, Postgres gets stopped
+       ;; then the connection will become useless so we'll have to
+       ;; grab a new one from the pool.
+       (with-handlers ([exn:fail? (lambda (e)
+                                    (log-worker-error "unexpected reactor failure: ~a" (exn-message e)))])
+         (sync
+          (handle-evt
+           (thread-receive-evt)
+           (lambda (_)
+             (match (thread-receive)
+               [(list 'stop)
+                (listener-stop listener)
+                (worker-pool-stop pool)
+                (broker-unregister-worker! broker id)])))
 
-        (handle-evt
-         ch
-         (match-lambda
-           [(list 'done t (vector id queue job-id arguments attempts))
-            (log-worker-debug "job ~a done" id)
-            (broker-mark-done! broker id)
-            (loop (cons t idle) (remq t busy))]
+          (handle-evt
+           (listener-jobs-evt listener (length idle))
+           (lambda (jobs)
+             (loop (drop idle (length jobs))
+                   (for/fold ([busy busy])
+                             ([t (in-list idle)]
+                              [j (in-list jobs)])
+                     (thread-send t (list 'exec j))
+                     (cons t busy)))))
 
-           [(list 'retry t (vector id queue job-id arguments attempts) reason delay-ms)
-            (log-worker-debug "job ~a requested retry with delay ~.s" id delay-ms)
-            (broker-mark-for-retry! broker id (+milliseconds (now/moment) delay-ms))
-            (loop (cons t idle) (remq t busy))]
+          (handle-evt
+           ch
+           (match-lambda
+             [(list 'done t (vector id queue job-id arguments attempts))
+              (log-worker-debug "job ~a done" id)
+              (with-handlers ([exn:fail? (lambda (e)
+                                           (log-worker-error "failed to mark job ~a done: ~a" id (exn-message e)))])
+                (broker-mark-done! broker id))
+              (continue t)]
 
-           [(list 'fail t (vector id queue job-id arguments attempts) message)
-            (log-worker-warning "job ~a failed: ~a" id message)
-            (broker-mark-failed! broker id)
-            (loop (cons t idle) (remq t busy))])))))))
+             [(list 'retry t (vector id queue job-id arguments attempts) reason delay-ms)
+              (log-worker-debug "job ~a requested retry with delay ~.s" id delay-ms)
+              (with-handlers ([exn:fail? (lambda (e)
+                                           (log-worker-error "failed to mark job ~a for retry: ~a" id (exn-message e)))])
+                (broker-mark-for-retry! broker id (+milliseconds (now/moment) delay-ms)))
+              (continue t)]
+
+             [(list 'fail t (vector id queue job-id arguments attempts) message)
+              (log-worker-warning "job ~a failed: ~a" id message)
+              (with-handlers ([exn:fail? (lambda (e)
+                                           (log-worker-error "failed to mark job ~a failed: ~a" id (exn-message e)))])
+                (broker-mark-failed! broker id))
+              (continue t)]))))))))
 
 (define (reactor-stop r)
   (log-worker-debug "stopping reactor...")
