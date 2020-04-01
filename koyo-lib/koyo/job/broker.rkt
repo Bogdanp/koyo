@@ -87,3 +87,18 @@
 (define (broker-unregister-worker! broker id)
   (with-database-connection [conn (broker-database broker)]
     (query-exec conn unregister-worker-stmt id)))
+
+
+;; for the admin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ broker-jobs)
+
+(define (broker-jobs broker [cursor -1])
+  (with-database-connection [conn (broker-database broker)]
+    (for/list ([(id queue job arguments status) (in-query conn latest-jobs-stmt cursor)])
+      (hasheq 'id id
+              'queue queue
+              'job job
+              'arguments arguments
+              'status status))))

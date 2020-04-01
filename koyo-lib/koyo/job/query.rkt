@@ -22,6 +22,9 @@
            (define id (make-virtual-stmt 'name))
            (provide id)))]))
 
+
+;; operational ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-stmt dequeue)
 (define-stmt enqueue)
 (define-stmt heartbeat)
@@ -31,3 +34,8 @@
 (define-stmt register-worker)
 (define-stmt unregister-stale-workers)
 (define-stmt unregister-worker)
+
+
+;; admin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-stmt latest-jobs)

@@ -1,0 +1,123 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #f8f6fe;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 1rem;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+pre, code {
+  font-family: "Dank Mono", "Operator Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+.container {
+  margin: 0 auto;
+  width: 960px;
+}
+
+.nav {
+  list-style: none;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+.nav .container {
+  display: flex;
+  flex-direction: row;
+}
+
+.nav__item {
+  flex: 0 0 auto;
+  color: #5c5a68;
+  font-weight: 600;
+}
+
+.nav__item--active,
+.nav__item:hover {
+  color: #000;
+}
+
+.nav__item a {
+  display: block;
+  padding: 16px;
+}
+
+.content {
+  margin-top: 16px;
+}
+
+.island {
+  background: #fff;
+  border: 1px solid #f0f0f2;
+  border-radius: 4px;
+}
+
+.island__title {
+  border-bottom: 1px solid #f0f0f2;
+  color: #000;
+  font-size: 2rem;
+  padding: 16px 16px 8px 16px;
+}
+
+.island__content {
+  padding: 16px;
+}
+
+.items {
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  row-gap: 15px;
+  column-gap: 15px;
+}
+
+.item {
+  background: #fff;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  padding: 8px;
+  width: 220px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.item:hover { border: 1px solid #000; }
+
+.item--ready   { box-shadow: 0 0 0 3px #f7f2e3; }
+.item--running { box-shadow: 0 0 0 3px #f7f2e3; }
+.item--done    { box-shadow: 0 0 0 3px #e3f2fe; }
+.item--failed  { box-shadow: 0 0 0 3px #fcdfd8; }
+
+.item__queue span {
+  display: inline-block;
+  background: #c1c1c1;
+  border-radius: 2px;
+  margin: 2px 0 4px 0;
+  padding: 4px;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.item__arguments {
+  display: block;
+  margin: 2px 0;
+  font-size: 1rem;
+  overflow: scroll;
+  width: 204px;
+}
