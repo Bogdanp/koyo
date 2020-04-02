@@ -64,5 +64,5 @@ The application folder is further subdivided into:
   #:row-properties '(bottom-border ())
   (list (list @bold{File}             @bold{Description})
         (list @filepath{config.rkt}   "Contains all of the application's configuration options.")
-        (list @filepath{dynamic.rkt}  "The mai entrypoint for the application.  Everything gets wired together in this file.")
+        (list @filepath{dynamic.rkt}  "The main entrypoint for the application.  Everything gets wired together in this file.")
         (list @filepath{info.rkt}     "Describes the package that makes up your application and its dependencies."))]
