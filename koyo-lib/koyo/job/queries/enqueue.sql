@@ -3,7 +3,7 @@ WITH
     INSERT INTO
       koyo_jobs(queue, job, arguments, priority, scheduled_at)
     VALUES
-      ($1, $2, $3, $4, DEFAULT)
+      ($1, $2, $3, $4, $5)
     RETURNING
       id
   )

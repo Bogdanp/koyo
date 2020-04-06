@@ -3,6 +3,7 @@
 (require (for-syntax racket/base
                      racket/stxparam
                      syntax/parse)
+         gregor
          racket/contract
          racket/stxparam
          "broker.rkt"
@@ -36,6 +37,10 @@
   (parameter/c boolean?)
   (make-parameter #f))
 
+(define/contract current-job-scheduled-at
+  (parameter/c (or/c false/c moment?))
+  (make-parameter #f))
+
 (struct job (id queue priority proc)
   #:transparent
   #:property
@@ -55,6 +60,7 @@
                          (job-queue job)
                          (job-id job)
                          (job-priority job)
+                         (or (current-job-scheduled-at) (now/moment))
                          (list kws kw-args args))]))))
 
 (define (make-job #:id id
@@ -87,3 +93,15 @@
                              (lambda (~? (arg ... . rest-id) (arg ...))
                                e ...)
                              'id))))]))
+
+
+;; scheduling ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ schedule-at)
+
+(define-syntax (schedule-at stx)
+  (syntax-parse stx
+    [(_ when-e:expr job-e:expr)
+     #'(parameterize ([current-job-scheduled-at when-e])
+         job-e)]))

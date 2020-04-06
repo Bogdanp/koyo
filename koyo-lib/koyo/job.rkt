@@ -10,6 +10,7 @@
  define-job
  job?
  retry!
+ schedule-at
 
  current-broker
  make-broker

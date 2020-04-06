@@ -3,6 +3,7 @@
 (require component
          component/testing
          db
+         gregor
          koyo/database
          koyo/job
          koyo/job/broker
@@ -75,7 +76,32 @@
         (deserialize arguments))
 
        (broker-mark-done! broker id)
-       (check-equal? (broker-dequeue! broker 0 "default") null)))
+       (check-equal? (broker-dequeue! broker 0 "default") null))
+
+     (test-case "jobs can be scheduled for later"
+       (define t0 (now/moment))
+       (define id
+         (parameterize ([current-broker broker])
+           (schedule-at
+            (+days t0 30)
+            (add 1 2))))
+
+       (define t1
+        (sql-timestamp->moment
+         (with-database-connection [conn database]
+           (query-value conn "select scheduled_at from koyo_jobs where id = $1" id))))
+
+       ;; Going to and from PG microseconds get lost so this has the
+       ;; effect of truncating t0 in the exact same way that t1 is.
+       ;; Janky but effective.
+       (define t0*
+         (sql-timestamp->moment
+          (with-database-connection [conn database]
+            (query-value conn "select $1::timestamptz" (->sql-timestamp t0)))))
+
+       (check-equal?
+        (days-between t0* t1)
+        30)))
 
    (let ([broker #f]
          [database #f])

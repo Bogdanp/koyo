@@ -46,14 +46,15 @@
 (define (broker-release-connection broker conn)
   (database-release-connection (broker-database broker) conn))
 
-(define (broker-enqueue! broker queue job priority arguments)
+(define (broker-enqueue! broker queue job priority scheduled-at arguments)
   (with-database-connection [conn (broker-database broker)]
     (for/first ([(id _) (in-row conn
                                 enqueue-stmt
                                 queue
                                 (symbol->string job)
                                 (serialize arguments)
-                                priority)])
+                                priority
+                                (->sql-timestamp scheduled-at))])
       id)))
 
 (define (broker-dequeue! broker worker-id queue [n 1])

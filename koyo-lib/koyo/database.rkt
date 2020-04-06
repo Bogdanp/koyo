@@ -132,6 +132,9 @@
  in-rows
  in-row
 
+ sql-date->date
+ sql-timestamp->moment
+
  ->sql-date
  ->sql-timestamp)
 
