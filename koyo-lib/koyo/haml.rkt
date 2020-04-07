@@ -152,4 +152,6 @@
 
 (define-syntax (haml stx)
   (syntax-parse stx
-    [(_ el:element) #'`el.xexpr]))
+    [(_ el:element) #'`el.xexpr]
+    [(_ el:element ...+)
+     #'(list (haml el) ...)]))

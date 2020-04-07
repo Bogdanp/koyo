@@ -235,7 +235,15 @@
         (.articles ,@(map symbol->string '(a b c))))
        '(div
          ([class "articles"])
-         "a" "b" "c"))))))
+         "a" "b" "c")))
+
+    (test-case "a list of elements produces a list of xexprs"
+      (check-equal?
+       (haml
+        (:li "a")
+        (:li "b"))
+       '((li () "a")
+         (li () "b")))))))
 
 (module+ test
   (require rackunit/text-ui)

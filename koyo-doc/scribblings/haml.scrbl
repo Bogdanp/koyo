@@ -1,6 +1,7 @@
 #lang scribble/doc
 
-@(require (for-label koyo)
+@(require (for-label koyo
+                     racket/base)
           "koyo.rkt")
 
 @title[#:tag "haml"]{HAML}
@@ -82,4 +83,25 @@ Lists of elements can be spliced in using the @racket[(unquote-splicing e)] synt
 @haml-splicing-syntax-example
 
 All expressions that don't parse as an element are evaluated in place
-at runtime.
+at runtime:
+
+@examples[
+  #:eval sandbox
+  #:label #f
+  (define (say-hi name)
+    (format "Hi, ~a!" name))
+
+  (haml
+   (:h1 (say-hi "Bogdan")))
+]
+
+Passing multiple elements to the @racket[haml] macro produces a list
+of @racket[xexpr?]s:
+
+@examples[
+  #:eval sandbox
+  #:label #f
+  (haml
+   (:li "a")
+   (:li "b"))
+]
