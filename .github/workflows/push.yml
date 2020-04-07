@@ -29,6 +29,13 @@ jobs:
 
     - name: Run tests for koyo itself
       run: raco test -j 4 koyo-test/
+      env:
+        KOYO_DATABASE_TESTS: x
+        KOYO_TEST_DB_HOST: 127.0.0.1
+        KOYO_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
+        KOYO_TEST_DB_NAME: example
+        KOYO_TEST_DB_USERNAME: example
+        KOYO_TEST_DB_PASSWORD: example
 
     - name: Run tests for standard blueprint
       run: ci/test-standard-blueprint.sh

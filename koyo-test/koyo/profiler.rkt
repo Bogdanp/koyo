@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require koyo/profiler
-         racket/match
          rackunit)
 
 (provide

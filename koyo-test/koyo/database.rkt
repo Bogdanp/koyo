@@ -5,16 +5,14 @@
          gregor
          koyo/database
          racket/sequence
-         rackunit)
+         rackunit
+         "common.rkt")
 
 (provide database-tests)
 
 (define db
   (component-start
-   ((make-database-factory (lambda ()
-                             (postgresql-connect #:database "koyo"
-                                                 #:user     "koyo"
-                                                 #:password "koyo"))))))
+   (make-test-database)))
 
 (define database-tests
   (test-suite

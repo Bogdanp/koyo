@@ -10,7 +10,8 @@
          koyo/job/serialize
          racket/async-channel
          racket/match
-         rackunit)
+         rackunit
+         "common.rkt")
 
 (provide
  worker-system
@@ -21,11 +22,7 @@
 
 (define-system worker
   [broker (database) make-broker]
-  [database (make-database-factory
-             (lambda ()
-               (postgresql-connect #:database "koyo"
-                                   #:user     "koyo"
-                                   #:password "koyo")))]
+  [database make-test-database]
   [worker (broker) (make-worker-factory)])
 
 (define-job (add x y)
@@ -50,10 +47,7 @@
 
    (system-test-suite job
      ([broker (database) make-broker]
-      [database (make-database-factory (lambda ()
-                                         (postgresql-connect #:database "koyo"
-                                                             #:user     "koyo"
-                                                             #:password "koyo")))])
+      [database make-test-database])
 
      #:before
      (lambda _
