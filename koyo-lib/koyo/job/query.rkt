@@ -38,4 +38,5 @@
 
 ;; admin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-stmt lookup-job)
 (define-stmt latest-jobs)

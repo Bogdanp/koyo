@@ -1,6 +1,8 @@
 #lang racket/base
 
-(require (for-syntax racket/base)
+(require (for-label koyo
+                    racket/base)
+         (for-syntax racket/base)
          racket/runtime-path
          racket/sandbox
          scribble/example
@@ -32,7 +34,7 @@
 (define haml-form
   (defform
     #:literals (unquote-splicing unless when)
-    (haml element)
+    (haml element ...+)
     #:grammar
     [(element (selector attributes element ...)
               (selector element ...)
