@@ -1,7 +1,19 @@
 #lang racket/base
 
-(require racket/contract
+(require net/url
+         racket/contract
          web-server/http)
+
+;; URL ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ url-scrub)
+
+(define/contract (url-scrub u)
+  (-> url? url?)
+  (struct-copy url u [path (for/list ([pp (in-list (url-path u))])
+                             (path/param (path/param-path pp) null))]))
+
 
 ;; Requests ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

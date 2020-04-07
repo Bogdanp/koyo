@@ -2,6 +2,7 @@
 
 (require koyo/flash
          koyo/haml
+         koyo/http
          koyo/l10n
          net/url
          racket/contract
@@ -21,16 +22,7 @@
      (:h1 (translate 'subtitle-not-found))
      (:p (translate 'message-not-found))))))
 
-(define/contract ((expired-page flashes) req)
-  (-> flash-manager? (-> request? response?))
-
-  (define (path/param-scrub pp)
-    (path/param (path/param-path pp) null))
-
-  (define the-url (request-uri req))
-  (define scrubbed-url
-    (let ([scrubbed-params (map path/param-scrub (url-path the-url))])
-      (struct-copy url the-url [path scrubbed-params])))
-
+(define/contract (expired-page req)
+  (-> request? response?)
   (flash 'warning (translate 'message-session-expired))
-  (redirect-to (url->string scrubbed-url)))
+  (redirect-to (url->string (url-scrub (request-uri req)))))

@@ -97,7 +97,7 @@
   (current-reverse-uri-fn reverse-uri)
 
   (define manager
-    (make-threshold-LRU-manager (stack (expired-page flashes)) (* 1024 1024 128)))
+    (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 128)))
 
   (app (sequencer:make
         (filter:make #rx"^/static/.+$" static-dispatcher)

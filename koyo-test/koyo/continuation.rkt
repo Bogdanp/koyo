@@ -6,8 +6,7 @@
          racket/string
          rackunit
          web-server/http
-         web-server/managers/manager
-         web-server/servlet/servlet-structs)
+         web-server/servlet)
 
 (provide
  continuation-tests)
@@ -20,21 +19,31 @@
    "protect-continuation"
 
    (test-case "ensures the key in the request matches the current key"
+     (define ran? #f)
      (define handler
        (protect-continuation
-        (lambda (req)
+        (lambda (_req)
+          (set! ran? #t)
           (response/xexpr '(h1 "Hello")))))
 
-     (check-exn
-      exn:fail:servlet-manager:no-instance?
-      (lambda ()
-        (parameterize ([current-continuation-key "sekrit"])
-          (handler (make-test-request)))))
+     (let ()
+       (define res
+         (call-with-continuation-prompt
+          (lambda ()
+            (parameterize ([current-continuation-key "sekrit"])
+              (handler (make-test-request))))
+          servlet-prompt))
 
-     (check-equal?
-      (response-code (parameterize ([current-continuation-key "sekrit"])
-                       (handler (make-test-request #:headers (list (make-header #"Cookie" #"_k=sekrit"))))))
-      200))
+       (check-equal? (response-code res) 302)
+       (check-false ran?))
+
+     (let ()
+       (define res
+         (parameterize ([current-continuation-key "sekrit"])
+           (handler (make-test-request #:headers (list (make-header #"Cookie" #"_k=sekrit"))))))
+
+       (check-equal? (response-code res) 200)
+       (check-true ran?)))
 
    (test-case "wraps the continuation function inside the current wrapper"
      (parameterize ([current-continuation-wrapper (lambda (hdl)

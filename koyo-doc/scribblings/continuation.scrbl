@@ -34,8 +34,8 @@ variants of the web server's continuation-related functions that
 protect themselves against being hijacked.  They do this by
 associating a random session cookie with each continuation that is
 captured.  When a continuation is called and the visitor's session
-does not contain said cookie, then a "403 Forbidden" response is
-returned.
+does not contain said cookie, then the request is aborted according to
+@racket[current-continuation-mismatch-handler].
 
 @deftogether[
   (@defparam[current-continuation-key-cookie-path path path-string?
@@ -50,15 +50,15 @@ returned.
   Since @racket[current-continuation-key-cookie-secure?] is
   @racket[#t] by default, you're expected to run your server behind
   TLS even in development mode, otherwise your cookies won't get set
-  and you'll encounter @emph{403 Forbidden} responses every time you
-  try to call a continuation.
+  and you'll encounter "Session expired" responses every time you try
+  to call a continuation.
 }
 
 @defparam[current-continuation-mismatch-handler handler (-> request? response?)]{
   This parameter holds the handler that is run whenever a continuation
   is called with an invalid continuation key in the request.  The
-  default implementation returns a @emph{403 Forbidden} response with
-  the text "Forbidden" in its body.
+  default implementation short-circuits the request and redirects the
+  user to the base path for that continuation, skipping its handler.
 }
 
 @defparam[current-continuation-wrapper wrapper (-> (-> request? response?)
@@ -77,6 +77,13 @@ returned.
 
   Without this, all protected continuations will fail out so don't
   forget to add it to your middleware stack.
+
+  Middleware that themselves wrap @racket[wrap-protect-continuations]
+  will wrap the mismatch handler.  This means you have to be careful
+  not to wrap the middleware inside other middleware that modify the
+  user session.  Nor should your mismatch handler modify the session,
+  because the session it modifies will be the one of the original
+  user, not the "attacker."
 }
 
 @deftogether[

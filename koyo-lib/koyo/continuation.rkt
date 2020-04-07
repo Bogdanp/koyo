@@ -1,12 +1,13 @@
 #lang racket/base
 
-(require racket/contract
+(require net/url
+         racket/contract
          racket/function
          racket/string
          web-server/http
-         web-server/managers/manager
          web-server/servlet/servlet-structs
          web-server/servlet/web
+         "http.rkt"
          "profiler.rkt"
          "random.rkt")
 
@@ -53,10 +54,7 @@
   (parameter/c (-> request? response?))
   (make-parameter
    (lambda (req)
-     (response/xexpr
-      #:code 403
-      #:message #"Forbidden"
-      '(h1 "Forbidden")))))
+     (redirect-to (url->string (url-scrub (request-uri req)))))))
 
 (define/contract current-continuation-wrapper
   (parameter/c (-> (-> request? response?)
@@ -80,10 +78,7 @@
        req]
 
       [else
-       (raise (make-exn:fail:servlet-manager:no-instance
-               "Continuation key mismatch."
-               (current-continuation-marks)
-               (current-continuation-mismatch-handler)))])))
+       (send/back ((current-continuation-mismatch-handler) req))])))
 
 (define/contract ((protect-continuation k) req)
   (-> (-> request? can-be-response?)
@@ -101,17 +96,24 @@
       (or (find-continuation-key (request-cookies req))
           (generate-random-string)))
 
-    (parameterize ([current-continuation-key continuation-key])
-      (define the-cookie (make-cookie #:path (current-continuation-key-cookie-path)
-                                      #:secure? (current-continuation-key-cookie-secure?)
-                                      #:http-only? #t
-                                      #:extension "SameSite=Strict"
-                                      continuation-key-cookie-name
-                                      continuation-key))
-      (define the-response (handler req))
-      (struct-copy response the-response [headers (cons
-                                                   (cookie->header the-cookie)
-                                                   (response-headers the-response))]))))
+    (define the-cookie
+      (make-cookie #:path (current-continuation-key-cookie-path)
+                   #:secure? (current-continuation-key-cookie-secure?)
+                   #:http-only? #t
+                   #:extension "SameSite=Strict"
+                   continuation-key-cookie-name
+                   continuation-key))
+
+    (define res
+      (call-with-continuation-prompt
+       (lambda ()
+         (parameterize ([current-continuation-key continuation-key])
+           (handler req)))
+       servlet-prompt))
+
+    (struct-copy response res [headers (cons
+                                        (cookie->header the-cookie)
+                                        (response-headers res))])))
 
 (define/contract (send/suspend/protect f)
   (-> (-> string? can-be-response?) request?)
