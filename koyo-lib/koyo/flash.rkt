@@ -10,6 +10,7 @@
 
 (provide
  current-flash-messages
+ current-flash-manager
  make-flash-manager
  flash-manager?
  flash)

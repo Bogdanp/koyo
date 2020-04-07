@@ -18,7 +18,13 @@ processed.  Each message is bound to a specific user session.
 
 @defparam[current-flash-messages messages (listof (cons/c symbol? string?))]{
   This parameter holds the set of flash messages for the current
-  session.
+  request.
+}
+
+@defparam[current-flash-manager flashes (or/c false/c flash-manager?)]{
+  This parameters holds the current flash manager for a particular
+  request.  It is installed by @racket[wrap-flash] and automatically
+  used by @racket[flash] if an explicit manager is not passed in.
 }
 
 @defproc[(flash-manager? [v any/c]) boolean?]{
@@ -48,8 +54,6 @@ processed.  Each message is bound to a specific user session.
           [message string?]) void?]
 )]{
 
-  Adds a flash message to the current session.  @racket[wrap-flash]
-  installs a private parameter that references the current flash
-  manager for each wrapped request so the @racket[flashes] argument is
-  optional.
+  Adds a flash message to the current session.  If @racket[flashes] is
+  not provided, the @racket[current-flash-manager] is used.
 }
