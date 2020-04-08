@@ -2,7 +2,6 @@
 
 (require net/url
          racket/contract
-         racket/function
          racket/string
          web-server/http
          web-server/servlet/servlet-structs
@@ -61,13 +60,10 @@
                    (-> request? response?)))
   (make-parameter values))
 
-(define continuation-key-cookie?
-  (compose1 (curry string=? continuation-key-cookie-name) client-cookie-name))
-
 (define (find-continuation-key cookies)
-  (define cookie
-    (findf continuation-key-cookie? cookies))
-  (and cookie (client-cookie-value cookie)))
+  (for/first ([cookie (in-list cookies)]
+              #:when (string=? continuation-key-cookie-name (client-cookie-name cookie)))
+    (client-cookie-value cookie)))
 
 (define/contract (protect-request req)
   (-> request? request?)
