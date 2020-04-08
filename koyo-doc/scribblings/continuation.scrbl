@@ -4,6 +4,7 @@
                      racket/base
                      racket/contract
                      web-server/http
+                     web-server/servlet
                      web-server/servlet/web)
           "koyo.rkt")
 
@@ -25,17 +26,18 @@ continuations.  If you don't protect your continuations, then a user
 could copy the URL for that button and give it to someone else; that
 other person would then inherit all of the state associated with that
 continuation.  You might think that your users are unlikely to do
-that, but there are other cases in which browsers can leak information
-about URLs in a web application.  One such case being @emph{Referrer}
-headers.
+that, but there are cases, such as via @tt{Referer} headers, in which
+browsers can leak information about URLs in a web application.
+
+@(define ccmh (racket current-continuation-mismatch-handler))
 
 To guard against the aforementioned issues, this module provides
 variants of the web server's continuation-related functions that
 protect themselves against being hijacked.  They do this by
 associating a random session cookie with each continuation that is
 captured.  When a continuation is called and the visitor's session
-does not contain said cookie, then the request is aborted according to
-@racket[current-continuation-mismatch-handler].
+does not contain said cookie, @ccmh is run instead of the target
+continuation function.
 
 @deftogether[
   (@defparam[current-continuation-key-cookie-path path path-string?
@@ -50,8 +52,7 @@ does not contain said cookie, then the request is aborted according to
   Since @racket[current-continuation-key-cookie-secure?] is
   @racket[#t] by default, you're expected to run your server behind
   TLS even in development mode, otherwise your cookies won't get set
-  and you'll encounter "Session expired" responses every time you try
-  to call a continuation.
+  and none of your continuation handlers will run.
 }
 
 @defparam[current-continuation-mismatch-handler handler (-> request? response?)]{
@@ -59,16 +60,20 @@ does not contain said cookie, then the request is aborted according to
   is called with an invalid continuation key in the request.  The
   default implementation short-circuits the request and redirects the
   user to the base path for that continuation, skipping its handler.
+
+  If you install a custom mismatch handler, you must avoid modifying
+  the user session within it.  The session that will get modified is
+  the session of the original user, not of the "attacker", which is
+  probably not what you want.
 }
 
 @defparam[current-continuation-wrapper wrapper (-> (-> request? response?)
                                                    (-> request? response?))]{
   Since continuations are executed outside of the standard request -
-  response lifecycle, this means that any middleware/wrappers you set
-  up on your dispatchers will not wrap your continuations.  To get
-  around this, you can register a your middleware stack with this
-  parameter and all protected continuations will be wrapped
-  appropriately.
+  response lifecycle, this means that any middleware you set up on
+  your dispatchers will not wrap your continuation handlers.  To get
+  around this, you have to register your middleware stack with this
+  parameter.
 }
 
 @defproc[((wrap-protect-continuations [handler (-> request? response?)]) [req request?]) response?]{
