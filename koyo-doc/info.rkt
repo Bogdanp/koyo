@@ -12,6 +12,7 @@
                      "web-server-lib"
 
                      "db-doc"
+                     "net-doc"
                      "racket-doc"
                      "web-server-doc"))
 
