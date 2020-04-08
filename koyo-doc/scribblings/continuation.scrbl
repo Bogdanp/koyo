@@ -48,11 +48,6 @@ continuation function.
   These parameters control the @emph{Path=} attribute and the
   @emph{Secure=} attribute, respectively, of the continuation key
   cookie.
-
-  Since @racket[current-continuation-key-cookie-secure?] is
-  @racket[#t] by default, you're expected to run your server behind
-  TLS even in development mode, otherwise your cookies won't get set
-  and none of your continuation handlers will run.
 }
 
 @defparam[current-continuation-mismatch-handler handler (-> request? response?)]{

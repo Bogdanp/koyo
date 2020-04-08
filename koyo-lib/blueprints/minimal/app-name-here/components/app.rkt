@@ -12,6 +12,7 @@
          threading
          web-server/managers/lru
          web-server/servlet-dispatch
+         (prefix-in config: "../config.rkt")
          "../pages/all.rkt")
 
 (provide
@@ -40,6 +41,8 @@
         (wrap-cors)
         (wrap-profiler)))
 
+  (when config:debug
+    (current-continuation-key-cookie-secure? #f))
   (current-continuation-wrapper stack)
   (current-reverse-uri-fn reverse-uri)
 
