@@ -134,7 +134,7 @@
   (with-timing 'user-manager (format "(user-manager-lookup/username ~v)" username)
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
-                       (where (= u.username ,username)))))))
+                       (where (= u.username ,(string-downcase username))))))))
 
 (define/contract (user-manager-login um username password)
   (-> user-manager? string? string? (or/c false/c user?))
