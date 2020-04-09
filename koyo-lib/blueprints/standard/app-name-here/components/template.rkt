@@ -81,7 +81,8 @@
 
          (.content ,@content)
 
-         (:script ([:src (static-uri "vendor/unpoly.min.js")]))))))
+         (:script ([:src (static-uri "vendor/unpoly.min.js")]))
+         (:script ([:src (static-uri "js/app.js")]))))))
 
     (response
      200
