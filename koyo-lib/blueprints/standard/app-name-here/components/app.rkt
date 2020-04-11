@@ -85,8 +85,8 @@
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
     (~> handler
-        ((wrap-browser-locale sessions))
         ((wrap-auth-required auth req-roles))
+        ((wrap-browser-locale sessions))
         ((wrap-flash flashes))
         ((wrap-session sessions))
         (wrap-protect-continuations)
