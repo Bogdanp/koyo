@@ -52,3 +52,5 @@ jobs:
         KOYO_DOCS_DEPLOY_KEY_PASSPHRASE: ${{ secrets.KOYO_DOCS_DEPLOY_KEY_PASSPHRASE }}
         KOYO_DOCS_SSH_HOST: ${{ secrets.KOYO_DOCS_SSH_HOST }}
         KOYO_DOCS_SSH_PORT: ${{ secrets.KOYO_DOCS_SSH_PORT }}
+      if: >-
+        startsWith(github.ref, 'refs/heads/master')
