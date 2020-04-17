@@ -3,6 +3,7 @@
 (require racket/contract
          racket/file
          racket/function
+         racket/future
          racket/list
          racket/match
          racket/path
@@ -18,6 +19,7 @@
   (if (directory-exists? p)
       (match/values (split-path p)
         [(_ (app path->string (regexp "^\\.")) _) #f]
+        [(_ (app path->string "compiled")      _) #f]
         [(_ (app path->string "migrations")    _) #f]
         [(_ (app path->string "node_modules")  _) #f]
         [(_ _                                  _) #t])
@@ -79,6 +81,7 @@
         (list dynamic-module-path)))
 
   (define stop #f)
+  (define rb (make-barrier))
   (define (run)
     (match-define (list in out pid err control)
       (apply process*/ports
@@ -88,15 +91,27 @@
              (find-executable-path "racket")
              command-args))
 
+    (log-runner-info "application process started with pid ~a" pid)
+    (barrier-close rb)
+
     (values
-     (thread
-      (lambda ()
-        (control 'wait)))
+     (handle-evt
+      (thread
+       (lambda ()
+         (control 'wait)))
+      (lambda (_)
+        (control 'status)))
      (lambda ()
-       (control 'interrupt))))
+       (control 'interrupt)
+       (control 'wait)
+       (barrier-open rb))))
 
   (define (make!)
-    (system*/exit-code (find-executable-path "raco") "make" "-v" dynamic-module-path))
+    (system*/exit-code
+     (find-executable-path "raco")
+     "make"
+     "-j" (number->string (processor-count))
+     dynamic-module-path))
 
   (when recompile?
     (log-runner-info "compiling application")
@@ -117,10 +132,33 @@
       (run))
 
     (set! stop stop-process)
-    (with-handlers ([exn:break? (lambda _
-                                  (stop))])
+    (with-handlers ([exn:break?
+                     (lambda (_)
+                       (stop))])
       (sync/enable-break
-       (handle-evt stopped-evt
-                   (lambda _
-                     (log-runner-info "restarting application process")
-                     (loop)))))))
+       (handle-evt
+        stopped-evt
+        (lambda (status)
+          (when (eq? status 'done-error)
+            (log-runner-info "application process failed; waiting for changes before reloading")
+            (barrier-wait rb))
+
+          (log-runner-info "restarting application process")
+          (loop)))))))
+
+
+;; barrier ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (make-barrier)
+  (make-semaphore 0))
+
+(define (barrier-open b)
+  (semaphore-post b))
+
+(define (barrier-wait b)
+  (semaphore-wait b))
+
+(define (barrier-close b)
+  (let loop ()
+    (when (semaphore-try-wait? b)
+      (loop))))
