@@ -228,9 +228,10 @@
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
 
 ;; TODO: Make it possible to control the verbosity?
-(void (start-logger #:levels '((koyo    . debug)
-                               (runner  . debug)
-                               (watcher . debug))))
+(define stop-logger
+  (start-logger #:levels '((koyo    . debug)
+                           (runner  . debug)
+                           (watcher . debug))))
 
 (define all-commands
   (hasheq 'console handle-console
@@ -250,4 +251,5 @@
 
 (parameterize ([current-command-line-arguments (list->vector args)]
                [current-program-name (~a (current-program-name) " " command)])
-  (handler))
+  (handler)
+  (stop-logger))
