@@ -140,7 +140,7 @@
         stopped-evt
         (lambda (status)
           (when (eq? status 'done-error)
-            (log-runner-info "application process failed; waiting for changes before reloading")
+            (log-runner-warning "application process failed; waiting for changes before reloading")
             (barrier-wait rb))
 
           (log-runner-info "restarting application process")
