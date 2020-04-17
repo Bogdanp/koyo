@@ -84,12 +84,13 @@
   (define rb (make-barrier))
   (define (run)
     (match-define (list in out pid err control)
-      (apply process*/ports
-             (current-output-port)
-             (current-input-port)
-             (current-error-port)
-             (find-executable-path "racket")
-             command-args))
+      (parameterize ([subprocess-group-enabled #t])
+        (apply process*/ports
+               (current-output-port)
+               (current-input-port)
+               (current-error-port)
+               (find-executable-path "racket")
+               command-args)))
 
     (log-runner-info "application process started with pid ~a" pid)
     (barrier-close rb)
