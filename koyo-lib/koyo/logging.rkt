@@ -6,7 +6,9 @@
          racket/format
          racket/list
          racket/logging
-         racket/match)
+         racket/match
+         racket/port
+         "private/term.rkt")
 
 (provide
  start-logger)
@@ -36,7 +38,16 @@
                               "[~a] [~a] [~a] ~a\n"
                               (~t (now) "yyyy-MM-dd HH:mm:ss")
                               (~a (getpid) #:align 'right #:width 8)
-                              (~a level #:align 'right #:width 7)
+                              (with-output-to-string
+                                (lambda _
+                                  (colorize
+                                   (case level
+                                     [(debug)   `((fg ,(make-color 0 0 4)))]
+                                     [(info)    `((fg ,(make-color 0 3 0)))]
+                                     [(warning) `((fg ,(make-color 3 1 0)))]
+                                     [(error)   `((fg ,(make-color 3 0 0)))]
+                                     [else      null])
+                                   (display (~a level #:align 'right #:width 7)))))
                               message)
                      (receive-logs)]))
       stopped)))
