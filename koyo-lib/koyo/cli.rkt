@@ -208,13 +208,13 @@
 
 (define (handle-serve)
   (define recompile? #t)
-  (define errortrace? #t)
+  (define errortrace? #f)
   (define dynamic-module-path
     (command-line
      #:program (current-program-name)
      #:once-each
-     [("--disable-errortrace") "run the application without error trace"
-                               (set! errortrace? #f)]
+     [("--errortrace") "run the application with errortrace"
+                       (set! errortrace? #t)]
      [("--disable-recompile") "don't recompile changed files on reload"
                               (set! recompile? #f)]
      #:args ([dynamic-module-path #f])
