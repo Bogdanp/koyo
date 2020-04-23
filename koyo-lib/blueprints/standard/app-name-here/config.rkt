@@ -75,11 +75,11 @@
 
 (define-option postmark-token)
 
-(define-option product-name "AppNameHere")
-(define-option company-name "AppNameHere")
-(define-option company-address "")
-(define-option support-name "Bot Botterson")
-(define-option support-email "support@app-name-here.com")
+(define-option product-name #:default "AppNameHere")
+(define-option company-name #:default "AppNameHere")
+(define-option company-address #:default "")
+(define-option support-name #:default "Bot Botterson")
+(define-option support-email #:default "support@app-name-here.com")
 
 (provide common-mail-variables)
 (define common-mail-variables
