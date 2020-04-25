@@ -111,7 +111,6 @@
     (system*/exit-code
      (find-executable-path "raco")
      "make"
-     "-j" (number->string (processor-count))
      dynamic-module-path))
 
   (when recompile?
