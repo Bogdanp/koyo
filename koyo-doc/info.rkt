@@ -9,6 +9,11 @@
                      "koyo-lib"
                      "sandbox-lib"
                      "scribble-lib"
-                     "web-server-lib"))
+                     "web-server-lib"
+
+                     "db-doc"
+                     "net-doc"
+                     "racket-doc"
+                     "web-server-doc"))
 
 (define update-implies '("koyo-lib"))
