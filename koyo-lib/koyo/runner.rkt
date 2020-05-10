@@ -2,9 +2,6 @@
 
 (require racket/contract
          racket/file
-         racket/function
-         racket/future
-         racket/list
          racket/match
          racket/path
          racket/system)
