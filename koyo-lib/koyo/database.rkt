@@ -23,19 +23,24 @@
  with-database-connection
  with-database-transaction)
 
-(struct database (connection-pool options)
+(struct database (custodian connection-pool options)
   #:methods gen:component
-  [(define (component-start a-database)
-     (define options (database-options a-database))
+  [(define (component-start db)
+     (define options (database-options db))
      (define connect (hash-ref options 'connector))
-     (struct-copy database a-database
-                  [connection-pool (connection-pool
-                                    #:max-connections (hash-ref options 'max-connections)
-                                    #:max-idle-connections (hash-ref options 'max-idle-connections)
-                                    connect)]))
+     (define custodian (make-custodian))
+     (define pool (parameterize ([current-custodian custodian])
+                    (connection-pool
+                     #:max-connections (hash-ref options 'max-connections)
+                     #:max-idle-connections (hash-ref options 'max-idle-connections)
+                     connect)))
+     (struct-copy database db
+                  [custodian custodian]
+                  [connection-pool pool]))
 
-   (define (component-stop a-database)
-     (struct-copy database a-database [connection-pool #f]))])
+   (define (component-stop db)
+     (custodian-shutdown-all (database-custodian db))
+     (struct-copy database db [connection-pool #f]))])
 
 (define/contract ((make-database-factory connector
                                          #:max-connections [max-connections 16]
@@ -44,9 +49,9 @@
        (#:max-connections exact-positive-integer?
         #:max-idle-connections exact-positive-integer?)
        (-> database?))
-  (database #f (hasheq 'connector connector
-                       'max-connections max-connections
-                       'max-idle-connections max-idle-connections)))
+  (database #f #f (hasheq 'connector connector
+                          'max-connections max-connections
+                          'max-idle-connections max-idle-connections)))
 
 (define current-database-connection
   (make-parameter #f))
