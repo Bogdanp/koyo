@@ -21,6 +21,7 @@
         #:output-port port?)
        (-> void?))
 
+  (define pid (getpid))
   (define stopped (make-semaphore))
   (define receiver
     (apply make-log-receiver parent
@@ -30,27 +31,27 @@
 
   (define (receive-logs)
     (sync
-     (choice-evt
-      (handle-evt receiver
-                  (match-lambda
-                    [(vector level message _ _)
-                     (fprintf out
-                              "[~a] [~a] [~a] ~a\n"
-                              (~t (now) "yyyy-MM-dd HH:mm:ss")
-                              (~a (getpid) #:align 'right #:width 8)
-                              (with-output-to-string
-                                (lambda _
-                                  (colorize
-                                   (case level
-                                     [(debug)   `((fg ,(make-color 0 0 4)))]
-                                     [(info)    `((fg ,(make-color 0 3 0)))]
-                                     [(warning) `((fg ,(make-color 3 1 0)))]
-                                     [(error)   `((fg ,(make-color 3 0 0)))]
-                                     [else      null])
-                                   (display (~a level #:align 'right #:width 7)))))
-                              message)
-                     (receive-logs)]))
-      stopped)))
+     stopped
+     (handle-evt
+      receiver
+      (match-lambda
+        [(vector level message _ _)
+         (fprintf out
+                  "[~a] [~a] [~a] ~a\n"
+                  (~t (now) "yyyy-MM-dd HH:mm:ss")
+                  (~a pid #:align 'right #:width 8)
+                  (with-output-to-string
+                    (lambda _
+                      (colorize
+                       (case level
+                         [(debug)   `((fg ,(make-color 0 0 4)))]
+                         [(info)    `((fg ,(make-color 0 3 0)))]
+                         [(warning) `((fg ,(make-color 3 1 0)))]
+                         [(error)   `((fg ,(make-color 3 0 0)))]
+                         [else      null])
+                       (display (~a level #:align 'right #:width 7)))))
+                  message)
+         (receive-logs)]))))
 
   (define thd
     (thread receive-logs))
