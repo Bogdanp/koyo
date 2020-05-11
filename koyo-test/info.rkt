@@ -10,6 +10,7 @@
                      "gregor-lib"
                      "koyo-lib"
                      "rackunit-lib"
+                     "srfi-lite-lib"
                      "web-server-lib"))
 
 (define update-implies '("koyo-lib"))
