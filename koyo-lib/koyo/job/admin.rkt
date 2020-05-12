@@ -158,8 +158,8 @@
    (:li
     ([:class (class-list "item" @~a{item--@(job-meta-status j)})]
      [:data-job-uri (make-uri "jobs" (job-meta-id j))])
-    (.item__queue
-     (:span (job-meta-queue j)))
+    (.item__status (pp-status (job-meta-status j)))
+    (.item__queue (:span.status (job-meta-queue j)))
     (.item__arguments
      ,@(pp-job j)))))
 

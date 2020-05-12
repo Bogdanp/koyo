@@ -102,16 +102,9 @@ pre, code {
 .item--done    { box-shadow: 0 0 0 3px #e3f2fe; }
 .item--failed  { box-shadow: 0 0 0 3px #fcdfd8; }
 
-.item__queue span {
+.item__queue, .item__status {
   display: inline-block;
-  background: #c1c1c1;
-  border-radius: 2px;
-  margin: 2px 0 4px 0;
-  padding: 4px;
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
+  margin: 2px 2px 4px 0;
 }
 
 .item__arguments {
