@@ -151,3 +151,28 @@ pre, code {
 .status--running { background: #f7f2e3; }
 .status--done    { background: #e3f2fe; }
 .status--failed  { background: #fcdfd8; }
+
+.button {
+  background: #f2f2f2;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: background 0.2s;
+}
+
+.button:hover {
+  background: #e2e2e2;
+  text-decoration: none;
+}
+
+.button--primary {
+  background: #e2f2fe;
+  border: 1px solid #b6d5ec;
+}
+
+.button--primary:hover {
+  background: #eaf6ff;
+}

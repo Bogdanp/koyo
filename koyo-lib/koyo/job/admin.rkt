@@ -3,16 +3,16 @@
 (require (for-syntax racket/base)
          component
          gregor
-         net/url
+         koyo/continuation
          racket/contract
          racket/format
+         racket/list
          racket/match
          racket/port
          racket/runtime-path
          racket/string
-         web-server/dispatch
          web-server/dispatchers/dispatch
-         web-server/http
+         web-server/servlet
          web-server/servlet-dispatch
          "../haml.rkt"
          "broker.rkt")
@@ -38,47 +38,29 @@
 
 ;; dispatcher ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (make-dispatcher path broker)
-  (current-path-prefix path)
+(define (make-dispatcher path-prefix broker)
+  (define prefix (string-split path-prefix "/"))
+  (define prefix:len (length prefix))
+  (current-path-prefix path-prefix)
+  (dispatch/servlet
+   (wrap-protect-continuations
+    (lambda (req)
+      (define path (map path/param-path (url-path (request-uri req))))
+      (define subpath (and (>= (length path) prefix:len)
+                           (equal? (take path prefix:len) prefix)
+                           (drop path prefix:len)))
 
-  (define-values (app _)
-    (dispatch-rules
-     [("") (dashboard-page broker)]
-     [("jobs" (integer-arg)) (job-page broker)]))
+      (parameterize ([current-broker broker]
+                     [current-path (string-join path "/")])
+        (match subpath
+          [(list)
+           (dashboard-page req)]
 
-  (mount path (dispatch/servlet app)))
+          [(list "jobs" (app string->number id))
+           (job-page req id)]
 
-(define ((mount p dispatcher) conn req)
-  (cond
-    [(request-mount req p)
-     => (lambda (mounted-req)
-          (current-path (string-join (map path/param-path (url-path (request-uri req))) "/"))
-          (dispatcher conn mounted-req))]
-
-    [else
-     (next-dispatcher)]))
-
-(define (request-mount req p)
-  (define uri
-    (request-uri req))
-
-  (let loop ([path (url-path uri)]
-             [parts (string-split p "/")])
-    (cond
-      [(null? parts)
-       (define uri*
-         (struct-copy url uri [path (if (null? path)
-                                        (list (path/param "" null))
-                                        path)]))
-
-       (struct-copy request req [uri uri*])]
-
-      [(null? path) #f]
-
-      [(string=? (path/param-path (car path)) (car parts))
-       (loop (cdr path) (cdr parts))]
-
-      [else #f])))
+          [_
+           (next-dispatcher)]))))))
 
 
 ;; pages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -100,26 +82,28 @@
   (call-with-input-file (build-path assets "screen.css")
     port->string))
 
-(define ((dashboard-page b) _req)
+(define (dashboard-page _req)
   (page
    (haml
     (.container
      (.island
       (:h1.island__title "Jobs")
       (.island__content
-       (job-list (broker-jobs b))))))))
+       (job-list (broker-jobs (current-broker)))))))))
 
-(define ((job-page b) _req id)
+(define (job-page _req id)
   (cond
-    [(broker-job b id)
+    [(broker-job (current-broker) id)
      => (lambda (j)
-          (page
-           (haml
-            (.container
-             (.island
-              (:h1.island__title @~a{Job @(job-meta-id j)})
-              (.island__content
-               (job-table j)))))))]
+          (send/suspend/dispatch/protect
+           (lambda (embed/url)
+             (page
+              (haml
+               (.container
+                (.island
+                 (:h1.island__title @~a{Job @(job-meta-id j)})
+                 (.island__content
+                  (job-table j embed/url)))))))))]
 
     [else
      (next-dispatcher)]))
@@ -179,7 +163,7 @@
     (.item__arguments
      ,@(pp-job j)))))
 
-(define (job-table j)
+(define (job-table j embed/url)
   (define (row label content)
     (haml
      (:tr
@@ -191,11 +175,33 @@
     (row "Queue" (job-meta-queue j))
     (row "Job" (haml (:div ,@(pp-job j))))
     (row "Status" (pp-status (job-meta-status j)))
+    (row "Attempts" (number->string (job-meta-attempts j)))
     (row "Created" (pp-moment (job-meta-created-at j)))
     (row "Scheduled" (pp-moment (job-meta-scheduled-at j)))
     (row "Started" (cond
                      [(job-meta-started-at j) => pp-moment]
-                     [else 'mdash])))))
+                     [else 'mdash]))
+    (row "Actions" (button
+                    #:confirmation-required? #t
+                    #:style 'primary
+                    "Retry"
+                    (embed/url
+                     (lambda (_req)
+                       (broker-mark-for-retry! (current-broker) (job-meta-id j) (now/moment))
+                       (redirect/get/forget)
+                       (redirect-to (make-uri "jobs" (job-meta-id j))))))))))
+
+(define (button label action
+                #:style [style #f]
+                #:confirmation-required? [confirmation-required? #f])
+  (haml
+   (:a
+    ([:class (class-list "button" (and style (~a "button--" style)))]
+     [:href action]
+     [:onclick (if confirmation-required?
+                   "return confirm('Are you sure?')"
+                   "")])
+    label)))
 
 (define (pp-job j)
   (match-define (list kws kw-args args)
