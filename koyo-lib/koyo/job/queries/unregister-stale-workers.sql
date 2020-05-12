@@ -8,10 +8,11 @@ WITH
       id
   )
 UPDATE
-  koyo_jobs
+  koyo_jobs j
 SET
   status = 'ready'
 FROM
   stale_workers sw
 WHERE
-  sw.id = worker_id;
+      j.status = 'running'
+  AND j.worker_id = sw.id;
