@@ -21,9 +21,7 @@
  app-dispatcher)
 
 (struct app (dispatcher)
-  #:methods gen:component
-  [(define component-start values)
-   (define component-stop values)])
+  #:methods gen:component [])
 
 (define/contract (make-app sessions)
   (-> session-manager? app?)

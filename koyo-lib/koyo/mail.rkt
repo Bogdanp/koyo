@@ -78,9 +78,7 @@
  mailer-send-email-with-template)
 
 (struct mailer (adapter sender common-variables)
-  #:methods gen:component
-  [(define component-start values)
-   (define component-stop values)])
+  #:methods gen:component [])
 
 (define/contract ((make-mailer-factory #:adapter adapter
                                        #:sender sender
@@ -96,7 +94,7 @@
   (hash-union
    (mailer-common-variables m)
    (apply hasheq variables)
-   #:combine/key (lambda (k _ v) v)))
+   #:combine/key (lambda (_k1 _k2 v) v)))
 
 (define/contract (mailer-send-email-with-template m
                                                   #:to to

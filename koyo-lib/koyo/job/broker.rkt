@@ -29,9 +29,7 @@
   #:methods gen:component
   [(define (component-start b)
      (begin0 b
-       (ensure-latest-schema! (broker-database b))))
-
-   (define component-stop values)])
+       (ensure-latest-schema! (broker-database b))))])
 
 (define/contract (make-broker database)
   (-> database? broker?)

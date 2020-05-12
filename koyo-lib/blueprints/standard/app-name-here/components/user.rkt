@@ -71,9 +71,7 @@
 
 (struct user-manager (db)
   #:transparent
-  #:methods gen:component
-  [(define component-start values)
-   (define component-stop values)])
+  #:methods gen:component [])
 
 (define/contract (make-user-manager db)
   (-> database? user-manager?)

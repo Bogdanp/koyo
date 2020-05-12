@@ -36,10 +36,8 @@
 (struct exn:fail:auth-manager exn:fail ())
 (struct exn:fail:auth-manager:unverified exn:fail:auth-manager ())
 
-(struct auth-manager (session-manager user-manager)
-  #:methods gen:component
-  [(define component-start values)
-   (define component-stop values)])
+(struct auth-manager (sessions users)
+  #:methods gen:component [])
 
 (define/contract (make-auth-manager sessions users)
   (-> session-manager? user-manager? auth-manager?)
@@ -47,7 +45,7 @@
 
 (define/contract (auth-manager-login! am username password)
   (-> auth-manager? non-empty-string? non-empty-string? (or/c false/c user?))
-  (match (user-manager-login (auth-manager-user-manager am) username password)
+  (match (user-manager-login (auth-manager-users am) username password)
     [#f #f]
     [(and (struct* user ([id id] [verified? verified?])) user)
      (unless verified?
@@ -77,7 +75,7 @@
       ;; change this.
       [(and~>> (session-ref session-key #f)
                (string->number)
-               (user-manager-lookup/id (auth-manager-user-manager am)))
+               (user-manager-lookup/id (auth-manager-users am)))
        => (lambda (user)
             (parameterize ([current-user user])
               (handler req)))]

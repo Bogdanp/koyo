@@ -50,9 +50,7 @@
    #:path->mime-type path->mime-type))
 
 (struct app (dispatcher)
-  #:methods gen:component
-  [(define component-start values)
-   (define component-stop values)])
+  #:methods gen:component [])
 
 (define/contract (make-app auth flashes mailer _migrator sessions users)
   (-> auth-manager? flash-manager? mailer? migrator? session-manager? user-manager? app?)

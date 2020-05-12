@@ -17,10 +17,8 @@
 
 (define session-key 'flash.messages)
 
-(struct flash-manager (session-manager)
-  #:methods gen:component
-  [(define component-start values)
-   (define component-stop values)])
+(struct flash-manager (sessions)
+  #:methods gen:component [])
 
 (define/contract (make-flash-manager sessions)
   (-> session-manager? flash-manager?)
@@ -40,7 +38,7 @@
 
     [(fm key message)
      (with-timing 'flash "flash"
-       (session-manager-update! (flash-manager-session-manager fm)
+       (session-manager-update! (flash-manager-sessions fm)
                                 session-key
                                 (lambda (flashes)
                                   (cons (cons key message) flashes))
@@ -61,7 +59,7 @@
           (-> request? can-be-response?)))
 
   (with-timing 'flash "wrap-flash"
-    (define sessions (flash-manager-session-manager fm))
+    (define sessions (flash-manager-sessions fm))
     (define flash-messages (session-manager-ref sessions session-key null))
     (session-manager-remove! sessions session-key)
 

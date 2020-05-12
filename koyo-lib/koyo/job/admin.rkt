@@ -27,9 +27,7 @@
 
 (struct broker-admin (dispatcher)
   #:transparent
-  #:methods gen:component
-  [(define component-start values)
-   (define component-stop values)])
+  #:methods gen:component [])
 
 (define/contract ((make-broker-admin-factory [path "/_koyo/jobs"]) broker)
   (->* () (non-empty-string?) (-> broker? broker-admin?))
