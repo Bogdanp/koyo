@@ -3,14 +3,12 @@
 (require koyo/haml
          racket/contract
          web-server/http
-         "../components/auth.rkt"
-         "../components/user.rkt"
          "../components/template.rkt")
 
 (provide
  dashboard-page)
 
-(define/contract (dashboard-page req)
+(define/contract (dashboard-page _req)
   (-> request? response?)
   (page
    (haml
