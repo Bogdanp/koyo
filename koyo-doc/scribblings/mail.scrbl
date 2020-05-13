@@ -1,7 +1,6 @@
 #lang scribble/doc
 
-@(require (for-label component
-                     koyo
+@(require (for-label koyo
                      racket/base
                      racket/contract
                      racket/string
@@ -16,9 +15,9 @@ This module provides functionality for sending e-mail.
 
 @section{Mailer}
 
-The mailer is a @racket[component] that wraps a @racket[mail-adapter?]
-along with a default value for the sender and common variables for
-some of the template model properties.
+The mailer is a component that wraps a @racket[mail-adapter?]  along
+with a default value for the sender and common variables for some of
+the template model properties.
 
 @defproc[(make-mailer-factory [#:adapter adapter mail-adapter?]
                               [#:sender sender non-empty-string?]

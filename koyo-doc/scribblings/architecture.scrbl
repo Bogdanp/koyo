@@ -1,14 +1,12 @@
 #lang scribble/doc
 
-@(require "koyo.rkt")
+@(require (for-label component)
+          "koyo.rkt")
 
 @title[#:tag "architecture"]{Architecture}
 
-@(define components
-    (seclink "intro"
-             #:doc '(lib "component/component.scrbl")
-             #:indirect? #t
-             "components"))
+@(define components (tech #:doc '(lib "component/component.scrbl") "components"))
+@(define systems (tech #:doc '(lib "component/component.scrbl") "systems"))
 
 Most of the functionality provided by this library comes in the form
 of @components -- bundles of data with associated behavior and
@@ -16,9 +14,9 @@ well-defined startup and shutdown routines.
 
 Applications that use koyo build their various bits of business logic
 as components and then bundle all of the required pieces into
-so-called systems that automatically wire and pass dependencies
-around.  Systems also ensure that components are started and stopped
-in the right order.
+so-called @systems that automatically wire dependencies between
+components and ensure that they are started and stopped in the right
+order.
 
 That may sound a bit complicated (and perhaps a little bit tedious!)
 but this approach makes it very easy to test code in isolation and to
