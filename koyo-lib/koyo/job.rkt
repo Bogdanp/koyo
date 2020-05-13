@@ -18,7 +18,7 @@
 
  make-broker-admin-factory
  broker-admin?
- broker-admin-dispatcher
+ broker-admin-handler
 
  make-worker-factory
  worker?)

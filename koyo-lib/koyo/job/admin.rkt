@@ -13,7 +13,6 @@
          racket/string
          web-server/dispatchers/dispatch
          web-server/servlet
-         web-server/servlet-dispatch
          "../haml.rkt"
          "broker.rkt")
 
@@ -23,40 +22,37 @@
 (provide
  make-broker-admin-factory
  broker-admin?
- broker-admin-dispatcher)
+ broker-admin-handler)
 
-(struct broker-admin (dispatcher)
+(struct broker-admin (handler)
   #:transparent
   #:methods gen:component [])
 
 (define/contract ((make-broker-admin-factory [path "/_koyo/jobs"]) broker)
-  (->* () (non-empty-string?) (-> broker? broker-admin?))
-  (broker-admin (make-dispatcher path broker)))
+  (->* () (string?) (-> broker? broker-admin?))
+  (broker-admin (make-handler path broker)))
 
 
 ;; dispatcher ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (make-dispatcher path-prefix broker)
+(define (make-handler path-prefix broker)
   (define prefix (string-split path-prefix "/"))
   (define prefix:len (length prefix))
-  (current-path-prefix path-prefix)
-  (dispatch/servlet
-   #:regexp (regexp (~a "^" path-prefix))
-   (wrap-protect-continuations
-    (lambda (req)
-      (define path (map path/param-path (url-path (request-uri req))))
-      (define subpath (drop path prefix:len))
-      (parameterize ([current-broker broker]
-                     [current-path (string-join path "/")])
-        (match subpath
-          [(list)
-           (dashboard-page req)]
+  (lambda (req)
+    (define path (map path/param-path (url-path (request-uri req))))
+    (define subpath (drop path prefix:len))
+    (parameterize ([current-broker broker]
+                   [current-path (string-join path "/")]
+                   [current-path-prefix path-prefix])
+      (match subpath
+        [(list)
+         (dashboard-page req)]
 
-          [(list "jobs" (app string->number id))
-           (job-page req id)]
+        [(list "jobs" (app string->number id))
+         (job-page req id)]
 
-          [_
-           (next-dispatcher)]))))))
+        [_
+         (next-dispatcher)]))))
 
 
 ;; pages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
