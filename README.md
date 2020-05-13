@@ -1,4 +1,4 @@
-# koyo
+# koyo ![CI/CD](https://github.com/Bogdanp/koyo/workflows/CI/CD/badge.svg)
 
 koyo is a web application development toolkit that expands upon
 Racket's built-in web-server with all the functionality that a web app

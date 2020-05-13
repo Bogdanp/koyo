@@ -32,9 +32,6 @@
   (->* () (string?) (-> broker? broker-admin?))
   (broker-admin (make-handler path broker)))
 
-
-;; dispatcher ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (define (make-handler path-prefix broker)
   (define prefix (string-split path-prefix "/"))
   (define prefix:len (length prefix))
