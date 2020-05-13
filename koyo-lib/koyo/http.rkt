@@ -2,6 +2,8 @@
 
 (require net/url
          racket/contract
+         racket/format
+         racket/string
          web-server/http)
 
 ;; URL ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -18,10 +20,16 @@
 ;; Requests ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ request-path
+
  bindings-ref
  bindings-ref-bytes
  bindings-ref-number
  bindings-ref-symbol)
+
+(define/contract (request-path req)
+  (-> request? string?)
+  (~a "/" (string-join (map path/param-path (url-path (request-uri req))) "/")))
 
 (define/contract (bindings-ref bindings name [default #f])
   (->* ((listof binding?) symbol?) ((or/c false/c string?)) (or/c false/c string?))

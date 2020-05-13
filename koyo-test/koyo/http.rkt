@@ -13,6 +13,14 @@
    "http"
 
    (test-suite
+    "request-path"
+
+    (test-case "returns the correct path for a request"
+      (check-equal? (request-path (make-test-request)) "/")
+      (check-equal? (request-path (make-test-request #:path "/a/b/c")) "/a/b/c")
+      (check-equal? (request-path (make-test-request #:path "/a/b/c;test")) "/a/b/c")))
+
+   (test-suite
     "bindings-ref"
 
     (test-case "returns #f or a default if the binding is not set"

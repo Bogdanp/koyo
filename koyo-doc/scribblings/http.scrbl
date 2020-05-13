@@ -15,6 +15,10 @@
 This module provides utilities for working with HTTP-related data
 structures.
 
+@defproc[(request-path [req request?]) string?]{
+  Returns the absolute request path for @racket[req], scrubbed of path params.
+}
+
 @deftogether[
   (@defproc[(bindings-ref [bindings (listof binding?)]
                           [name symbol?]
