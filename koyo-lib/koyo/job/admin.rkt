@@ -41,13 +41,11 @@
   (define prefix:len (length prefix))
   (current-path-prefix path-prefix)
   (dispatch/servlet
+   #:regexp (regexp (~a "^" path-prefix))
    (wrap-protect-continuations
     (lambda (req)
       (define path (map path/param-path (url-path (request-uri req))))
-      (define subpath (and (>= (length path) prefix:len)
-                           (equal? (take path prefix:len) prefix)
-                           (drop path prefix:len)))
-
+      (define subpath (drop path prefix:len))
       (parameterize ([current-broker broker]
                      [current-path (string-join path "/")])
         (match subpath
