@@ -42,8 +42,10 @@
                                #:sender config:support-email
                                #:common-variables config:common-mail-variables)]
   [migrator (db) (make-migrator-factory migrations-path)]
-  [server (app) (compose1 (make-server-factory #:host config:http-host
-                                               #:port config:http-port) app-dispatcher)]
+  [server (app) (compose1
+                 (make-server-factory #:host config:http-host
+                                      #:port config:http-port)
+                 app-dispatcher)]
   [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
                                           #:cookie-secure? #f
                                           #:cookie-same-site 'lax
@@ -72,6 +74,7 @@
                 (session              . ,config:log-level)
                 (system               . ,config:log-level))))
 
+  (current-system prod-system)
   (system-start prod-system)
 
   (lambda ()
@@ -81,7 +84,7 @@
 
 (module+ main
   (define stop (start))
-  (with-handlers ([exn:break? (lambda _
-                                (stop)
-                                (sync/enable-break (system-idle-evt)))])
+  (with-handlers ([exn:break?
+                   (lambda (_)
+                     (stop))])
     (sync/enable-break never-evt)))
