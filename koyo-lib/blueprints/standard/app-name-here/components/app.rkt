@@ -102,4 +102,5 @@
 
   (app (sequencer:make
         (filter:make #rx"^/static/.+$" static-dispatcher)
-        (dispatch/servlet #:manager manager (stack dispatch)))))
+        (dispatch/servlet #:manager manager (stack dispatch))
+        (dispatch/servlet #:manager manager (stack not-found-page)))))

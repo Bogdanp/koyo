@@ -10,6 +10,7 @@
          koyo/url
          racket/contract
          threading
+         (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          web-server/managers/lru
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
@@ -47,4 +48,6 @@
   (define manager
     (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))
 
-  (app (dispatch/servlet #:manager manager (stack dispatch))))
+  (app (sequencer:make
+        (dispatch/servlet #:manager manager (stack dispatch))
+        (dispatch/servlet #:manager manager (stack not-found-page)))))
