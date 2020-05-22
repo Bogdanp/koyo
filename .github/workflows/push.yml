@@ -38,7 +38,7 @@ jobs:
         KOYO_TEST_DB_PASSWORD: example
 
     - name: Run tests for standard blueprint
-      run: ci/test-standard-blueprint.sh
+      run: ci/test-blueprint.sh standard
       env:
         EXAMPLE_TEST_DB_HOST: 127.0.0.1
         EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
@@ -47,7 +47,7 @@ jobs:
         EXAMPLE_TEST_DB_PASSWORD: example
 
     - name: Run tests for minimal blueprint
-      run: ci/test-minimal-blueprint.sh
+      run: ci/test-blueprint.sh minimal
       env:
         EXAMPLE_TEST_DB_HOST: 127.0.0.1
         EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
