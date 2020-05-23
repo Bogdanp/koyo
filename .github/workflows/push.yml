@@ -40,10 +40,11 @@ jobs:
     - name: Run tests for standard blueprint
       run: ci/test-blueprint.sh standard
       env:
-        DATABASE_URL://standard:standard@127.0.0.1:${{ job.services.postgres.ports[5432] }}/standard
-
-    - name: Run tests for minimal blueprint
-      run: ci/test-blueprint.sh minimal
+        EXAMPLE_TEST_DB_HOST: 127.0.0.1
+        EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
+        EXAMPLE_TEST_DB_NAME: example
+        EXAMPLE_TEST_DB_USERNAME: example
+        EXAMPLE_TEST_DB_PASSWORD: example
 
     - name: Deploy docs
       run: ci/docs.sh
