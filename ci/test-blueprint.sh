@@ -10,13 +10,13 @@ log "Making scratch space..."
 mkdir -p /tmp/scratch
 pushd /tmp/scratch
 
-appname="$1-example"
+application="$1-example"
 log "Creating app from blueprint..."
-raco koyo new --blueprint "$1" "$appname"
+raco koyo new --blueprint "$1" "$application"
 
 log "Installing example app and deps..."
-pushd "$appname"
-raco pkg install --batch --auto "$appname/" "$appname-tests/"
+pushd "$application"
+raco pkg install --batch --auto "$application/" "$application-tests/"
 
 log "Running example app tests..."
-raco test "$appname-tests/"
+raco test "$application-tests/"
