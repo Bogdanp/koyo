@@ -44,8 +44,6 @@ jobs:
 
     - name: Run tests for minimal blueprint
       run: ci/test-blueprint.sh minimal
-      env:
-        DATABASE_URL://minimal:minimal@127.0.0.1:${{ job.services.postgres.ports[5432] }}minimal/
 
     - name: Deploy docs
       run: ci/docs.sh
