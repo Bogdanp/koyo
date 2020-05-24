@@ -55,7 +55,7 @@
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
 
-  (define root-path (normalize-path (build-path dynamic-module-path 'up 'up)))
+  (define root-path (simplify-path (build-path dynamic-module-path 'up 'up)))
   (define command-args
     (if errortrace?
         (list "-l" "errortrace" "-t" dynamic-module-path)
