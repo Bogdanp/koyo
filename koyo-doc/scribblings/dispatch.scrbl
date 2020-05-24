@@ -38,11 +38,11 @@ function.
    [(else-fun (-> request? response?))
     (dispatch-fun (-> request? any/c ... response?))]]{
 
-  Like @racket[dispatch-roles] but each @racket[dispatch-clause] takes
+  Like @racket[dispatch-rules] but each @racket[dispatch-clause] takes
   an optional list of roles and an optional name.
 
   Returns three values: the first being a dispatcher function like in
-  @racket[dispatch-roles], the second a function that can generate
+  @racket[dispatch-rules], the second a function that can generate
   reverse URIs and the third a function that, given a
   @racket[request], can return the required set of roles for the
   matching @racket[dispatch-fun].

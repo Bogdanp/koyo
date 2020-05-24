@@ -76,9 +76,7 @@
       (signup-page auth mailer users)]
 
      [("verify" (integer-arg) (string-arg))
-      (verify-page flashes users)]
-
-     [else not-found-page]))
+      (verify-page flashes users)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)

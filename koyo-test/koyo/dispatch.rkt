@@ -4,7 +4,8 @@
          koyo/testing
          racket/function
          rackunit
-         web-server/dispatch)
+         web-server/dispatch
+         web-server/dispatchers/dispatch)
 
 (provide
  dispatch-tests)
@@ -60,7 +61,23 @@
 
       (check-equal? (reverse-uri 'home-page) "/")
       (check-equal? (reverse-uri 'order-page 1) "/orders/1")
-      (check-equal? (reverse-uri 'edit-order-page 1) "/admin/orders/1")))))
+      (check-equal? (reverse-uri 'edit-order-page 1) "/admin/orders/1"))
+
+    (test-case "calls `next-dispatcher` if no rule matches"
+      (define-values (dispatch _ __)
+        (dispatch-rules+roles
+         [("")
+          home-page]
+
+         [("orders" (integer-arg))
+          (order-page 'order-manager)]))
+
+      (check-not-exn
+       (lambda () (dispatch (make-test-request #:path "/orders/1"))))
+
+      (check-exn
+       exn:dispatcher?
+       (lambda () (dispatch (make-test-request #:path "/invalid"))))))))
 
 
 (module+ test
