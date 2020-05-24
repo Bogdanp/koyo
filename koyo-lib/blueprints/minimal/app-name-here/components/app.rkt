@@ -28,8 +28,7 @@
   (-> session-manager? app?)
   (define-values (dispatch reverse-uri _req-roles)
     (dispatch-rules+roles
-     [("") home-page]
-     [else not-found-page]))
+     [("") home-page]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
