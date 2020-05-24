@@ -2,6 +2,8 @@
 
 (require racket/contract
          racket/file
+         racket/format
+         racket/future
          racket/match
          racket/path
          racket/system)
@@ -85,7 +87,7 @@
        (control 'wait))))
 
   (define (make!)
-    (raco "make" dynamic-module-path))
+    (raco "make" "-j" (~a (processor-count)) dynamic-module-path))
 
   (when recompile?
     (log-runner-info "compiling application")
