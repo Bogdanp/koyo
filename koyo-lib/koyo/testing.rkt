@@ -70,6 +70,9 @@
                       (define segment/split (string-split segment ";"))
                       (path/param (car segment/split) (map form-urlencoded-decode (cdr segment/split))))
                     (string-split path "/"))]
+         [path (if (null? path)
+                   (list (path/param "" null))
+                   path)]
          [url (url scheme #f host port #t path query #f)]
          [headers (for/list ([header headers])
                     (match header

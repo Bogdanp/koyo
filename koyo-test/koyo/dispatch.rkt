@@ -73,11 +73,17 @@
           (order-page 'order-manager)]))
 
       (check-not-exn
-       (lambda () (dispatch (make-test-request #:path "/orders/1"))))
+       (lambda ()
+         (dispatch (make-test-request #:path "/"))))
+
+      (check-not-exn
+       (lambda ()
+         (dispatch (make-test-request #:path "/orders/1"))))
 
       (check-exn
        exn:dispatcher?
-       (lambda () (dispatch (make-test-request #:path "/invalid"))))))))
+       (lambda ()
+         (dispatch (make-test-request #:path "/invalid"))))))))
 
 
 (module+ test

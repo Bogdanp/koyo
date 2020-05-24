@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require koyo/testing
+         net/url
          rackunit
          web-server/http)
 
@@ -12,6 +13,21 @@
 
    (test-suite
     "make-test-request"
+
+    (test-case "produces correct paths"
+      (struct test (p expected) #:transparent)
+      (define tests
+        (list (test ""  (list (path/param "" null)))
+              (test "/" (list (path/param "" null)))
+              (test "/orders/1" (list (path/param "orders" null)
+                                      (path/param "1" null)))))
+
+      (for ([t (in-list tests)])
+        (check-equal?
+         (url-path
+          (request-uri
+           (make-test-request #:path (test-p t))))
+         (test-expected t))))
 
     (test-case "appends query params to bindings"
       (define req
