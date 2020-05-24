@@ -58,4 +58,4 @@
      (syntax/loc stx
        (dispatch-rules+roles
         [pat #:method method #:roles (role ...) #:name name fun] ...
-        [else next-dispatcher]))]))
+        [else (lambda (req) (next-dispatcher))]))]))
