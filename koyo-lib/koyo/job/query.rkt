@@ -27,6 +27,7 @@
 
 (define-stmt dequeue)
 (define-stmt enqueue)
+(define-stmt requeue)
 (define-stmt heartbeat)
 (define-stmt mark-done)
 (define-stmt mark-failed)

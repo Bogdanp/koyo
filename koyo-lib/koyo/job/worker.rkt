@@ -141,20 +141,35 @@
         (cond
           [(zero? limit) never-evt]
           [else
-           (guard-evt
-            (lambda _
-              (match (broker-dequeue! broker id queue limit)
-                [(list) never-evt]
-                [jobs (handle-evt always-evt (lambda _ jobs))])))])
+           (choice-evt
+            (replace-evt
+             (send+ conn
+                    (get-base)
+                    (async-message-evt))
+             (lambda (ready?)
+               (cond
+                 [ready?
+                  (define jobs (broker-dequeue! broker id queue limit))
+                  (begin0 (pure-evt jobs)
+                    (log-worker-debug "dequeued jobs from notification: ~a" (length jobs)))]
 
-        (handle-evt
-         (send+ conn
-                (get-base)
-                (async-message-evt))
-         (lambda (ready?)
-           (cond
-             [ready? (broker-dequeue! broker id queue limit)]
-             [else null])))
+                 [else never-evt])))
+
+            (nack-guard-evt
+             (lambda (nack)
+               (match (broker-dequeue! broker id queue limit)
+                 [(list) never-evt]
+                 [jobs
+                  (log-worker-debug "dequeued jobs: ~a" (length jobs))
+                  (thread
+                   (lambda ()
+                     (sync nack)
+                     (define ids
+                       (for/list ([j (in-list jobs)])
+                         (vector-ref j 0)))
+                     (broker-requeue! broker id ids)
+                     (log-worker-debug "requeued job due to nack: ~.s" ids)))
+                  (pure-evt jobs)]))))])
 
         (handle-evt
          (alarm-evt (+ (current-inexact-milliseconds)
@@ -163,6 +178,9 @@
            (begin0 null
              (log-worker-debug "performing maintenance...")
              (broker-perform-maintenance! broker id))))))]))
+
+(define (pure-evt v)
+  (handle-evt always-evt (lambda (_) v)))
 
 
 ;; worker threads ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -202,7 +220,7 @@
             (log-worker-debug "stopping worker thread ~a..." id)]
 
            [(list 'exec (and (vector id queue job-id arguments attempts) job))
-            (log-worker-debug "processing job ~.s..." job)
+            (log-worker-debug "processing job ~a (id: ~.s, queue: ~.s, attempts: ~.s)" job-id id queue attempts)
             (with-handlers ([exn:job:retry?
                              (lambda (e)
                                (send retry thd job (exn-message e) (exn:job:retry-delay-ms e)))]

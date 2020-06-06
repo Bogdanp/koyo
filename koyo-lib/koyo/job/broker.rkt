@@ -17,6 +17,7 @@
  broker-release-connection
  broker-enqueue!
  broker-dequeue!
+ broker-requeue!
  broker-mark-done!
  broker-mark-failed!
  broker-mark-for-retry!
@@ -59,6 +60,11 @@
 (define (broker-dequeue! b worker-id queue [n 1])
   (with-database-transaction [conn (broker-database b)]
     (begin0 (query-rows conn dequeue-stmt worker-id queue n)
+      (query-exec conn heartbeat-stmt worker-id))))
+
+(define (broker-requeue! b worker-id job-ids)
+  (with-database-transaction [conn (broker-database b)]
+    (begin0 (query-rows conn requeue-stmt job-ids)
       (query-exec conn heartbeat-stmt worker-id))))
 
 (define (broker-mark-done! b id)
