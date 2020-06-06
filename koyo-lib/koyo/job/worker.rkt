@@ -139,7 +139,10 @@
      (parameterize ([current-database-connection conn])
        (choice-evt
         (cond
-          [(zero? limit) never-evt]
+          [(zero? limit)
+           (begin0 never-evt
+             (log-worker-debug "no slots for dequeue"))]
+
           [else
            (choice-evt
             (replace-evt
@@ -149,27 +152,12 @@
              (lambda (ready?)
                (cond
                  [ready?
-                  (define jobs (broker-dequeue! broker id queue limit))
-                  (begin0 (pure-evt jobs)
-                    (log-worker-debug "dequeued jobs from notification: ~a" (length jobs)))]
+                  (begin0 (dequeue-evt broker id queue limit)
+                    (log-worker-debug "received job notification"))]
 
                  [else never-evt])))
 
-            (nack-guard-evt
-             (lambda (nack)
-               (match (broker-dequeue! broker id queue limit)
-                 [(list) never-evt]
-                 [jobs
-                  (log-worker-debug "dequeued jobs: ~a" (length jobs))
-                  (thread
-                   (lambda ()
-                     (sync nack)
-                     (define ids
-                       (for/list ([j (in-list jobs)])
-                         (vector-ref j 0)))
-                     (broker-requeue! broker id ids)
-                     (log-worker-debug "requeued job due to nack: ~.s" ids)))
-                  (pure-evt jobs)]))))])
+            (dequeue-evt broker id queue limit))])
 
         (handle-evt
          (alarm-evt (+ (current-inexact-milliseconds)
@@ -178,6 +166,28 @@
            (begin0 null
              (log-worker-debug "performing maintenance...")
              (broker-perform-maintenance! broker id))))))]))
+
+(define (dequeue-evt broker id queue limit)
+  (nack-guard-evt
+   (lambda (nack)
+     (match (broker-dequeue! broker id queue limit)
+       [(list)
+        (begin0 never-evt
+          (log-worker-debug "nothing to dequeue"))]
+
+       [jobs
+        (define ids
+          (for/list ([j (in-list jobs)])
+            (vector-ref j 0)))
+
+        (thread
+         (lambda ()
+           (sync nack)
+           (broker-requeue! broker id ids)
+           (log-worker-debug "requeued job due to nack: ~.s" ids)))
+
+        (begin0 (pure-evt jobs)
+          (log-worker-debug "dequeued jobs: ~.s" ids))]))))
 
 (define (pure-evt v)
   (handle-evt always-evt (lambda (_) v)))
