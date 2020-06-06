@@ -158,7 +158,7 @@
 
         (handle-evt
          (alarm-evt (+ (current-inexact-milliseconds)
-                       (* (random 15 60) 1000)))
+                       (* (random 1 15) 1000)))
          (lambda _
            (begin0 null
              (log-worker-debug "performing maintenance...")
