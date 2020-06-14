@@ -7,6 +7,7 @@
                      "component-lib"
                      "db-lib"
                      "koyo-lib"
+                     "koyo-north"
                      "threading-lib"
                      "rackunit-lib"
 
