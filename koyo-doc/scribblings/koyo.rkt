@@ -21,7 +21,7 @@
    (lambda ()
      (parameterize ([sandbox-output 'string]
                     [sandbox-error-output 'string]
-                    [sandbox-memory-limit 50])
+                    [sandbox-memory-limit 256])
        (make-evaluator 'racket/base)))))
 
 (void (examples #:eval sandbox (require koyo)))
