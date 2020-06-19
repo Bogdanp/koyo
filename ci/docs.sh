@@ -11,7 +11,7 @@ sudo apt-get update
 sudo apt-get install -y --no-install-recommends gettext-base gpg ssh rsync
 
 log "Building docs..."
-raco scribble +m --dest doc --html-tree 2 --redirect-main 'http://docs.racket-lang.org/' koyo-doc/scribblings/koyo.scrbl
+raco scribble +m --dest doc --html-tree 2 --redirect 'https://docs.racket-lang.org/local-redirect/index.html' koyo-doc/scribblings/koyo.scrbl
 
 log "Decrypting key..."
 mkdir -p /tmp/secrets
