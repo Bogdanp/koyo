@@ -17,7 +17,7 @@
 This module provides functionality for declaring and executing
 asynchronous jobs.  The job queuing functionality is implemented in
 PostgreSQL so you don't need an external message queue.  Jobs are
-guaranteed to be executed at least once.
+guaranteed to be executed at least once once enqueued.
 
 @(begin
    (define-syntax-rule (interaction e ...) (examples #:label #f e ...))
