@@ -18,6 +18,7 @@
  "error.rkt"
  "flash.rkt"
  "haml.rkt"
+ "hasher.rkt"
  "http.rkt"
  "job.rkt"
  "json.rkt"
