@@ -13,8 +13,8 @@
 
 This module exposes a component for storing and retrieving flash
 messages.  @deftech{Flash messages} which are set on one page, are
-available for on the next and then cleared as soon as the next page is
-processed.  Each message is bound to a specific user session.
+available for display on the next and then cleared as soon as the next
+page is processed.  Each message is bound to a specific user session.
 
 @defparam[current-flash-messages messages (listof (cons/c symbol? string?))]{
   This parameter holds the set of flash messages for the current
