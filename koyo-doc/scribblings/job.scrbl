@@ -15,9 +15,9 @@
 @defmodule[koyo/job]
 
 This module provides functionality for declaring and executing
-asynchronous jobs.  The job queuing functionality is implemented in
-PostgreSQL so you don't need an external message queue.  Jobs are
-guaranteed to be executed at least once once enqueued.
+asynchronous jobs.  The job queuing functionality is implemented on
+top of PostgreSQL so you don't need an external message queue.  Jobs
+are guaranteed to be executed at least once once enqueued.
 
 @(begin
    (define-syntax-rule (interaction e ...) (examples #:label #f e ...))
@@ -105,9 +105,9 @@ guaranteed to be executed at least once once enqueued.
 }
 
 @defform[(retry!)]{
-  Schedules the current job so that it may be retried later.  Calling
-  this function outside the body of a @racket[define-job] form is a
-  syntax error.
+  Immediately terminates the current job and re-enqueues it so that it
+  may be executed again at a later time.  Using this form outside the
+  body of a @racket[define-job] form is a syntax error.
 }
 
 @defform[(schedule-at when-expr job-expr)
