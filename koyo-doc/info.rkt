@@ -10,11 +10,13 @@
                      "koyo-lib"
                      "sandbox-lib"
                      "scribble-lib"
+                     "srfi-lite-lib"
                      "web-server-lib"
 
                      "db-doc"
                      "net-doc"
                      "racket-doc"
+                     "srfi-doc-nonfree"
                      "web-server-doc"))
 
 (define update-implies '("koyo-lib"))

@@ -1,9 +1,9 @@
 #lang racket/base
 
-(require koyo/l10n
+(require gregor
+         koyo/l10n
          rackunit
-         srfi/29
-         gregor)
+         srfi/29)
 
 (provide
  l10n-tests)
