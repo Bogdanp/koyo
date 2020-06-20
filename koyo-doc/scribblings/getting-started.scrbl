@@ -21,6 +21,7 @@ runs @exec{raco koyo serve} based on the configuration in
 @filepath{Procfile}) in order to be able to both compile your assets
 and run the web server from a single terminal session.
 
+
 @section{Project Structure}
 
 Running @exec{raco koyo new example} generates the following project
@@ -66,3 +67,19 @@ The application folder is further subdivided into:
         (list @filepath{config.rkt}   "Contains all of the application's configuration options.")
         (list @filepath{dynamic.rkt}  "The main entrypoint for the application.  Everything gets wired together in this file.")
         (list @filepath{info.rkt}     "Describes the package that makes up your application and its dependencies."))]
+
+
+@section{Interactive Console}
+
+Running @exec{raco koyo console} from within the root of a koyo
+application starts an interactive REPL with that application's
+components loaded into scope.
+
+Each component is available by prefixing @tt{$%} to its name.  For
+example, if you have a component named @tt{database} then you would
+access it from the console using @racket[$%database].
+
+The @racket[$%start] and @racket[$%stop] procedures can be used to
+start and, respectively, stop the system from the console.  The
+@racket[$%start] procedure is implicitly called at the beginning of
+every console session.
