@@ -24,17 +24,17 @@
  #"")
 ((define-job
   (say-hello name)
-  (displayln (format "hi ~a!" name))
+  (printf "hi ~a!~n" name)
   (semaphore-post executed?))
  ((3) 0 () 0 () () (c values c (void)))
  #""
  #"")
-((say-hello "Bogdan") ((3) 0 () 0 () () (q values 23)) #"" #"")
+((say-hello "Bogdan") ((3) 0 () 0 () () (q values 27)) #"" #"")
 ((void (sync executed?))
  ((3) 0 () 0 () () (c values c (void)))
  #"hi Bogdan!\n"
  #"")
 ((schedule-at (+minutes (now/moment) 5) (say-hello "Bogdan"))
- ((3) 0 () 0 () () (q values 24))
+ ((3) 0 () 0 () () (q values 28))
  #""
  #"")

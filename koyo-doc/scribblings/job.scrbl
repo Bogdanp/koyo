@@ -2,7 +2,7 @@
 
 @(require (for-label component
                      db
-                     (only-in gregor +minutes now/moment)
+                     (only-in gregor +minutes moment? now/moment)
                      koyo
                      racket/base
                      racket/contract)
@@ -51,7 +51,7 @@ PostgreSQL so you don't need an external message queue.
 (code:line)
 (code:comment "Define a job:")
 (define-job (say-hello name)
-  (displayln (format "hi ~a!" name))
+  (printf "hi ~a!~n" name)
   (semaphore-post executed?))
 
 (code:line)
@@ -117,7 +117,9 @@ PostgreSQL so you don't need an external message queue.
 
   @interaction[
   #:eval db-eval
-  (schedule-at (+minutes (now/moment) 5) (say-hello "Bogdan"))
+  (schedule-at
+   (+minutes (now/moment) 5)
+   (say-hello "Bogdan"))
   ]
 }
 
