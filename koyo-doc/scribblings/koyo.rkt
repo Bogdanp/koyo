@@ -24,7 +24,7 @@
                     [sandbox-memory-limit 256])
        (make-evaluator 'racket/base)))))
 
-(void (examples #:eval sandbox (require koyo)))
+(void (examples #:eval sandbox (require component koyo)))
 
 
 (provide

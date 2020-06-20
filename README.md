@@ -16,7 +16,7 @@ what you use.
 ## Documentation
 
 You can find the documentation on the [Racket package server][docs].
-The package server only updates once every 24 hours so if you want the
+The package server only updates once every few hours so if you want the
 absolute most recent docs, then you can visit [koyoweb.org][docs-master].
 
 ## License
