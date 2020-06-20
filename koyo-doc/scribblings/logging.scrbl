@@ -17,10 +17,13 @@ This module provides utilities for displaying log messages.
                        [#:parent parent logger? (current-logger)]
                        [#:output-port out port? (current-error-port)]) (-> void?)]{
 
-  Starts a background logger that will receive logs based on
-  @racket[levels] and print them to @racket[out].
+  Starts a background thread that receives logs based on
+  @racket[levels] and writes them to @racket[out] using the following
+  format:
 
-  @racket[levels] is a list of topic and level pairs.
+  @tt{    [<timestamp>] [<pid>] [<level>] <topic>: <message>}
+
+  The @racket[levels] argument is a list of topic and level pairs.
 
   The return value is a function that will stop the background thread
   when called.  Calling the stopper function after the thread has been
