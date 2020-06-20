@@ -14,7 +14,7 @@
 @defmodule[koyo/job]
 
 This module provides functionality for declaring and executing
-asynchronous jobs.  The job queueing functionality is implemented in
+asynchronous jobs.  The job queuing functionality is implemented in
 PostgreSQL so you don't need an external message queue.
 
 @(begin
