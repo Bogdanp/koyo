@@ -7,6 +7,7 @@
 (define build-deps '("component-doc"
                      "component-lib"
                      "db-lib"
+                     "gregor-lib"
                      "koyo-lib"
                      "sandbox-lib"
                      "scribble-lib"
@@ -14,6 +15,7 @@
                      "web-server-lib"
 
                      "db-doc"
+                     "gregor-doc"
                      "net-doc"
                      "racket-doc"
                      "srfi-doc-nonfree"
