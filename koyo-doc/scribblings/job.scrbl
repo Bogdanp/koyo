@@ -1,6 +1,7 @@
 #lang scribble/doc
 
 @(require (for-label component
+                     db
                      (only-in gregor +minutes now/moment)
                      koyo
                      racket/base
