@@ -1,6 +1,6 @@
 #lang info
 
-(define version "0.5.2")
+(define version "0.6.0")
 (define collection 'multi)
 
 (define deps '("base"
