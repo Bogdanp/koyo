@@ -19,9 +19,10 @@
 
 (define mail-tests
   (system-test-suite mail ([db make-test-database]
+                           [hasher make-test-hasher]
                            [mailer make-test-mailer]
-                           [users (db mailer) (lambda (db _)
-                                                (make-user-manager db))])
+                           [users (db hasher mailer) (lambda (db h _)
+                                                       (make-user-manager db h))])
 
    #:before
    (lambda _

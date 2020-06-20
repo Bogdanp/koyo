@@ -5,12 +5,12 @@
          deta
          gregor
          koyo/database
+         koyo/hasher
          koyo/profiler
          koyo/random
          racket/contract
          racket/string
-         threading
-         "hash.rkt")
+         threading)
 
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -30,13 +30,11 @@
   (lambda (u)
     (set-user-updated-at u (now/moment))))
 
-(define/contract (set-user-password u p)
-  (-> user? string? user?)
-  (set-user-password-hash u (make-password-hash p)))
+(define (set-password um u p)
+  (set-user-password-hash u (hasher-make-hash (user-manager-hasher um) p)))
 
-(define/contract (user-password-valid? u p)
-  (-> user? string? boolean?)
-  (hash-matches? (user-password-hash u) p))
+(define (password-valid? um u p)
+  (hasher-hash-matches? (user-manager-hasher um) (user-password-hash u) p))
 
 
 ;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,20 +67,20 @@
 (struct exn:fail:user-manager exn:fail ())
 (struct exn:fail:user-manager:username-taken exn:fail:user-manager ())
 
-(struct user-manager (db)
+(struct user-manager (db hasher)
   #:transparent
   #:methods gen:component [])
 
-(define/contract (make-user-manager db)
-  (-> database? user-manager?)
-  (user-manager db))
+(define/contract (make-user-manager db h)
+  (-> database? hasher? user-manager?)
+  (user-manager db h))
 
 (define/contract (user-manager-create! um username password)
   (-> user-manager? string? string? user?)
 
   (define user
     (~> (make-user #:username username)
-        (set-user-password password)))
+        (set-password um _ password)))
 
   (with-handlers ([exn:fail:sql:constraint-violation?
                    (lambda _
@@ -138,7 +136,7 @@
   (-> user-manager? string? string? (or/c false/c user?))
   (with-timing 'user-manager "user-manager-login"
     (define user (user-manager-lookup/username um username))
-    (and user (user-password-valid? user password) user)))
+    (and user (password-valid? um user password) user)))
 
 (define/contract (user-manager-verify! um id verification-code)
   (-> user-manager? exact-positive-integer? string? void?)
@@ -169,7 +167,7 @@
                 (and~> (lookup conn
                                (~> (from user #:as u)
                                    (where (= u.id ,user-id))))
-                       (set-user-password password)
+                       (set-password um _ password)
                        (update! conn _))))]
 
 

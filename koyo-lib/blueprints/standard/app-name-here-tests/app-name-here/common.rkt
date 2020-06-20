@@ -4,6 +4,7 @@
          db
          koyo/database
          koyo/database/migrator
+         koyo/hasher
          koyo/session
          racket/runtime-path
          rackunit/text-ui
@@ -45,6 +46,18 @@
     (lambda _
       (query-exec conn "lock table __test_mutex")
       (run-tests test verbosity))))
+
+
+;; hasher ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ make-test-hasher)
+
+(define (make-test-hasher)
+  ((make-argon2id-hasher-factory
+    #:parallelism 1
+    #:iterations 128
+    #:memory 128)))
 
 
 ;; mail ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
