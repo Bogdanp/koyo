@@ -16,7 +16,8 @@
 
 This module provides functionality for declaring and executing
 asynchronous jobs.  The job queuing functionality is implemented in
-PostgreSQL so you don't need an external message queue.
+PostgreSQL so you don't need an external message queue.  Jobs are
+guaranteed to be executed at least once.
 
 @(begin
    (define-syntax-rule (interaction e ...) (examples #:label #f e ...))
@@ -127,7 +128,9 @@ PostgreSQL so you don't need an external message queue.
 @section{Brokers}
 
 @deftech{Job brokers} handle the details of storing and retrieving
-jobs to and from the database.
+jobs to and from the database.  Each broker permanently leases a
+connection from the database pool to listen for notifications and then
+other connections are leased and put back into the pool as needed.
 
 @defparam[current-broker broker broker?]{
   Holds the current broker that is used to enqueue jobs.
