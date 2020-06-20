@@ -11,9 +11,9 @@
 
 @defmodule[koyo/error]
 
-This module exposes an error handling wrapper that displays stack
-traces in the browser in a slightly prettier way that the default web
-server error handler:
+This module exposes an error handling middleware that displays stack
+traces in the browser in a prettier way that the default web server
+error handler:
 
 @centered[
  (image
