@@ -86,17 +86,20 @@
                (semaphore-post ready?))
              (displayln line))))))
 
-    (unless (sync/timeout 10 ready?)
+    (define stopped-evt
+      (handle-evt
+       (thread
+        (lambda ()
+          (control 'wait)))
+       (lambda (_)
+         (control 'status))))
+
+    (unless (sync/timeout 10 stopped-evt ready?)
       (log-runner-warning "timed out while waiting for 'listening' output"))
     (log-runner-info "application process started with pid ~a" pid)
 
     (values
-     (handle-evt
-      (thread
-       (lambda ()
-         (control 'wait)))
-      (lambda (_)
-        (control 'status)))
+     stopped-evt
      (lambda ()
        (control 'interrupt)
        (control 'wait)
