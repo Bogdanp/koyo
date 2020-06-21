@@ -197,7 +197,9 @@
     (job-meta-arguments j))
 
   (haml
-   (:pre "(" (job-meta-job j))
+   (:a
+    ([:href (make-uri "jobs" (job-meta-id j))])
+    (:pre "(" (job-meta-job j)))
 
    (:div
     ,@(for/list ([kw (in-list kws)]
