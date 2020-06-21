@@ -37,9 +37,10 @@ are guaranteed to be executed at least once once enqueued.
 #:eval db-eval
 (define-system example
  [broker (db) make-broker]
- [db (make-database-factory (lambda ()
-                             (postgresql-connect #:user "example"
-                                                 #:database "example")))]
+ [db (make-database-factory
+      (lambda ()
+        (postgresql-connect #:user "example"
+                            #:database "example")))]
  [worker (broker) (make-worker-factory)])
 
 (code:line)

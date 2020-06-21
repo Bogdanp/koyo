@@ -5,7 +5,22 @@
                      racket/base
                      racket/contract
                      racket/future)
+          racket/runtime-path
           "koyo.rkt")
+
+@(begin
+   (define-syntax-rule (interaction e ...) (examples #:label #f e ...))
+   (define-runtime-path log-file "hasher-log.rktd")
+   (define log-mode (if (getenv "KOYO_HASHER_RECORD") 'record 'replay))
+   (define (make-pg-eval log-file)
+     (make-log-based-eval log-file log-mode))
+   (define hasher-eval (make-pg-eval log-file)))
+
+@interaction[
+#:hidden
+#:eval hasher-eval
+(require component koyo)
+]
 
 @title[#:tag "password-hashing"]{Password Hashing}
 
@@ -65,9 +80,8 @@ blueprint.
   It's strongly recommended that you pick config values suitable to
   your own environment.
 
-  @examples[
-  #:label #f
-  #:eval sandbox
+  @interaction[
+  #:eval hasher-eval
   (define the-hasher
    (component-start ((make-argon2id-hasher-factory))))
 
