@@ -6,6 +6,7 @@
          racket/future
          racket/match
          racket/path
+         racket/string
          racket/system)
 
 (provide
@@ -64,15 +65,29 @@
         (list dynamic-module-path)))
 
   (define (run)
+    (define-values (stderr-in stderr-out)
+      (make-pipe))
     (match-define (list in out pid err control)
       (parameterize ([subprocess-group-enabled #t])
         (apply process*/ports
                (current-output-port)
                (current-input-port)
-               (current-error-port)
+               stderr-out
                racket-exe
                command-args)))
 
+    (define ready? (make-semaphore))
+    (define stderr-filter
+      (thread
+       (lambda ()
+         (parameterize ([current-output-port (current-error-port)])
+           (for ([line (in-lines stderr-in)])
+             (when (string-contains? line "server: listening")
+               (semaphore-post ready?))
+             (displayln line))))))
+
+    (unless (sync/timeout 10 ready?)
+      (log-runner-warning "timed out while waiting for 'listening' output"))
     (log-runner-info "application process started with pid ~a" pid)
 
     (values
@@ -84,7 +99,8 @@
         (control 'status)))
      (lambda ()
        (control 'interrupt)
-       (control 'wait))))
+       (control 'wait)
+       (close-output-port stderr-out))))
 
   (define (make! [parallel? #f])
     (if parallel?
