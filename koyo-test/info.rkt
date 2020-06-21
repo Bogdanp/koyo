@@ -9,6 +9,7 @@
                      "db-lib"
                      "gregor-lib"
                      "koyo-lib"
+                     "libargon2"
                      "rackunit-lib"
                      "srfi-lite-lib"
                      "web-server-lib"))
