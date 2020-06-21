@@ -86,12 +86,14 @@
        (control 'interrupt)
        (control 'wait))))
 
-  (define (make!)
-    (raco "make" "-j" (~a (processor-count)) dynamic-module-path))
+  (define (make! [parallel? #f])
+    (if parallel?
+        (raco "make" "-j" (~a (processor-count)) dynamic-module-path)
+        (raco "make" dynamic-module-path)))
 
   (when recompile?
     (log-runner-info "compiling application")
-    (make!))
+    (make! #t))
 
   (log-runner-info "starting application process")
   (let loop ()
