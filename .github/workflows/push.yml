@@ -22,10 +22,11 @@ jobs:
     - name: Install Racket
       uses: Bogdanp/setup-racket@master
       with:
-        version: "7.6"
+        variant: CS
+        version: "7.7"
 
     - name: Install pkg and deps
-      run: raco pkg install --batch --auto koyo-lib/ koyo-doc/ koyo-test/ koyo/ libargon2
+      run: raco pkg install --batch --auto koyo-lib/ koyo-doc/ koyo-test/ koyo/
 
     - name: Run tests for koyo itself
       run: raco test -j 4 koyo-test/
