@@ -9,6 +9,7 @@
                      "db-lib"
                      "gregor-lib"
                      "koyo-lib"
+                     "libargon2"
                      "sandbox-lib"
                      "scribble-lib"
                      "srfi-lite-lib"
