@@ -7,6 +7,7 @@
          koyo/database/migrator
          koyo/flash
          koyo/hasher
+         koyo/job
          koyo/logging
          koyo/mail/postmark
          koyo/server
@@ -30,35 +31,41 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth flashes mailer migrator sessions users) make-app]
+  [app (auth broker flashes mailer migrator sessions users) make-app]
   [auth (sessions users) make-auth-manager]
+  [broker (db) make-broker]
   [db (make-database-factory
        (lambda ()
-         (postgresql-connect #:database config:db-name
-                             #:user     config:db-username
-                             #:password config:db-password
-                             #:server   config:db-host
-                             #:port     config:db-port)))]
+         (postgresql-connect
+          #:database config:db-name
+          #:user     config:db-username
+          #:password config:db-password
+          #:server   config:db-host
+          #:port     config:db-port)))]
   [flashes (sessions) make-flash-manager]
   [hasher (make-argon2id-hasher-factory
            #:parallelism 2
            #:iterations 256
            #:memory 2048)]
-  [mailer (make-mailer-factory #:adapter mail-adapter
-                               #:sender config:support-email
-                               #:common-variables config:common-mail-variables)]
+  [mailer (make-mailer-factory
+           #:adapter mail-adapter
+           #:sender config:support-email
+           #:common-variables config:common-mail-variables)]
   [migrator (db) (make-migrator-factory migrations-path)]
   [server (app) (compose1
-                 (make-server-factory #:host config:http-host
-                                      #:port config:http-port)
+                 (make-server-factory
+                  #:host config:http-host
+                  #:port config:http-port)
                  app-dispatcher)]
-  [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
-                                          #:cookie-secure? #f
-                                          #:cookie-same-site 'lax
-                                          #:shelf-life config:session-shelf-life
-                                          #:secret-key config:session-secret-key
-                                          #:store (make-memory-session-store #:file-path "/tmp/app-name-here-session.rktd"))]
-  [users (db hasher) make-user-manager])
+  [sessions (make-session-manager-factory
+             #:cookie-name config:session-cookie-name
+             #:cookie-secure? #f
+             #:cookie-same-site 'lax
+             #:shelf-life config:session-shelf-life
+             #:secret-key config:session-secret-key
+             #:store (make-memory-session-store #:file-path "/tmp/app-name-here-session.rktd"))]
+  [users (db hasher) make-user-manager]
+  [worker (broker) (make-worker-factory)])
 
 
 ;; Interface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,7 +85,8 @@
                 (north-adapter        . ,config:log-level)
                 (server               . ,config:log-level)
                 (session              . ,config:log-level)
-                (system               . ,config:log-level))))
+                (system               . ,config:log-level)
+                (worker               . info))))
 
   (current-system prod-system)
   (system-start prod-system)

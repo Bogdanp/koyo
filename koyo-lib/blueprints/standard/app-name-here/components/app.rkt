@@ -8,6 +8,7 @@
          koyo/dispatch
          koyo/error
          koyo/flash
+         koyo/job
          koyo/l10n
          koyo/mime
          koyo/preload
@@ -53,8 +54,8 @@
 (struct app (dispatcher)
   #:methods gen:component [])
 
-(define/contract (make-app auth flashes mailer _migrator sessions users)
-  (-> auth-manager? flash-manager? mailer? migrator? session-manager? user-manager? app?)
+(define/contract (make-app auth broker flashes mailer _migrator sessions users)
+  (-> auth-manager? broker? flash-manager? mailer? migrator? session-manager? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
@@ -92,6 +93,7 @@
         (wrap-profiler)
         ((wrap-errors config:debug))))
 
+  (current-broker broker)
   (when config:debug
     (current-continuation-key-cookie-secure? #f))
   (current-continuation-wrapper stack)
