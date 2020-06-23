@@ -6,6 +6,7 @@
          koyo/cors
          koyo/database/migrator
          koyo/dispatch
+         koyo/error
          koyo/flash
          koyo/l10n
          koyo/mime
@@ -88,7 +89,8 @@
         (wrap-protect-continuations)
         (wrap-preload)
         (wrap-cors)
-        (wrap-profiler)))
+        (wrap-profiler)
+        ((wrap-errors config:debug))))
 
   (when config:debug
     (current-continuation-key-cookie-secure? #f))
