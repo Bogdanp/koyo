@@ -30,6 +30,7 @@
  wrap-protect-continuations
 
  send/suspend/protect
+ send/back/protect
  send/forward/protect
  send/suspend/dispatch/protect
  redirect/get/protect
@@ -114,6 +115,8 @@
 (define/contract (send/suspend/protect f)
   (-> (-> string? can-be-response?) request?)
   (protect-request (send/suspend f)))
+
+(define send/back/protect send/back)
 
 (define/contract (send/forward/protect f)
   (-> (-> string? can-be-response?) request?)
