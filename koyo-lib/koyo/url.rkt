@@ -69,9 +69,10 @@
 
 (define/contract (reverse-uri #:query [params null] . args)
   (->* ()
-       (#:params (listof (cons symbol? (or/c false/c string?))))
+       (#:query (listof (cons/c symbol? (or/c false/c string?))))
        #:rest any/c
        string?)
+
   (define uri (apply (current-reverse-uri-fn) args))
   (cond
     [(null? params) uri]
