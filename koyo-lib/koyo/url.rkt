@@ -67,13 +67,13 @@
   (make-parameter (lambda (name . args)
                     (error "current-reverse-uri-fn not installed"))))
 
-(define/contract (reverse-uri #:query [params null] . args)
-  (->* ()
+(define/contract (reverse-uri where #:query [params null] . args)
+  (->* (symbol?)
        (#:query (listof (cons/c symbol? (or/c false/c string?))))
        #:rest any/c
        string?)
 
-  (define uri (apply (current-reverse-uri-fn) args))
+  (define uri (apply (current-reverse-uri-fn) where args))
   (cond
     [(null? params) uri]
     [else (format "~a?~a" uri (alist->form-urlencoded params))]))
