@@ -44,7 +44,8 @@ application.
   The default implementation raises an error.
 }
 
-@defproc[(reverse-uri [route symbol?]
+@defproc[(reverse-uri [where symbol?]
+                      [#:query query (listof (cons/c symbol? (or/c false/ string?))) null]
                       [arg any/c] ...) string?]{
 
   Applies the @racket[current-reverse-uri-fn] to @racket[route] and
