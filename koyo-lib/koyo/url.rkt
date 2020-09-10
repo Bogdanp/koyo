@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require net/url
+(require net/uri-codec
+         net/url
          racket/contract
          racket/function
          racket/match
@@ -66,5 +67,12 @@
   (make-parameter (lambda (name . args)
                     (error "current-reverse-uri-fn not installed"))))
 
-(define (reverse-uri . args)
-  (apply (current-reverse-uri-fn) args))
+(define/contract (reverse-uri #:query [params null] . args)
+  (->* ()
+       (#:params (listof (cons symbol? (or/c false/c string?))))
+       #:rest any/c
+       string?)
+  (define uri (apply (current-reverse-uri-fn) args))
+  (cond
+    [(null? params) uri]
+    [else (format "~a?~a" uri (alist->form-urlencoded params))]))
