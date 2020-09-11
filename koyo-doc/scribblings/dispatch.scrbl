@@ -47,7 +47,7 @@ function.
   @racket[request], can return the required set of roles for the
   matching @racket[dispatch-fun].
 
-  Reverse URI generation is different from @racket[dispatch-roles] in
+  Reverse URI generation is different from @racket[dispatch-rules] in
   that the first argument is a symbol representing the name of the
   route rather than the specific @racket[dispatch-fun] that was used.
   This helps avoid deep dependency chains between routes.  The name
