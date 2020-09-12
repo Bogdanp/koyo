@@ -14,6 +14,7 @@
          racket/system
          raco/command-name
          "console.rkt"
+         "generator.rkt"
          "logging.rkt"
          "runner.rkt")
 
@@ -58,12 +59,13 @@
    "usage: raco koyo <command> <option> ... <arg> ..."
    ""
    "available commands:"
-   "  console  run a REPL for the current application"
-   "  dist     generate a deployable distribution of the application"
-   "  graph    generate a graph of all the components in the current application"
-   "  help     display this help message"
-   "  new      generate a new koyo-based project from a blueprint"
-   "  serve    run a server for the current application"))
+   "  console   run a REPL for the current application"
+   "  dist      generate a deployable distribution of the application"
+   "  generate  generate various types of configuration files"
+   "  graph     generate a graph of all the components in the current application"
+   "  help      display this help message"
+   "  new       generate a new koyo-based project from a blueprint"
+   "  serve     run a server for the current application"))
 
 (define (handle-console)
   (start-console
@@ -128,6 +130,32 @@
 
     (delete-directory/files target-static-path #:must-exist? #f)
     (copy-directory/files static-path target-static-path)))
+
+(define (handle-generate)
+  (define dynamic-module-path (infer-dynamic-module-path))
+  (define what
+    (command-line
+     #:once-each
+     [("--dynamic-module-path" "-p")
+      path
+      "the path to dynamic.rkt, inferred by default"
+      (set! dynamic-module-path path)]
+     #:args (what)
+     what))
+
+  (define project-name
+    (infer-project-name dynamic-module-path))
+
+  (define project-root
+    (simplify-path (build-path dynamic-module-path 'up 'up)))
+
+  (case what
+    [("dockerfile")
+     (with-handlers ([exn:fail? (lambda (e)
+                                  (exit-with-errors! @~a{error: @(exn-message e)}))])
+       (generate-dockerfile! project-root project-name))]
+    [else
+     (exit-with-errors! @~a{error: unknown template '@|what|'})]))
 
 (define (handle-graph)
   (define dynamic-module-path
@@ -234,12 +262,13 @@
                            (watcher . debug))))
 
 (define all-commands
-  (hasheq 'console handle-console
-          'dist    handle-dist
-          'graph   handle-graph
-          'help    handle-help
-          'new     handle-new
-          'serve   handle-serve))
+  (hasheq 'console  handle-console
+          'dist     handle-dist
+          'generate handle-generate
+          'graph    handle-graph
+          'help     handle-help
+          'new      handle-new
+          'serve    handle-serve))
 
 (define-values (command handler args)
   (match (current-command-line-arguments)
