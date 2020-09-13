@@ -49,15 +49,16 @@
                              RUN raco pkg install --batch --auto -D @|project-name|/
 
                              COPY --from=assets /opt/app/static /opt/app/static
+                             # The `openssl/libcrypto' module searches for a version-less .so on Linux, but the distribution only includes
+                             # the versioned name so creating the symlink ensures it'll be included in the distribution.
+                             RUN ln -s /usr/lib/racket/libcrypto.so.1.1 /usr/lib/racket/libcrypto.so
                              RUN raco koyo dist ++lang north
 
                              FROM debian:10-slim
 
                              RUN apt-get update -y \
                                && apt-get install -y --no-install-recommends \
-                                    dumb-init \
-                                    libargon2-1 \
-                                    openssl
+                                    dumb-init
 
                              ENV @(config-var 'http-host) "0.0.0.0"
                              COPY --from=build /opt/app/dist /opt/dist
