@@ -1,32 +1,14 @@
 #lang racket/base
 
-(require (for-syntax racket/base)
-         component
-         koyo/continuation
-         koyo/cors
+(require koyo
          koyo/database/migrator
-         koyo/dispatch
-         koyo/error
-         koyo/flash
-         koyo/job
-         koyo/l10n
-         koyo/mime
-         koyo/preload
-         koyo/profiler
-         koyo/session
-         koyo/url
-         net/url
          racket/contract
-         racket/runtime-path
+         racket/list
          threading
          web-server/dispatch
-         (prefix-in files: web-server/dispatchers/dispatch-files)
-         (prefix-in filter: web-server/dispatchers/dispatch-filter)
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
-         web-server/dispatchers/filesystem-map
          web-server/managers/lru
          web-server/servlet-dispatch
-         (prefix-in config: "../config.rkt")
          "../pages/all.rkt"
          "auth.rkt"
          "mail.rkt"
@@ -37,25 +19,16 @@
  app?
  app-dispatcher)
 
-(define-runtime-path static-path
-  (build-path 'up 'up "static"))
-
-(define url->path
-  (make-url->path static-path))
-
-(define (static-url->path u)
-  (url->path (struct-copy url u [path (cdr (url-path u))])))
-
-(define static-dispatcher
-  (files:make
-   #:url->path static-url->path
-   #:path->mime-type path->mime-type))
-
 (struct app (dispatcher)
-  #:methods gen:component [])
+  #:transparent)
 
-(define/contract (make-app auth broker flashes mailer _migrator sessions users)
-  (-> auth-manager? broker? flash-manager? mailer? migrator? session-manager? user-manager? app?)
+(define/contract (make-app auth broker flashes mailer _migrator sessions users
+                           #:debug? [debug? #f]
+                           #:static-path [static-path #f])
+  (->* (auth-manager? broker? flash-manager? mailer? migrator? session-manager? user-manager?)
+       (#:debug? boolean?
+        #:static-path (or/c #f path-string?))
+       app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
@@ -91,10 +64,10 @@
         (wrap-preload)
         (wrap-cors)
         (wrap-profiler)
-        ((wrap-errors config:debug))))
+        ((wrap-errors debug?))))
 
   (current-broker broker)
-  (when config:debug
+  (when debug?
     (current-continuation-key-cookie-secure? #f))
   (current-continuation-wrapper stack)
   (current-reverse-uri-fn reverse-uri)
@@ -102,7 +75,10 @@
   (define manager
     (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))
 
-  (app (sequencer:make
-        (filter:make #rx"^/static/.+$" static-dispatcher)
-        (dispatch/servlet #:manager manager (stack dispatch))
-        (dispatch/servlet #:manager manager (stack not-found-page)))))
+  (define dispatchers
+    (list
+     (and static-path (make-static-dispatcher static-path))
+     (dispatch/servlet #:manager manager (stack dispatch))
+     (dispatch/servlet #:manager manager (stack not-found-page))))
+
+  (app (apply sequencer:make (filter-map values dispatchers))))

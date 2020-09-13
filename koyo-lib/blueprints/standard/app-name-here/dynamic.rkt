@@ -25,13 +25,20 @@
 (define-runtime-path migrations-path
   (build-path 'up "migrations"))
 
+(define-runtime-path static-path
+  (build-path 'up "static"))
+
 (define mail-adapter
   (if config:postmark-token
       (make-postmark-mail-adapter (postmark config:postmark-token))
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth broker flashes mailer migrator sessions users) make-app]
+  [app (auth broker flashes mailer migrator sessions users)
+       (lambda deps
+         (apply make-app deps
+                #:debug? config:debug
+                #:static-path static-path))]
   [auth (sessions users) make-auth-manager]
   [broker (db) make-broker]
   [db (make-database-factory
