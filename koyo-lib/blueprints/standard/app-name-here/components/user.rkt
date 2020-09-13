@@ -68,8 +68,7 @@
 (struct exn:fail:user-manager:username-taken exn:fail:user-manager ())
 
 (struct user-manager (db hasher)
-  #:transparent
-  #:methods gen:component [])
+  #:transparent)
 
 (define/contract (make-user-manager db h)
   (-> database? hasher? user-manager?)
