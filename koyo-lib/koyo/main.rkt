@@ -31,6 +31,7 @@
  "random.rkt"
  "server.rkt"
  "session.rkt"
+ "static.rkt"
  "testing.rkt"
  "url.rkt"
  "util.rkt"
