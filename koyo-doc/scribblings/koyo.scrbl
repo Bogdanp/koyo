@@ -47,6 +47,7 @@ exactly which parts you want to use.
 @include-section["random.scrbl"]
 @include-section["server.scrbl"]
 @include-section["session.scrbl"]
+@include-section["static.scrbl"]
 @include-section["testing.scrbl"]
 @include-section["url.scrbl"]
 
