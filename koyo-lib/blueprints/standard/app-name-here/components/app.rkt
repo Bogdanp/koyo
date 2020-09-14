@@ -24,9 +24,11 @@
 
 (define/contract (make-app auth broker flashes mailer _migrator sessions users
                            #:debug? [debug? #f]
+                           #:memory-threshold [memory-threshold (* 1 1024 1024 1024)]
                            #:static-path [static-path #f])
   (->* (auth-manager? broker? flash-manager? mailer? migrator? session-manager? user-manager?)
        (#:debug? boolean?
+        #:memory-threshold exact-positive-integer?
         #:static-path (or/c #f path-string?))
        app?)
   (define-values (dispatch reverse-uri req-roles)
@@ -73,7 +75,7 @@
   (current-reverse-uri-fn reverse-uri)
 
   (define manager
-    (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))
+    (make-threshold-LRU-manager (stack expired-page) memory-threshold))
 
   (define dispatchers
     (list

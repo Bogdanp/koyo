@@ -12,7 +12,9 @@
 
 (define-system prod
   [app (sessions) (lambda (sessions)
-                    (make-app config:debug sessions))]
+                    (make-app sessions
+                              #:debug? config:debug
+                              #:memory-threshold config:continuation-manager-memory-threshold))]
   [server (app) (compose1
                  (make-server-factory
                   #:host config:http-host

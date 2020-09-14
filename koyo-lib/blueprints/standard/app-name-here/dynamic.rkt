@@ -38,6 +38,7 @@
        (lambda deps
          (apply make-app deps
                 #:debug? config:debug
+                #:memory-threshold config:continuation-manager-memory-threshold
                 #:static-path static-path))]
   [auth (sessions users) make-auth-manager]
   [broker (db) make-broker]
