@@ -40,3 +40,6 @@
 (define-option session-secret-key-path #:default "/tmp/app-name-here-secret-key")
 (define-option session-secret-key
   (or session-secret-key (make-secret-salt/file session-secret-key-path)))
+
+(define-option continuation-manager-memory-threshold #:default (number->string (* 512 1024 1024))  ;; 512 MiB
+  (string->number continuation-manager-memory-threshold))

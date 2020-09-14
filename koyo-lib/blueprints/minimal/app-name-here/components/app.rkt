@@ -1,6 +1,7 @@
-#lang racket
+#lang racket/base
 
 (require koyo
+         racket/contract
          threading
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          web-server/managers/lru
@@ -12,10 +13,16 @@
  app?
  app-dispatcher)
 
-(struct app (dispatcher))
+(struct app (dispatcher)
+  #:transparent)
 
-(define/contract (make-app debug? sessions)
-  (-> boolean? session-manager? app?)
+(define/contract (make-app sessions
+                           #:debug? [debug? #f]
+                           #:memory-threshold [memory-threshold (* 512 1024 1024)])
+  (->* (session-manager?)
+       (#:debug? boolean?
+        #:memory-threshold exact-positive-integer?)
+       app?)
   (define-values (dispatch reverse-uri _req-roles)
     (dispatch-rules+roles
      [("") home-page]))
@@ -35,7 +42,7 @@
   (current-reverse-uri-fn reverse-uri)
 
   (define manager
-    (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))
+    (make-threshold-LRU-manager (stack expired-page) memory-threshold))
 
   (app
    (sequencer:make

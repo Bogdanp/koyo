@@ -73,6 +73,9 @@
 (define-option session-secret-key
   (or session-secret-key (make-secret-salt/file session-secret-key-path)))
 
+(define-option continuation-manager-memory-threshold #:default (number->string (* 1 1024 1024 1024))  ;; 1 GiB
+  (string->number continuation-manager-memory-threshold))
+
 (define-option postmark-token)
 
 (define-option product-name #:default "AppNameHere")
