@@ -1,7 +1,9 @@
 #lang racket/base
 
 (require racket/contract
+         racket/fixnum
          racket/format
+         racket/port
          racket/random
          racket/string)
 
@@ -10,13 +12,12 @@
  generate-random-string)
 
 (define (crypto-generate-random-string len)
-  (string-join
-   (for/list ([byte (in-bytes (crypto-random-bytes (/ len 2)))])
-     (~a (number->string byte 16)
-         #:align 'right
-         #:min-width 2
-         #:pad-string "0"))
-   ""))
+  (with-output-to-string
+    (lambda ()
+      (for ([b (in-bytes (crypto-random-bytes (/ len 2)))])
+        (when (fx< b 16)
+          (display "0"))
+        (display (number->string b 16))))))
 
 (define/contract current-random-string-generator
   (parameter/c (-> exact-positive-integer? non-empty-string?))
