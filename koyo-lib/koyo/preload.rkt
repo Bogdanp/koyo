@@ -3,6 +3,7 @@
 (require racket/contract
          racket/match
          racket/path
+         racket/port
          web-server/servlet
          "profiler.rkt")
 
@@ -36,8 +37,15 @@
 (define/contract (make-preload-headers)
   (-> (listof header?))
   (with-timing 'preload "make-preload-headers"
-    (for/list ([path (current-preload-dependencies)] #:when (path->preload-as path))
-      (header #"Link" (string->bytes/utf-8 (format "<~a>; rel=preload; as=~a" path (path->preload-as path)))))))
+    (for*/list ([path (in-list (current-preload-dependencies))]
+                [preload-as (in-value (path->preload-as path))]
+                #:when preload-as)
+      (header #"Link" (with-output-to-bytes
+                        (lambda ()
+                          (display "<")
+                          (display path)
+                          (display ">; rel=preload; as=")
+                          (display preload-as)))))))
 
 (define/contract ((wrap-preload handler) req)
   (-> (-> request? can-be-response?)
