@@ -1,6 +1,8 @@
 #lang scribble/manual
 
 @(require (for-label koyo)
+          scribble/core
+          scribble/html-properties
           "koyo.rkt")
 
 @title{@exec{koyo}: Web Development Toolkit}
@@ -18,8 +20,19 @@ koyo is a web application development toolkit that expands upon
 @web-server-link with all the functionality that a web app typically
 needs in a complete package.
 
-All of koyo's components are decoupled so you get to pick and choose
-exactly which parts you want to use.
+@(define embed-style
+  (make-style
+   "youtube-embed"
+   (list
+    (make-alt-tag "iframe")
+    (make-attributes '((width           . "700")
+                       (height          . "394")
+                       (src             . "https://www.youtube.com/embed/DS_0-lqiSVs")
+                       (frameborder     . "0")
+                       (allowfullscreen . ""))))))
+
+@element[embed-style]{
+}
 
 @local-table-of-contents[]
 
