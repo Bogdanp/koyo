@@ -23,23 +23,19 @@
  with-database-connection
  with-database-transaction)
 
-(struct database (custodian connection-pool options)
+(struct database (connection-pool options)
   #:methods gen:component
   [(define (component-start db)
      (define options (database-options db))
      (define connect (hash-ref options 'connector))
-     (define custodian (make-custodian))
-     (define pool (parameterize ([current-custodian custodian])
-                    (connection-pool
-                     #:max-connections (hash-ref options 'max-connections)
-                     #:max-idle-connections (hash-ref options 'max-idle-connections)
-                     connect)))
-     (struct-copy database db
-                  [custodian custodian]
-                  [connection-pool pool]))
+     (define pool
+       (connection-pool
+        #:max-connections (hash-ref options 'max-connections)
+        #:max-idle-connections (hash-ref options 'max-idle-connections)
+        connect))
+     (struct-copy database db [connection-pool pool]))
 
    (define (component-stop db)
-     (custodian-shutdown-all (database-custodian db))
      (struct-copy database db [connection-pool #f]))])
 
 (define/contract ((make-database-factory connector
@@ -49,9 +45,9 @@
        (#:max-connections exact-positive-integer?
         #:max-idle-connections exact-positive-integer?)
        (-> database?))
-  (database #f #f (hasheq 'connector connector
-                          'max-connections max-connections
-                          'max-idle-connections max-idle-connections)))
+  (database #f (hasheq 'connector connector
+                       'max-connections max-connections
+                       'max-idle-connections max-idle-connections)))
 
 (define current-database-connection
   (make-parameter #f))
