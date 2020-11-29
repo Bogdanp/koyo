@@ -2,7 +2,6 @@
 
 (require component
          racket/contract
-         racket/function
          racket/generic
          racket/hash
          racket/list
@@ -15,11 +14,19 @@
 (provide
  gen:mail-adapter
  mail-adapter?
+ mail-adapter-send-email
  mail-adapter-send-email-with-template)
 
 (define-logger mail-adapter)
 
 (define-generics mail-adapter
+  (mail-adapter-send-email
+   mail-adapter
+   #:to to
+   #:from from
+   #:subject subject
+   #:text-content [text-content]
+   #:html-content [html-content])
   (mail-adapter-send-email-with-template
    mail-adapter
    #:to to
@@ -38,23 +45,35 @@
 
 (struct stub-mail-adapter (queue)
   #:methods gen:mail-adapter
-  [(define (mail-adapter-send-email-with-template ma
+  [(define (mail-adapter-send-email ma
+                                    #:to to
+                                    #:from from
+                                    #:subject subject
+                                    #:text-content [text-content #f]
+                                    #:html-content [html-content #f])
+     (define message
+       (hasheq 'to to
+               'from from
+               'subject subject
+               'text-content text-content
+               'html-content html-content))
+
+     (push-message! ma message)
+     (log-mail-adapter-info "email added to outbox ~v" message))
+
+   (define (mail-adapter-send-email-with-template ma
                                                   #:to to
                                                   #:from from
                                                   #:template-id [template-id #f]
                                                   #:template-alias [template-alias #f]
                                                   #:template-model template-model)
-     (unless (or template-id template-alias)
-       (raise-user-error 'mail-adapter-send-email-with-template
-                         "either template-id or template-alias must be provided"))
-
      (define message
        (hasheq 'to to
                'from from
                'template (or template-id template-alias)
                'template-model template-model))
 
-     (box-swap! (stub-mail-adapter-queue ma) (curry cons message))
+     (push-message! ma message)
      (log-mail-adapter-info "templated email added to outbox ~v" message))])
 
 (define/contract (make-stub-mail-adapter)
@@ -64,6 +83,11 @@
 (define/contract (stub-mail-adapter-outbox ma)
   (-> stub-mail-adapter? (listof hash?))
   (unbox (stub-mail-adapter-queue ma)))
+
+(define (push-message! ma m)
+  (box-swap! (stub-mail-adapter-queue ma)
+             (lambda (queue)
+               (cons m queue))))
 
 
 ;; Mailer ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -75,6 +99,7 @@
  mailer-sender
  mailer-common-variables
  mailer-merge-common-variables
+ mailer-send-email
  mailer-send-email-with-template)
 
 (struct mailer (adapter sender common-variables)
@@ -96,19 +121,49 @@
    (apply hasheq variables)
    #:combine/key (lambda (_k1 _k2 v) v)))
 
+(define/contract (mailer-send-email m
+                                    #:to to
+                                    #:from [from (mailer-sender m)]
+                                    #:subject subject
+                                    #:text-content [text-content #f]
+                                    #:html-content [html-content #f])
+  (->i ([m mailer?]
+        #:to [to non-empty-string?]
+        #:subject [subject non-empty-string?])
+       (#:from [from non-empty-string?]
+        #:text-content [text-content (or/c #f string?)]
+        #:html-content [html-content (or/c #f string?)])
+       #:pre/name (text-content html-content)
+       "at least one of #:text-content or #:html-content must be provided"
+       (not (and (unsupplied-arg? text-content)
+                 (unsupplied-arg? html-content)))
+       [result void?])
+  (mail-adapter-send-email
+   (mailer-adapter m)
+   #:to to
+   #:from from
+   #:subject subject
+   #:text-content text-content
+   #:html-content html-content))
+
 (define/contract (mailer-send-email-with-template m
                                                   #:to to
                                                   #:from [from (mailer-sender m)]
                                                   #:template-id [template-id #f]
                                                   #:template-alias [template-alias #f]
                                                   #:template-model [template-model (hasheq)])
-  (->* (mailer?
-        #:to non-empty-string?)
-       (#:from non-empty-string?
-        #:template-id (or/c false/c exact-positive-integer?)
-        #:template-alias (or/c false/c symbol?)
-        #:template-model (hash/c symbol? string?))
-       void?)
+  (->i ([m mailer?]
+        #:to [to non-empty-string?])
+       (#:from [from non-empty-string?]
+        #:template-id [template-id (or/c #f exact-positive-integer?)]
+        #:template-alias [template-alias (or/c #f symbol?)]
+        #:template-model [template-model (hash/c symbol? string?)])
+       #:pre/name (template-id template-alias)
+       "either #:template-id or #:template-alias must be provided, but not both"
+       (cond
+         [(unsupplied-arg? template-id) (not (unsupplied-arg? template-alias))]
+         [else (not (unsupplied-arg? template-id))])
+       [result void?])
   (mail-adapter-send-email-with-template
    (mailer-adapter m)
    #:to to

@@ -31,14 +31,24 @@ the template model properties.
   Returns @racket[#t] when @racket[v] is a mailer.
 }
 
-@defproc[(mailer-sender [mailer mailer?]) non-empty-string?]{
+@defproc[(mailer-sender [m mailer?]) non-empty-string?]{
 
   Returns the default sender e-mail address the mailer was created with.
 }
 
-@defproc[(mailer-send-email-with-template [mailer mailer?]
+@defproc[(mailer-send-email [m mailer?]
+                            [#:to to non-empty-string?]
+                            [#:from from non-empty-string? (mailer-sender m)]
+                            [#:subject subject non-empty-string?]
+                            [#:text-content text-content (or/c #f string?) #f]
+                            [#:html-content html-content (or/c #f string?) #f]) void?]{
+
+  Sends an e-mail using the underlying @tech{mail adapter}.
+}
+
+@defproc[(mailer-send-email-with-template [m mailer?]
                                           [#:to to non-empty-string?]
-                                          [#:from from non-empty-string? (mailer-sender mailer)]
+                                          [#:from from non-empty-string? (mailer-sender m)]
                                           [#:template-id template-id (or/c false/c exact-positive-integer?) #f]
                                           [#:template-alias template-alias (or/c false/c symbol?) #f]
                                           [#:template-model template-model (hash/c symbol? string?) (hasheq)]) void?]{
@@ -59,6 +69,12 @@ can send e-mail.
 @deftogether[(
   @defidform[#:kind "interface" gen:mail-adapter]
   @defproc[(mail-adapter? [v any/c]) boolean?]
+  @defproc[(mail-adapter-send-email [adapter mail-adapter?]
+                                    [#:to to non-empty-string?]
+                                    [#:from from non-empty-string?]
+                                    [#:subject subject non-empty-string?]
+                                    [#:text-content text-content (or/c #f string?) #f]
+                                    [#:html-content html-content (or/c #f string?) #f]) void?]
   @defproc[(mail-adapter-send-email-with-template [adapter mail-adapter?]
                                                   [#:to to non-empty-string?]
                                                   [#:form from non-empty-string?]
@@ -67,7 +83,9 @@ can send e-mail.
                                                   [#:template-model template-model (hash/c symbol? string?)]) void?]
 )]{
 
-  The generic interface for @tech{mail adapters}.
+  The generic interface for @tech{mail adapters}.  Adapters must
+  implement at least one of these methods, but they don't have to
+  implement all of them.
 
   The @racket[#:template-id] and @racket[#:template-alias] arguments
   to @racket[mail-adapter-send-email-with-template] are mutually

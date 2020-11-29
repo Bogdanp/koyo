@@ -21,6 +21,35 @@
    "mail"
 
    (test-suite
+    "mailer-send-email"
+
+    (test-case "can send text email"
+      (mailer-send-email mailer
+                         #:to "bogdan@example.com"
+                         #:subject "Hi!"
+                         #:text-content "Hello!")
+      (check-equal?
+       (car (stub-mail-adapter-outbox adapter))
+       (hasheq 'to "bogdan@example.com"
+               'from "example@koyoweb.org"
+               'subject "Hi!"
+               'text-content "Hello!"
+               'html-content #f)))
+
+    (test-case "can send html email"
+      (mailer-send-email mailer
+                         #:to "bogdan@example.com"
+                         #:subject "Hi!"
+                         #:html-content "Hello!")
+      (check-equal?
+       (car (stub-mail-adapter-outbox adapter))
+       (hasheq 'to "bogdan@example.com"
+               'from "example@koyoweb.org"
+               'subject "Hi!"
+               'text-content #f
+               'html-content "Hello!"))))
+
+   (test-suite
     "mailer-send-email-with-template"
 
     (test-case "can send email"
