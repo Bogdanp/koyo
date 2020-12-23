@@ -1,21 +1,14 @@
 #lang racket/base
 
-(require (for-syntax racket/base)
-         component
+(require component
          racket/contract
          racket/place
-         racket/runtime-path
          "argon2id-place.rkt"
          "generic.rkt")
 
 (provide
  make-argon2id-hasher-factory
  argon2id-hasher?)
-
-;; Declare a runtime path s.t. the library will automatically be
-;; distributed in executables.
-(define-runtime-path libargon2-so
-  '(so "libargon2"))
 
 (struct argon2id-hasher (config sema [ch #:mutable] running?)
   #:methods gen:component
