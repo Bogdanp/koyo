@@ -58,7 +58,7 @@
 
                              RUN apt-get update -y \
                                && apt-get install -y --no-install-recommends \
-                                    dumb-init
+                                    dumb-init libargon2-dev
 
                              ENV @(config-var 'http-host) "0.0.0.0"
                              COPY --from=build /opt/app/dist /opt/dist
