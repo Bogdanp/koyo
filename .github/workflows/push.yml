@@ -23,7 +23,7 @@ jobs:
       uses: Bogdanp/setup-racket@master
       with:
         variant: CS
-        version: "7.7"
+        version: stable
 
     - name: Install pkg and deps
       run: raco pkg install --batch --auto koyo-lib/ koyo-doc/ koyo-test/ koyo/
