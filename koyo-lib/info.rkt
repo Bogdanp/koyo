@@ -6,7 +6,7 @@
 (define deps '("base"
                "compatibility-lib"
                "component-lib"
-               "crypto-lib"
+               ("crypto-lib" #:version "1.6")
                "db-lib"
                "errortrace-lib"
                "gregor-lib"
