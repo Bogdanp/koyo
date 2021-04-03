@@ -11,8 +11,10 @@
                "errortrace-lib"
                "gregor-lib"
                "html-lib"
+               "net-lib"
                "readline-lib"
                "srfi-lite-lib"
+               "unix-socket-lib"
                "web-server-lib"))
 (define build-deps '("at-exp-lib"))
 
