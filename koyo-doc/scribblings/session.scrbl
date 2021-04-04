@@ -117,6 +117,8 @@ browser session.
 
 @section{Session Stores}
 
+@deftech{Session stores} decide how session data is stored.
+
 @defproc[(session-store? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a session store.
 }
