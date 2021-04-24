@@ -37,16 +37,17 @@
   (map simplify-path (find-files track-file? path #:skip-filtered-directory? #t)))
 
 (define (code-change-evt root-path)
-  (define custodian (make-custodian))
-  (parameterize ([current-custodian custodian])
-    (apply
-     choice-evt
-     (for/list ([p (in-list (collect-tracked-files root-path))] #:when (file-exists? p))
-       (handle-evt
-        (filesystem-change-evt p)
-        (lambda _
-          (begin0 p
-            (custodian-shutdown-all custodian))))))))
+  (apply
+   choice-evt
+   (for/list ([p (in-list (collect-tracked-files root-path))] #:when (file-exists? p))
+     (define chg (filesystem-change-evt p))
+     (nack-guard-evt
+      (lambda (nack)
+        (thread
+         (lambda ()
+           (sync nack)
+           (filesystem-change-evt-cancel chg)))
+        (handle-evt chg (λ (_) p)))))))
 
 (define/contract (run-forever dynamic-module-path
                               #:recompile? [recompile? #t]
