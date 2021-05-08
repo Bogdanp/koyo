@@ -82,7 +82,7 @@ Lists of elements can be spliced in using the @racket[(unquote-splicing e)] synt
 
 @haml-splicing-syntax-example
 
-All expressions that don't parse as an element are evaluated in place
+Any expressions that don't parse as an element are evaluated in place
 at runtime:
 
 @examples[
@@ -93,6 +93,19 @@ at runtime:
 
   (haml
    (:h1 (say-hi "Bogdan")))
+]
+
+The @racket[when] and @racket[unless] forms are handled specially so
+that they automatically splice their result, if any, into the
+enclosing expression:
+
+@examples[
+  #:eval sandbox
+  #:label #f
+  (for ([v '(#t #f)])
+    (println
+     (haml
+      (:h1 (when v "a") "title"))))
 ]
 
 Passing multiple elements to the @racket[haml] macro produces a list
