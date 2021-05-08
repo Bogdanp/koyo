@@ -16,7 +16,7 @@
 @racket[haml] is a convenience macro for generating xexprs with less
 boilerplate.  Its syntax is inspired by @haml-link -- whence its name
 -- but if you've used Clojure's @hiccup-link or any similar templating
-language (like jade or pug), then @racket[haml] will seem familiar to
+language (like jade or pug), then @racket[haml] will feel familiar to
 you.
 
 @section[#:tag "haml-syntax"]{Syntax}
@@ -32,8 +32,8 @@ Literal numbers and strings are returned unmodified:
   (haml "hello")
 ]
 
-Identifiers that start with an & symbol are returned with said symbol
-stripped off:
+Identifiers that start with an @tt{&} character are converted to
+symbols with the initial @tt{&} removed:
 
 @examples[
   #:eval sandbox

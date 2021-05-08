@@ -36,12 +36,11 @@
     #:literals (unquote-splicing unless when)
     (haml element ...+)
     #:grammar
-    [(element (selector attributes element ...)
-              (selector element ...)
-              symbol
-              unless
-              when
-              splice
+    [(element (selector maybe-attributes element ...)
+              (unless cond-expr e0 e ...)
+              (when cond-expr e0 e ...)
+              &html-entity-name
+              ,@expr
               expr)
 
      (selector :tag-name
@@ -50,14 +49,8 @@
                :tag-name.class-name
                :tag-name.class-name#id)
 
-     (symbol &name)
-
-     (attributes ((:attribute-name maybe-expr) ...))
-
-     (unless (unless cond-expr e0 e ...))
-     (when (when cond-expr e0 e ...))
-
-     (splice (unquote-splicing e))]
+     (maybe-attributes (code:line)
+                       ([:attribute-name maybe-expr] ...))]
     "Produces an x-expression."))
 
 (define haml-splicing-syntax-example
