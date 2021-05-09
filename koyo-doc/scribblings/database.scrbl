@@ -25,6 +25,13 @@ working with database connections.
   Returns a function that will create a database component containing
   a DB connection pool of size @racket[#:max-connections] which
   connects to the database using the @racket[connector].
+
+  @history[#:changed "0.8" @elem{The component no longer forcefully
+  shuts down its associated custodian when the component is
+  stopped. There is now a lower bound on @tt{crypto-lib} for version
+  1.6 to ensure that shared libraries (eg. for libargon2) correctly
+  get included in distributions (using @tt{koyo dist} or @tt{raco
+  distribute}).}]
 }
 
 @defproc[(call-with-database-connection [database database?]

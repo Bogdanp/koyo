@@ -44,6 +44,8 @@ the template model properties.
                             [#:html-content html-content (or/c #f string?) #f]) void?]{
 
   Sends an e-mail using the underlying @tech{mail adapter}.
+
+  @history[#:added "0.8"]
 }
 
 @defproc[(mailer-send-email-with-template [m mailer?]

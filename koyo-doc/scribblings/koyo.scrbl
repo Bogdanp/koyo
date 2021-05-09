@@ -63,6 +63,5 @@ needs in a complete package.
 @include-section["static.scrbl"]
 @include-section["testing.scrbl"]
 @include-section["url.scrbl"]
-@include-section["changelog.scrbl"]
 
 @index-section[]
