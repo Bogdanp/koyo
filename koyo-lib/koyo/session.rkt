@@ -107,24 +107,25 @@
 
      (struct-copy mss-data data [sessions sessions]))))
 
-(define ((memory-session-store-remove-stale-sessions! ttl) data)
-  (define live-sessions
-    (for/fold ([live-sessions (hasheq)])
-              ([(session-id session-data) (in-hash (mss-data-sessions data))])
-      (cond
-        [(< (current-seconds) (+ (car session-data) ttl))
-         (hash-set live-sessions session-id session-data)]
+(define ((memory-session-store-remove-stale-sessions ttl) data)
+  (define now (current-seconds))
+  (define current-sessions (mss-data-sessions data))
+  (define live-sessions (make-hasheq))
+  (for ([(session-id session-data) (in-hash current-sessions)]
+        #:unless (>= now (+ (car session-data) ttl)))
+    (hash-set! live-sessions session-id session-data))
 
-        [else
-         (log-memory-session-store-debug "session ~v expired" session-id)
-         live-sessions])))
-
+  (define expired-count
+    (- (hash-count current-sessions)
+       (hash-count live-sessions)))
+  (log-memory-session-store-debug "found ~a stale sessions out of ~a" expired-count (hash-count current-sessions))
   (struct-copy mss-data data [sessions live-sessions]))
 
 (define/contract (make-memory-session-store #:ttl [ttl (* 7 86400)]
                                             #:file-path [file-path (make-temporary-file)])
-  (->* () (#:ttl exact-positive-integer?
-           #:file-path path-string?)
+  (->* ()
+       (#:ttl exact-positive-integer?
+        #:file-path path-string?)
        session-store?)
 
   (define custodian (make-custodian))
@@ -135,7 +136,7 @@
        (let loop ()
          (sleep ttl)
          (log-memory-session-store-debug "expiring stale sessions")
-         (box-swap! data-box (memory-session-store-remove-stale-sessions! ttl))
+         (box-swap! data-box (memory-session-store-remove-stale-sessions ttl))
          (loop))))
 
     (memory-session-store custodian data-box file-path)))
