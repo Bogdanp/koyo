@@ -15,21 +15,21 @@
     "colorize"
 
     (check-equal?
-     (with-output-to-string
-       (lambda _
+     (with-output-to-bytes
+       (lambda ()
          (colorize
           `((fg ,(make-color 5 0 0)))
           (display "hello!"))))
-     "\e[38;5;196mhello!\e[0m")
+     #"\e[38;5;196mhello!\e[0m")
 
     (check-equal?
-     (with-output-to-string
+     (with-output-to-bytes
        (lambda _
          (colorize
           `((fg ,(make-color 5 0 0))
             (bg ,(make-color 5 5 5)))
           (display "hello!"))))
-     "\e[38;5;196m\e[48;5;231mhello!\e[0m"))))
+     #"\e[38;5;196m\e[48;5;231mhello!\e[0m"))))
 
 (module+ test
   (require rackunit/text-ui)
