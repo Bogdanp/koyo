@@ -61,7 +61,8 @@
 
        (sleep 1.1)
        (sync (system-idle-evt))
-       (check-false (session-store-ref ss "session-1" 'a #f)))))
+       (check-false (session-store-ref ss "session-1" 'a #f))
+       (session-store-set! ss "session-1" 'a 1))))
 
    ;; TODO: Test wrap-session.
    (test-suite
