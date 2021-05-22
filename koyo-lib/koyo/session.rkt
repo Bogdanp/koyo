@@ -110,10 +110,10 @@
 (define ((memory-session-store-remove-stale-sessions ttl) data)
   (define now (current-seconds))
   (define current-sessions (mss-data-sessions data))
-  (define live-sessions (make-hasheq))
-  (for ([(session-id session-data) (in-hash current-sessions)]
-        #:unless (>= now (+ (car session-data) ttl)))
-    (hash-set! live-sessions session-id session-data))
+  (define live-sessions
+    (for/hasheq ([(session-id session-data) (in-hash current-sessions)]
+                 #:unless (>= now (+ (car session-data) ttl)))
+      (values session-id session-data)))
 
   (define expired-count
     (- (hash-count current-sessions)
