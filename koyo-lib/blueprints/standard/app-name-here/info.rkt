@@ -4,7 +4,7 @@
 (define deps '("base"
                "component-lib"
                "db-lib"
-               "deta-lib"
+               ("deta-lib" #:version "0.9")
                "forms-lib"
                "gregor-lib"
                "koyo-lib"
