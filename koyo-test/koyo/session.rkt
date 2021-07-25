@@ -9,10 +9,11 @@
 (provide session-tests)
 
 (define session-manager
-  ((make-session-manager-factory #:cookie-name "session-id"
-                                 #:shelf-life 86400
-                                 #:secret-key #"supercalifragilisticexpialidocious"
-                                 #:store (make-memory-session-store))))
+  ((make-session-manager-factory
+    #:cookie-name "session-id"
+    #:shelf-life 86400
+    #:secret-key #"supercalifragilisticexpialidocious"
+    #:store (make-memory-session-store))))
 
 (define session-tests
   (test-suite

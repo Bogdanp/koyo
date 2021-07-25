@@ -3,6 +3,7 @@
 (require (for-syntax racket/base)
          component
          db
+         deta/reflect
          koyo/database
          koyo/database/migrator
          koyo/flash
@@ -80,7 +81,8 @@
 
 (provide
  prod-system
- start)
+ start
+ before-reload)
 
 (define/contract (start)
   (-> (-> void?))
@@ -103,6 +105,9 @@
     (system-stop prod-system)
     (current-system #f)
     (stop-logger)))
+
+(define (before-reload)
+  (schema-registry-allow-conflicts? #t))
 
 
 (module+ main

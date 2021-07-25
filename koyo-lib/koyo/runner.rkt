@@ -51,10 +51,13 @@
 
 (define/contract (run-forever dynamic-module-path
                               #:recompile? [recompile? #t]
-                              #:errortrace? [errortrace? #t])
+                              #:errortrace? [errortrace? #t]
+                              #:server-timeout [server-timeout 30])
   (->* (path-string?)
        (#:recompile? boolean?
-        #:errortrace? boolean?) void?)
+        #:errortrace? boolean?
+        #:server-timeout (and/c real? positive?))
+       void?)
 
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
@@ -62,23 +65,25 @@
   (define root-path (simplify-path (build-path dynamic-module-path 'up 'up)))
   (define command-args
     (if errortrace?
-        (list "-l" "errortrace" "-t" dynamic-module-path)
-        (list dynamic-module-path)))
+        (list "-l" "errortrace" "-l" "koyo/runner" "--" "--verbose" dynamic-module-path)
+        (list "-l" "koyo/runner" "--" "--verbose" dynamic-module-path)))
 
   (define (run)
+    (define-values (command-in command-out)
+      (make-pipe))
     (define-values (stderr-in stderr-out)
       (make-pipe))
-    (match-define (list in out pid err control)
+    (match-define (list _in _out pid err control)
       (parameterize ([subprocess-group-enabled #t])
         (apply process*/ports
                (current-output-port)
-               (current-input-port)
+               command-in
                stderr-out
                racket-exe
                command-args)))
 
     (define ready? (make-semaphore))
-    (define stderr-filter
+    (define _stderr-filter
       (thread
        (lambda ()
          (parameterize ([current-output-port (current-error-port)])
@@ -95,49 +100,120 @@
        (lambda (_)
          (control 'status))))
 
-    (unless (sync/timeout 10 stopped-evt ready?)
+    (unless (sync/timeout server-timeout stopped-evt ready?)
       (log-runner-warning "timed out while waiting for 'listening' output"))
     (log-runner-info "application process started with pid ~a" pid)
 
     (values
      stopped-evt
+     (lambda (changed-path)
+       (log-runner-info "reloading application because '~a' changed" changed-path)
+       (write `(reload ,(path->string changed-path)) command-out)
+       (sync/timeout
+        server-timeout
+        (handle-evt stopped-evt void)
+        (handle-evt
+         ready?
+         (λ (_)
+           (log-runner-info "application reloaded")))))
      (lambda ()
        (control 'interrupt)
        (control 'wait)
-       (close-output-port stderr-out))))
+       (close-output-port stderr-out)
+       (close-input-port command-in)
+       (close-output-port command-out))))
 
   (define (make! [parallel? #f])
     (if parallel?
-        (raco "make" "-j" (~a (processor-count)) dynamic-module-path)
-        (raco "make" dynamic-module-path)))
+        (raco "make" "--disable-constant" "-j" (~a (processor-count)) dynamic-module-path)
+        (raco "make" "--disable-constant" "-v" dynamic-module-path)))
 
-  (when recompile?
-    (log-runner-info "compiling application")
-    (make! #t))
+  (define compiler
+    (thread
+     (lambda ()
+       (let loop ()
+         (match (thread-receive)
+           ['(compile)
+            (log-runner-info "compiling application")
+            (make! #t)
+            (loop)]
 
-  (log-runner-info "starting application process")
-  (let loop ()
-    (let-values ([(stopped-evt stop) (run)])
-      (with-handlers ([exn:break?
-                       (lambda _
-                         (stop))])
-        (sync/enable-break
-         (handle-evt
-          stopped-evt
-          (lambda (status)
-            (when (eq? status 'done-error)
-              (log-runner-warning "application process failed; waiting for changes before reloading")
-              (sync (code-change-evt root-path)))
-
-            (log-runner-info "restarting application process")
-            (loop)))
-         (handle-evt
-          (code-change-evt root-path)
-          (lambda (changed-path)
+           [`(recompile ,changed-path)
             (when recompile?
-              (log-runner-info (format "recompiling because '~a' changed" changed-path))
+              (log-runner-info "recompiling because '~a' changed" changed-path)
               (make!))
-            (when stop
-              (log-runner-info "stopping application process")
-              (stop))
-            (loop))))))))
+            (loop)])))))
+  (define (compile-app)
+    (thread-send compiler '(compile)))
+  (define (recompile-app changed-path)
+    (thread-send compiler `(recompile ,changed-path)))
+
+  (compile-app)
+  (log-runner-info "starting application process")
+  (let process-loop ()
+    (let-values ([(stopped-evt reload stop) (run)])
+      (let application-loop ()
+        (with-handlers ([exn:break?
+                         (lambda (_e)
+                           (stop))])
+          (sync/enable-break
+           (handle-evt
+            stopped-evt
+            (lambda (status)
+              (when (eq? status 'done-error)
+                (log-runner-warning "application process failed; waiting for changes before reloading")
+                (sync (code-change-evt root-path)))
+
+              (log-runner-info "restarting application process")
+              (process-loop)))
+           (handle-evt
+            (code-change-evt root-path)
+            (lambda (changed-path)
+              (reload changed-path)
+              (recompile-app changed-path)
+              (application-loop)))))))))
+
+(module+ main
+  (require racket/cmdline
+           racket/rerequire
+           setup/collects
+           (prefix-in jobs: (submod "job/registry.rkt" private))
+           "private/mod.rkt")
+
+  (define verbose? #f)
+  (define dynamic-module-path
+    (command-line
+     #:once-each
+     [("--verbose") "turn on verbose logging" (set! verbose? #t)]
+     #:args (dynamic-module-path)
+     dynamic-module-path))
+
+  (define mod-path (path->module-path dynamic-module-path))
+  (define (start)
+    (jobs:clear!)
+    (dynamic-rerequire #:verbosity (if verbose? 'reload 'none) mod-path)
+    (values
+     ((dynamic-require mod-path 'start))
+     (dynamic-require mod-path 'before-reload (λ () void))))
+
+  (let loop ()
+    (let-values ([(stop before-reload) (start)])
+      (let inner-loop ()
+        (with-handlers ([exn:break?
+                         (lambda (_)
+                           (stop))])
+          (sync/enable-break
+           (handle-evt
+            (current-input-port)
+            (lambda (_)
+              (match (read)
+                [`(reload ,changed-path)
+                 (stop)
+                 (when should-touch-dependents?
+                   (touch-dependents dynamic-module-path changed-path))
+                 (before-reload)
+                 (loop)]
+
+                [message
+                 (eprintf "koyo/runner: unhandled message ~e~n" message)
+                 (inner-loop)])))))))))
