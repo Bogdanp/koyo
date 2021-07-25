@@ -192,6 +192,9 @@
            (prefix-in jobs: (submod "job/registry.rkt" private))
            "private/mod.rkt")
 
+  (file-stream-buffer-mode (current-output-port) 'line)
+  (file-stream-buffer-mode (current-error-port) 'line)
+
   (define verbose? #f)
   (define dynamic-module-path
     (command-line
