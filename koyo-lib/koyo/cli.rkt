@@ -237,6 +237,7 @@
 (define (handle-serve)
   (define recompile? #t)
   (define errortrace? #f)
+  (define server-timeout 30)
   (define dynamic-module-path
     (command-line
      #:program (current-program-name)
@@ -245,12 +246,16 @@
                        (set! errortrace? #t)]
      [("--disable-recompile") "don't recompile changed files on reload"
                               (set! recompile? #f)]
+     [("--server-timeout") t "server startup timeout in seconds"
+                           (set! server-timeout (or (string->number t) server-timeout))]
      #:args ([dynamic-module-path #f])
      (or dynamic-module-path (infer-dynamic-module-path))))
 
-  (run-forever (path->complete-path dynamic-module-path)
-               #:recompile? recompile?
-               #:errortrace? errortrace?))
+  (run-forever
+   #:recompile? recompile?
+   #:errortrace? errortrace?
+   #:server-timeout server-timeout
+   (path->complete-path dynamic-module-path)))
 
 (define ((handle-unknown command))
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
