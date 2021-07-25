@@ -6,6 +6,7 @@
          racket/future
          racket/match
          racket/path
+         racket/port
          racket/string
          racket/system)
 
@@ -141,7 +142,18 @@
            [`(recompile ,changed-path)
             (when recompile?
               (log-runner-info "recompiling because '~a' changed" changed-path)
-              (make!))
+              (define-values (in out)
+                (make-pipe))
+              (define ok?
+                (parameterize ([current-output-port out]
+                               [current-error-port  out])
+                  (zero? (make!))))
+              (cond
+                [ok?
+                 (copy-port in (current-error-port))
+                 (log-runner-info "application recompiled")]
+                [else
+                 (log-runner-warning "compilation failed (output suppressed)")]))
             (loop)])))))
   (define (compile-app)
     (thread-send compiler '(compile)))
