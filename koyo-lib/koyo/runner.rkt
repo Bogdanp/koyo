@@ -214,9 +214,7 @@
   (let loop ()
     (let-values ([(stop before-reload) (start)])
       (let inner-loop ()
-        (with-handlers ([exn:break?
-                         (lambda (_)
-                           (stop))])
+        (with-handlers ([exn:break? (λ (_) (stop))])
           (sync/enable-break
            (handle-evt
             (current-input-port)

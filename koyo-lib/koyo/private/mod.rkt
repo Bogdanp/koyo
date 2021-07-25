@@ -6,14 +6,14 @@
 
 (require racket/list
          racket/match
-         "version.rkt")
+         version/utils)
 
 (provide
  should-touch-dependents?
  touch-dependents)
 
 (define should-touch-dependents?
-  (< (version-number) 8002000004))
+  (version<? (version) "8.2.0.4"))
 
 (define (touch-dependents root mod)
   (define (touch path)
