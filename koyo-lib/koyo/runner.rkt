@@ -142,32 +142,23 @@
            [`(recompile ,changed-path)
             (when recompile?
               (log-runner-info "recompiling because '~a' changed" changed-path)
-              (define-values (in out)
-                (make-pipe))
-              (define ok?
-                (parameterize ([current-output-port out]
-                               [current-error-port  out])
-                  (zero? (make!))))
-              (cond
-                [ok?
-                 (copy-port in (current-error-port))
-                 (log-runner-info "application recompiled")]
-                [else
-                 (log-runner-warning "compilation failed (output suppressed)")]))
+              (parameterize ([current-output-port (open-output-nowhere)]
+                             [current-error-port  (open-output-nowhere)])
+                (if (zero? (make!))
+                    (log-runner-info "application recompiled")
+                    (log-runner-warning "compilation failed (output suppressed)"))))
             (loop)])))))
   (define (compile-app)
     (thread-send compiler '(compile)))
   (define (recompile-app changed-path)
     (thread-send compiler `(recompile ,changed-path)))
 
-  (compile-app)
-  (log-runner-info "starting application process")
   (let process-loop ()
+    (compile-app)
+    (log-runner-info "starting application process")
     (let-values ([(stopped-evt reload stop) (run)])
       (let application-loop ()
-        (with-handlers ([exn:break?
-                         (lambda (_e)
-                           (stop))])
+        (with-handlers ([exn:break? (λ (_) (stop))])
           (sync/enable-break
            (handle-evt
             stopped-evt
@@ -175,14 +166,15 @@
               (when (eq? status 'done-error)
                 (log-runner-warning "application process failed; waiting for changes before reloading")
                 (sync (code-change-evt root-path)))
-
-              (log-runner-info "restarting application process")
               (process-loop)))
            (handle-evt
             (code-change-evt root-path)
             (lambda (changed-path)
               (reload changed-path)
-              (recompile-app changed-path)
+              (unless (symbol? (sync/timeout 0 stopped-evt))
+                ;; Don't recompile the app if it's stopped.  The
+                ;; `process-loop' will take care of that.
+                (recompile-app changed-path))
               (application-loop)))))))))
 
 (module+ main
@@ -190,6 +182,7 @@
            racket/rerequire
            setup/collects
            (prefix-in jobs: (submod "job/registry.rkt" private))
+           "private/compiler.rkt"
            "private/mod.rkt")
 
   (file-stream-buffer-mode (current-output-port) 'line)
@@ -203,18 +196,24 @@
      #:args (dynamic-module-path)
      dynamic-module-path))
 
-  (define mod-path (path->module-path dynamic-module-path))
+  (define root (simplify-path (build-path dynamic-module-path 'up)))
+  (define mod (path->module-path dynamic-module-path))
   (define (start)
     (jobs:clear!)
-    (dynamic-rerequire #:verbosity (if verbose? 'reload 'none) mod-path)
+    (dynamic-rerequire #:verbosity (if verbose? 'reload 'none) mod)
     (values
-     ((dynamic-require mod-path 'start))
-     (dynamic-require mod-path 'before-reload (λ () void))))
+     ((dynamic-require mod 'start))
+     (dynamic-require mod 'before-reload (λ () void))))
 
   (let loop ()
     (let-values ([(stop before-reload) (start)])
       (let inner-loop ()
-        (with-handlers ([exn:break? (λ (_) (stop))])
+        (with-handlers ([exn:break? (λ (_) (stop))]
+                        [constant-redefined-exn?
+                         (λ (e)
+                           (eprintf "koyo/runner: ~a~n" (exn-message e))
+                           (delete-zos! root)
+                           (exit 0))])
           (sync/enable-break
            (handle-evt
             (current-input-port)
