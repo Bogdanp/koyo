@@ -33,8 +33,7 @@
 
 (provide
  prod-system
- start
- before-reload)
+ start)
 
 (define/contract (start)
   (-> (-> void?))
@@ -53,9 +52,6 @@
   (lambda ()
     (system-stop prod-system)
     (stop-logger)))
-
-(define (before-reload)
-  (void))
 
 (module+ main
   (define stop (start))
