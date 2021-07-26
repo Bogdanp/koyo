@@ -66,8 +66,8 @@
   (define root-path (simplify-path (build-path dynamic-module-path 'up 'up)))
   (define command-args
     (if errortrace?
-        (list "-l" "errortrace" "-l" "koyo/runner" "--" "--verbose" dynamic-module-path)
-        (list "-l" "koyo/runner" "--" "--verbose" dynamic-module-path)))
+        (list "-l" "errortrace" "-l" "koyo/runner" "--" root-path dynamic-module-path)
+        (list "-l" "koyo/runner" "--" root-path dynamic-module-path)))
 
   (define (run)
     (define-values (command-in command-out)
@@ -187,19 +187,16 @@
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
 
-  (define verbose? #f)
-  (define dynamic-module-path
+  (define-values (root-path dynamic-module-path)
     (command-line
-     #:once-each
-     [("--verbose") "turn on verbose logging" (set! verbose? #t)]
-     #:args (dynamic-module-path)
-     dynamic-module-path))
+     #:program "raco koyo serve"
+     #:args (root-path dynamic-module-path)
+     (values root-path dynamic-module-path)))
 
-  (define root (simplify-path (build-path dynamic-module-path 'up)))
   (define mod (path->module-path dynamic-module-path))
   (define (start)
     (jobs:clear!)
-    (dynamic-rerequire #:verbosity (if verbose? 'reload 'none) mod)
+    (dynamic-rerequire mod)
     (values
      ((dynamic-require mod 'start))
      (dynamic-require mod 'before-reload (λ () void))))
@@ -211,7 +208,7 @@
                         [constant-redefined-exn?
                          (lambda (e)
                            (eprintf "koyo/runner: ~a~n" (exn-message e))
-                           (delete-zos! root)
+                           (delete-zos! root-path)
                            (exit 0))])
           (sync/enable-break
            (handle-evt
