@@ -124,40 +124,39 @@
        (close-input-port command-in)
        (close-output-port command-out))))
 
+  (define make!-sema (make-semaphore 1))
   (define (make! [parallel? #f])
-    (if parallel?
-        (raco "make" "--disable-constant" "-j" (~a (processor-count)) dynamic-module-path)
-        (raco "make" "--disable-constant" "-v" dynamic-module-path)))
+    (call-with-semaphore make!-sema
+      (lambda ()
+        (zero?
+         (if parallel?
+             (raco "make" "--disable-constant" "-j" (~a (processor-count)) dynamic-module-path)
+             (raco "make" "--disable-constant" "-v" dynamic-module-path))))))
 
-  (define compiler
-    (thread
-     (lambda ()
-       (let loop ()
-         (match (thread-receive)
-           ['(compile)
-            (log-runner-info "compiling application")
-            (make! #t)
-            (loop)]
+  (define (maybe-compile-app!)
+    (when recompile?
+      (log-runner-info "compiling application")
+      (if (make! #t)
+          (log-runner-info "application compiled")
+          (log-runner-warning "compilation failed"))))
 
-           [`(recompile ,changed-path)
-            (when recompile?
-              (log-runner-info "recompiling because '~a' changed" changed-path)
-              (parameterize ([current-output-port (open-output-nowhere)]
-                             [current-error-port  (open-output-nowhere)])
-                (if (zero? (make!))
-                    (log-runner-info "application recompiled")
-                    (log-runner-warning "compilation failed (output suppressed)"))))
-            (loop)])))))
-  (define (compile-app)
-    (thread-send compiler '(compile)))
-  (define (recompile-app changed-path)
-    (thread-send compiler `(recompile ,changed-path)))
+  (define (maybe-recompile-app! changed-path)
+    (void
+     (thread
+      (lambda ()
+        (when recompile?
+          (log-runner-info "recompiling because '~a' changed" changed-path)
+          (parameterize ([current-output-port (open-output-nowhere)]
+                         [current-error-port  (open-output-nowhere)])
+            (if (make!)
+                (log-runner-info "application recompiled")
+                (log-runner-warning "compilation failed (output suppressed)"))))))))
 
   (let process-loop ()
-    (compile-app)
+    (maybe-compile-app!)
     (log-runner-info "starting application process")
     (let-values ([(stopped-evt reload stop) (run)])
-      (let application-loop ()
+      (let filesystem-loop ()
         (with-handlers ([exn:break? (λ (_) (stop))])
           (sync/enable-break
            (handle-evt
@@ -172,10 +171,10 @@
             (lambda (changed-path)
               (reload changed-path)
               (unless (symbol? (sync/timeout 0 stopped-evt))
-                ;; Don't recompile the app if it's stopped.  The
-                ;; `process-loop' will take care of that.
-                (recompile-app changed-path))
-              (application-loop)))))))))
+                ;; Don't recompile the app if it has stopped.  The
+                ;; process loop will take care of that.
+                (maybe-recompile-app! changed-path))
+              (filesystem-loop)))))))))
 
 (module+ main
   (require racket/cmdline
@@ -210,7 +209,7 @@
       (let inner-loop ()
         (with-handlers ([exn:break? (λ (_) (stop))]
                         [constant-redefined-exn?
-                         (λ (e)
+                         (lambda (e)
                            (eprintf "koyo/runner: ~a~n" (exn-message e))
                            (delete-zos! root)
                            (exit 0))])
