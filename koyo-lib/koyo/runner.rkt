@@ -182,8 +182,8 @@
            racket/rerequire
            setup/collects
            (prefix-in jobs: (submod "job/registry.rkt" private))
-           "private/compiler.rkt"
-           "private/mod.rkt")
+           "private/mod.rkt"
+           "private/zo.rkt")
 
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)

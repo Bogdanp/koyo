@@ -6,7 +6,8 @@
 
 (require racket/list
          racket/match
-         version/utils)
+         version/utils
+         "zo.rkt")
 
 (provide
  should-touch-dependents?
@@ -23,15 +24,6 @@
   (for ([path (find-dependents root mod)])
     (touch path)
     (touch (mod-path->zo-path path))))
-
-;; TODO: Handle complete compiled paths.
-(define (mod-path->zo-path p)
-  (define-values (dir filename _)
-    (split-path p))
-  (define compiled
-    (let ([l (use-compiled-file-paths)])
-      (if (pair? l) (car l) "compiled")))
-  (build-path dir compiled (path-replace-extension filename #"_rkt.zo")))
 
 (define (find-dependents root mod)
   (define dependents-tree

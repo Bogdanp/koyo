@@ -9,7 +9,11 @@
 
 (provide
  constant-redefined-exn?
- delete-zos!)
+ delete-zos!
+ mod-path->zo-path
+ zo-dir
+ zo-dir?
+ zo-path?)
 
 (define (constant-redefined-exn? e)
   (and (exn:fail:contract:variable? e)
@@ -20,6 +24,18 @@
     (eprintf "  [deleting ~a]~n" p)
     (delete-file p)))
 
+(define (mod-path->zo-path p)
+  (define compiled (zo-dir))
+  (define-values (dir filename _)
+    (split-path p))
+  (build-path dir compiled (path-replace-extension filename #"_rkt.zo")))
+
+(define (zo-dir)
+  (define ps (use-compiled-file-paths))
+  (if (pair? ps)
+      (car ps)
+      (string->path "compiled")))
+
 (define (zo-path? p)
   (define-values (parent name _)
     (split-path p))
@@ -28,11 +44,7 @@
        (zo-dir? parent)))
 
 (define (zo-dir? p)
-  (define expected
-    (let ([ps (use-compiled-file-paths)])
-      (if (pair? ps)
-          (car ps)
-          (string->path "compiled"))))
+  (define expected (zo-dir))
   (define-values (_parent name _)
     (split-path p))
   (equal? name expected))
