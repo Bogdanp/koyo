@@ -136,9 +136,8 @@
   (define (maybe-compile-app!)
     (when recompile?
       (log-runner-info "compiling application")
-      (if (make! #t)
-          (log-runner-info "application compiled")
-          (log-runner-warning "compilation failed"))))
+      (unless (make! #t)
+        (log-runner-warning "compilation failed"))))
 
   (define (maybe-recompile-app! changed-path)
     (void
@@ -148,9 +147,8 @@
           (log-runner-info "recompiling because '~a' changed" changed-path)
           (parameterize ([current-output-port (open-output-nowhere)]
                          [current-error-port  (open-output-nowhere)])
-            (if (make!)
-                (log-runner-info "application recompiled")
-                (log-runner-warning "compilation failed (output suppressed)"))))))))
+            (unless (make!)
+              (log-runner-warning "compilation failed (output suppressed)"))))))))
 
   (let process-loop ()
     (maybe-compile-app!)
