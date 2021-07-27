@@ -8,18 +8,14 @@
          racket/path
          racket/port
          racket/string
-         racket/system)
+         racket/system
+         "private/tool.rkt")
 
 (provide
  run-forever)
 
 (define-logger runner)
 (define-logger watcher)
-
-(define racket-exe (find-executable-path "racket"))
-(define raco-exe (find-executable-path "raco"))
-(define (raco . args)
-  (apply system*/exit-code raco-exe args))
 
 (define (track-file? p)
   (if (directory-exists? p)
@@ -124,19 +120,10 @@
        (close-input-port command-in)
        (close-output-port command-out))))
 
-  (define make!-sema (make-semaphore 1))
-  (define (make! [parallel? #f])
-    (call-with-semaphore make!-sema
-      (lambda ()
-        (zero?
-         (if parallel?
-             (raco "make" "--disable-constant" "-j" (~a (processor-count)) dynamic-module-path)
-             (raco "make" "--disable-constant" "-v" dynamic-module-path))))))
-
   (define (maybe-compile-app!)
     (when recompile?
       (log-runner-info "compiling application")
-      (unless (make! #t)
+      (unless (make! dynamic-module-path)
         (log-runner-warning "compilation failed"))))
 
   (define (maybe-recompile-app! changed-path)
@@ -147,7 +134,7 @@
           (log-runner-info "recompiling because '~a' changed" changed-path)
           (parameterize ([current-output-port (open-output-nowhere)]
                          [current-error-port  (open-output-nowhere)])
-            (unless (make!)
+            (unless (make! dynamic-module-path #:parallel? #f)
               (log-runner-warning "compilation failed (output suppressed)"))))))))
 
   (let process-loop ()
@@ -183,7 +170,7 @@
            "private/zo.rkt")
 
   (file-stream-buffer-mode (current-output-port) 'line)
-  (file-stream-buffer-mode (current-error-port) 'line)
+  (file-stream-buffer-mode (current-error-port)  'line)
 
   (define-values (root-path dynamic-module-path)
     (command-line

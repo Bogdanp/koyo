@@ -1,6 +1,7 @@
 #lang scribble/manual
 
-@(require (for-label koyo)
+@(require (for-label koyo
+                     racket/base)
           scribble/core
           scribble/html-properties
           "koyo.rkt")
@@ -40,6 +41,7 @@ needs in a complete package.
 @include-section["architecture.scrbl"]
 @include-section["cors.scrbl"]
 @include-section["config.scrbl"]
+@include-section["console.scrbl"]
 @include-section["continuation.scrbl"]
 @include-section["csrf.scrbl"]
 @include-section["database.scrbl"]

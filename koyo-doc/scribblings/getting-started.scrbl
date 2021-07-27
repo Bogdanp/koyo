@@ -1,6 +1,8 @@
 #lang scribble/doc
 
-@(require (for-label koyo)
+@(require (for-label component
+                     koyo
+                     koyo/console)
           "koyo.rkt")
 
 @title[#:tag "getting-started"]{Getting Started}
@@ -75,11 +77,14 @@ Running @exec{raco koyo console} from within the root of a koyo
 application starts an interactive REPL with that application's
 components loaded into scope.
 
-Each component is available by prefixing @tt{$%} to its name.  For
-example, if you have a component named @tt{database} then you would
-access it from the console using @racket[$%database].
+Components are accessible via @racket[system-ref]. For example, if you
+have a component named @tt{database} then you can access it from the
+console using @racket[(system-ref 'database)].
 
-The @racket[$%start] and @racket[$%stop] procedures can be used to
-start and, respectively, stop the system from the console.  The
-@racket[$%start] procedure is implicitly called at the beginning of
-every console session.
+The @racket[start] and @racket[stop] procedures can be used to start
+and, respectively, stop the system from the console. The @racket[start]
+procedure is implicitly called at the beginning of every console
+session.
+
+See @racket[start-console-here] for information on loading the console
+functionality into an existing REPL session.

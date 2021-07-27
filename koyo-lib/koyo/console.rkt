@@ -1,57 +1,46 @@
 #lang racket/base
 
-(require racket/system)
+(require "private/filesystem.rkt"
+         "private/tool.rkt")
 
 (provide
- start-console)
+ start-console
+ start-console-here)
 
 (define preload-modules
   '(racket readline component db koyo))
 
 (define preamble
   '(begin
-     (module dyn racket/base
-       (require (for-syntax racket/base
-                            racket/string
-                            syntax/parse)
-                component)
-
-       (provide
-        (rename-out [$%top #%top])
-        current-dev-system)
-
-       (define current-dev-system (make-parameter #f))
-
-       (define-syntax ($%top stx)
-         (syntax-parse stx
-           [(_ . id)
-            #:when (string-prefix? (symbol->string (syntax-e #'id)) "$%")
-            #:with cid (datum->syntax #'id (string->symbol (let ([e:str (symbol->string (syntax-e #'id))])
-                                                             (substring e:str 2 (string-length e:str)))))
-            #'(system-ref (current-dev-system) 'cid)]
-
-           [(_ . id)
-            #'(#%top . id)])))
-
-     (require 'dyn)
-
      (define dev-system
        (system-replace prod-system 'server values))
 
-     (current-dev-system dev-system)
+     (current-system dev-system)
 
-     (define ($%start) (system-start dev-system))
-     (define ($%stop)  (system-stop  dev-system))
+     (define (start) (system-start dev-system))
+     (define (stop)  (system-stop  dev-system))
 
-     ($%start)))
+     (start)))
 
-(define (start-console module-path)
+(define (start-console dynamic-module-path)
   (displayln "Compiling application...")
-  (system*/exit-code (find-executable-path "raco") "make" "-v" module-path)
+  (make! dynamic-module-path)
   (displayln "Starting REPL...")
   (parameterize ([current-namespace (make-base-empty-namespace)])
     (for ([mod (in-list preload-modules)])
       (namespace-require mod))
-    (namespace-require module-path)
+    (namespace-require dynamic-module-path)
     (eval preamble)
     (read-eval-print-loop)))
+
+(define (start-console-here)
+  (define dynamic-module-path (find-file-in-project "dynamic.rkt" (current-directory)))
+  (unless dynamic-module-path
+    (raise-user-error 'koyo/console/dev "could not reach dynamic.rkt from here"))
+  (for ([mod (in-list preload-modules)])
+    (namespace-require mod))
+  (namespace-require dynamic-module-path)
+  (eval preamble))
+
+(module+ dev
+  (start-console-here))
