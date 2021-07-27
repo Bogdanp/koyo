@@ -20,4 +20,6 @@
 
   Requiring @racketmodname[(submod koyo/console dev)] is a shorthand
   for requiring this function and then calling it.
+
+  @history[#:added "0.9"]
 }
