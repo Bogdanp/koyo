@@ -54,10 +54,11 @@
     "Produces an x-expression."))
 
 (define haml-splicing-syntax-example
-  (examples #:eval sandbox
-            #:label #f
-            (haml
-             (.content
-              (:ul.items
-               ,@(for/list ([it (list "a" "b" "c")])
-                   (haml (:li it))))))))
+  (examples
+   #:eval sandbox
+   #:label #f
+   (haml
+    (.content
+     (:ul.items
+      ,@(for/list ([it '("a" "b" "c")])
+          `(li ,it)))))))

@@ -1,7 +1,8 @@
 #lang scribble/doc
 
 @(require (for-label koyo
-                     racket/base)
+                     racket/base
+                     xml)
           "koyo.rkt")
 
 @title[#:tag "haml"]{HAML}
@@ -68,7 +69,8 @@ Id and class attributes can be attached to a tag via a shorthand syntax:
    (:h1.title#main-title "Hello World"))
 ]
 
-Tag names are optional if a class name is provided:
+Tag names are optional if a class name is provided, in which case the
+tag defaults to @tt{div}:
 
 @examples[
   #:eval sandbox
@@ -95,9 +97,9 @@ at runtime:
    (:h1 (say-hi "Bogdan")))
 ]
 
-The @racket[when] and @racket[unless] forms are handled specially so
-that they automatically splice their result, if any, into the
-enclosing expression:
+The @racket[when] and @racket[unless] forms are special-cased so that
+they automatically splice their result, if any, into the enclosing
+expression:
 
 @examples[
   #:eval sandbox
