@@ -20,7 +20,7 @@ jobs:
       uses: actions/checkout@master
 
     - name: Install Racket
-      uses: Bogdanp/setup-racket@master
+      uses: Bogdanp/setup-racket@v1.6
       with:
         variant: CS
         version: stable
