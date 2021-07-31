@@ -30,4 +30,5 @@
 
 (module+ test
   (require rackunit/text-ui)
-  (run-tests hasher-tests))
+  (unless (getenv "PLT_PKG_BUILD_SERVICE")
+    (run-tests hasher-tests)))
