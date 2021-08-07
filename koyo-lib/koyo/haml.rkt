@@ -1,7 +1,10 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse))
+                     racket/match
+                     racket/string
+                     syntax/parse)
+         racket/string)
 
 (provide
  haml)
@@ -72,6 +75,7 @@
       [(list _ value)
        (string->symbol value)]))
 
+
   (define (html-symbol? s)
     (define s:str (symbol->string s))
     (and (> (string-length s:str) 1)
@@ -82,6 +86,33 @@
 
 (begin-for-syntax
   (require 'selectors)
+
+  (define (concat-attributes attr-stxes)
+    (define attrs&stxes
+      (for/fold ([attrs&stxes (hasheq)])
+                ([attr-stx (in-list attr-stxes)])
+        (syntax-parse attr-stx
+          [(name:id e:expr)
+           (hash-update attrs&stxes (syntax-e #'name) (λ (es) (cons #'e es)) null)])))
+    (for*/fold ([stxes null]
+                [seen  null]
+                #:result (reverse stxes))
+               ([attr-stx (in-list attr-stxes)]
+                [attr-id (in-value
+                          (syntax-parse attr-stx
+                            [(name:id _:expr) (syntax-e #'name)]))]
+                #:unless (memq attr-id seen))
+      (define stx
+        (match (hash-ref attrs&stxes attr-id)
+          [`(,_) attr-stx]
+          [`(,es ...)
+           (syntax-parse attr-stx
+             [(attr:id _)
+              #:with (e ...) (reverse es)
+              #'(attr ,(string-join `(e ...) " "))])]))
+      (values
+       (cons stx stxes)
+       (cons attr-id seen))))
 
   (define-syntax-class selector
     (pattern selector:id
@@ -97,7 +128,7 @@
   (define-syntax-class attribute-definition
     (pattern (attr:attribute)
              #:with name #'attr.name
-             #:with value "")
+             #:with value #'"")
 
     (pattern (attr:attribute val:str)
              #:with name #'attr.name
@@ -117,31 +148,29 @@
              #:with xexpr #'lit))
 
   (define-syntax-class element
-    #:datum-literals (@ unquote-splicing)
+    #:literals (unless unquote-splicing when)
     (pattern (sel:selector (attr:attribute-definition ...+) child:element ...)
-             #:with xexpr (with-syntax ([attrs
-                                         (append
-                                          (syntax-e #'sel.attributes)
-                                          (syntax-e #'[(attr.name attr.value) ...]))])
-                            #'(sel.tag attrs child.xexpr ...)))
+             #:with xexpr (with-syntax ([(attr ...)
+                                         (concat-attributes
+                                          (append
+                                           (syntax-e #'sel.attributes)
+                                           (syntax-e #'[(attr.name attr.value) ...])))])
+                            #'(sel.tag (attr ...) child.xexpr ...)))
 
     (pattern (sel:selector child:element ...)
              #:with xexpr #'(sel.tag sel.attributes child.xexpr ...))
 
-    (pattern ((~datum unless) condition:expr child:expr ...+)
+    (pattern (unless condition:expr child:expr ...+)
              #:with xexpr #',@(if (not condition)
                                   (list child ...)
                                   (list)))
 
-    (pattern ((~datum when) condition:expr child:expr ...+)
+    (pattern (when condition:expr child:expr ...+)
              #:with xexpr #',@(if condition
                                   (list child ...)
                                   (list)))
 
     (pattern (unquote-splicing e)
-             #:with xexpr #',@e)
-
-    (pattern (@ e)
              #:with xexpr #',@e)
 
     (pattern lit:literal
@@ -153,5 +182,5 @@
 (define-syntax (haml stx)
   (syntax-parse stx
     [(_ el:element) #'`el.xexpr]
-    [(_ el:element ...+)
+    [(_ el ...+)
      #'(list (haml el) ...)]))

@@ -80,12 +80,26 @@ tag defaults to @tt{div}:
     (:h1.title "Hello World")))
 ]
 
+Repeated attributes are concatenated into a single value:
+
+@examples[
+  #:eval sandbox
+  #:label #f
+  (haml
+   (.content
+    (:h1.title
+     ([:class "hello"]
+      [:data-example "1"]
+      [:data-example "2"])
+     "Hello World")))
+]
+
 Lists of elements can be spliced in using the @racket[(unquote-splicing e)] syntax:
 
 @haml-splicing-syntax-example
 
-Any expressions that don't parse as an element are evaluated in place
-at runtime:
+Expressions that don't parse as elements are evaluated in place at
+runtime:
 
 @examples[
   #:eval sandbox
@@ -119,4 +133,12 @@ of @racket[xexpr?]s:
   (haml
    (:li "a")
    (:li "b"))
+]
+
+@history[
+  #:changed "0.10" @elem{
+    @racket[when], @racket[unless] and @racket[unquote-splicing] are
+    now recognized by binding.  The @"@"-style splicing syntax is no
+    longer supported.
+  }
 ]

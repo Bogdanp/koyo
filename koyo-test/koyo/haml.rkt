@@ -221,14 +221,6 @@
          (div ([class "child-1"]))
          (div ([class "child-2"])))))
 
-    (test-case "expressions can be spliced into elements using (@ ...) syntax"
-      (check-equal?
-       (haml
-        (.articles (@ (map symbol->string '(a b c)))))
-       '(div
-         ([class "articles"])
-         "a" "b" "c")))
-
     (test-case "expressions can be spliced into elements using unquote splicing"
       (check-equal?
        (haml
@@ -243,7 +235,24 @@
         (:li "a")
         (:li "b"))
        '((li () "a")
-         (li () "b")))))))
+         (li () "b"))))
+
+    (test-case "concatenates duplicate attributes"
+      (check-equal?
+       (let ([boo "boo"])
+         (haml
+          (:li.foo.bar
+           ([:class "baz"]
+            [:class boo]
+            [:data-empty]
+            [:data-example "1"]
+            [:data-example "2"])
+           boo)))
+       '(li
+         ([class "foo bar baz boo"]
+          [data-empty ""]
+          [data-example "1 2"])
+         "boo"))))))
 
 (module+ test
   (require rackunit/text-ui)
