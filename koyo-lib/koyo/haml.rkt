@@ -75,7 +75,6 @@
       [(list _ value)
        (string->symbol value)]))
 
-
   (define (html-symbol? s)
     (define s:str (symbol->string s))
     (and (> (string-length s:str) 1)
