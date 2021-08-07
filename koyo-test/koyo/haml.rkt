@@ -21,55 +21,55 @@
      "selector?"
 
      (test-case "matches valid selectors"
-       (check-false (selector? ':))
-       (check-false (selector? (string->symbol ".")))
-       (check-true (selector? ':div))
-       (check-true (selector? ':a))
-       (check-true (selector? '.button))))
+       (check-false (selector? #':))
+       (check-false (selector? (datum->syntax #f (string->symbol "."))))
+       (check-true (selector? #':div))
+       (check-true (selector? #':a))
+       (check-true (selector? #'.button))))
 
     (test-suite
      "selector-tag"
 
      (test-case "extracts a selector's tag"
-       (check-equal? (selector-tag ':div) 'div)
-       (check-equal? (selector-tag ':a) 'a)
-       (check-equal? (selector-tag '.button) 'div)
-       (check-equal? (selector-tag '.container) 'div)
-       (check-equal? (selector-tag '.container.container--wide) 'div)))
+       (check-equal? (syntax-e (selector-tag #':div)) 'div)
+       (check-equal? (syntax-e (selector-tag #':a)) 'a)
+       (check-equal? (syntax-e (selector-tag #'.button)) 'div)
+       (check-equal? (syntax-e (selector-tag #'.container)) 'div)
+       (check-equal? (syntax-e (selector-tag #'.container.container--wide)) 'div)))
 
     (test-suite
      "selector-attributes"
 
      (test-case "infers classes and ids from a selector"
-       (check-equal? (selector-attributes ':div) null)
-       (check-equal? (selector-attributes '.a.b)
+       (check-equal? (syntax->datum (selector-attributes #':div)) null)
+       (check-equal? (syntax->datum (selector-attributes #'.a.b))
                      '((class "a b")))
-       (check-equal? (selector-attributes 'div#some-id.a.b)
+       (check-equal? (syntax->datum (selector-attributes #'div#some-id.a.b))
                      '((id "some-id")
                        (class "a b")))
        (check-exn
         exn:fail:syntax?
-        (lambda _
-          (selector-attributes 'div#id-1#id-2)))))
+        (lambda ()
+          (selector-attributes #'div#id-1#id-2)))))
 
     (test-suite
      "attribute?"
 
      (test-case "matches valid attributes"
-       (check-false (attribute? '.foo))
-       (check-false (attribute? 'class))
-       (check-false (attribute? ':class.foo))
-       (check-true (attribute? ':class))
-       (check-true (attribute? ':data-foo))
-       (check-true (attribute? ':cdr:license))))
+       (check-false (attribute? #'.foo))
+       (check-false (attribute? #'class))
+       (check-false (attribute? #':class.foo))
+       (check-true (attribute? #':class))
+       (check-true (attribute? #':data-foo))
+       (check-true (attribute? #':cdr:license))))
 
     (test-suite
      "attribute-name"
 
      (test-case "extracts names from attributes"
-       (check-equal? (attribute-name ':class) 'class)
-       (check-equal? (attribute-name ':data-value) 'data-value)
-       (check-equal? (attribute-name ':cdr:license) 'cdr:license))))
+       (check-equal? (syntax-e (attribute-name #':class)) 'class)
+       (check-equal? (syntax-e (attribute-name #':data-value)) 'data-value)
+       (check-equal? (syntax-e (attribute-name #':cdr:license)) 'cdr:license))))
 
    (test-suite
     "haml"
