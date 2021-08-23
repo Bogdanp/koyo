@@ -26,13 +26,13 @@
           (define message (place-channel-get ch))
           (log-argon2id-hasher-debug "received message: ~.s" message)
           (match message
-            [(list 'stop)
+            [`(stop)
              (log-argon2id-hasher-debug "stopped")]
 
-            [(list 'hash p out)
+            [`(hash ,p ,out)
              (place-channel-put out (pwhash 'argon2id (string->bytes/utf-8 p) config))
              (loop)]
 
-            [(list 'verify p h out)
+            [`(verify ,p ,h ,out)
              (place-channel-put out (pwhash-verify #f (string->bytes/utf-8 p) h))
              (loop)]))))))
