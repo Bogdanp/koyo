@@ -10,6 +10,9 @@
  make-argon2id-hasher-factory
  argon2id-hasher?)
 
+(define (fail-place-dead who)
+  (error who "hasher place crashed"))
+
 (struct argon2id-hasher (config sema [ch #:mutable] running?)
   #:methods gen:component
   [(define (component-start h)
@@ -22,17 +25,27 @@
   #:methods gen:hasher
   [(define (hasher-make-hash h pass)
      (try-start-hasher-place! 'hasher-make-hash h)
+     (define pch (argon2id-hasher-ch h))
      (define-values (in out)
        (place-channel))
-     (place-channel-put (argon2id-hasher-ch h) (list 'hash pass out))
-     (place-channel-get in))
+     (place-channel-put pch (list 'hash pass out))
+     (sync
+      in
+      (handle-evt
+       (place-dead-evt pch)
+       (λ (_) (fail-place-dead 'hasher-make-hash)))))
 
    (define (hasher-hash-matches? h pass-hash pass)
      (try-start-hasher-place! 'hasher-hash-matches? h)
+     (define pch (argon2id-hasher-ch h))
      (define-values (in out)
        (place-channel))
-     (place-channel-put (argon2id-hasher-ch h) (list 'verify pass pass-hash out))
-     (place-channel-get in))])
+     (place-channel-put pch (list 'verify pass pass-hash out))
+     (sync
+      in
+      (handle-evt
+       (place-dead-evt pch)
+       (λ (_) (fail-place-dead 'hasher-hash-matches?)))))])
 
 (define/contract ((make-argon2id-hasher-factory
                    #:parallelism [parallelism (processor-count)]
