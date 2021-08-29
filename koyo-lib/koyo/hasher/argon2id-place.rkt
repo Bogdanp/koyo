@@ -30,9 +30,11 @@
              (log-argon2id-hasher-debug "stopped")]
 
             [`(hash ,p ,out)
-             (place-channel-put out (pwhash 'argon2id (string->bytes/utf-8 p) config))
+             (with-handlers ([exn:fail? (λ (e) (place-channel-put out `(err ,(exn-message e))))])
+               (place-channel-put out `(ok ,(pwhash 'argon2id (string->bytes/utf-8 p) config))))
              (loop)]
 
             [`(verify ,p ,h ,out)
-             (place-channel-put out (pwhash-verify #f (string->bytes/utf-8 p) h))
+             (with-handlers ([exn:fail? (λ (e) (place-channel-put out `(err ,(exn-message e))))])
+               (place-channel-put out `(ok ,(pwhash-verify #f (string->bytes/utf-8 p) h))))
              (loop)]))))))

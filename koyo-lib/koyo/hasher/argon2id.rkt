@@ -2,16 +2,15 @@
 
 (require component
          racket/contract
+         racket/match
          racket/place
          "argon2id-place.rkt"
+         "error.rkt"
          "generic.rkt")
 
 (provide
  make-argon2id-hasher-factory
  argon2id-hasher?)
-
-(define (fail-place-dead who)
-  (error who "hasher place crashed"))
 
 (struct argon2id-hasher (config sema [ch #:mutable] running?)
   #:methods gen:component
@@ -28,24 +27,24 @@
      (define pch (argon2id-hasher-ch h))
      (define-values (in out)
        (place-channel))
-     (place-channel-put pch (list 'hash pass out))
+     (place-channel-put pch `(hash ,pass ,out))
      (sync
-      in
+      (command-result-evt 'hasher-make-hash in)
       (handle-evt
        (place-dead-evt pch)
-       (λ (_) (fail-place-dead 'hasher-make-hash)))))
+       (λ (_) (oops 'hasher-make-hash "place crashed")))))
 
    (define (hasher-hash-matches? h pass-hash pass)
      (try-start-hasher-place! 'hasher-hash-matches? h)
      (define pch (argon2id-hasher-ch h))
      (define-values (in out)
        (place-channel))
-     (place-channel-put pch (list 'verify pass pass-hash out))
+     (place-channel-put pch `(verify ,pass ,pass-hash ,out))
      (sync
-      in
+      (command-result-evt 'hasher-hash-matches? in)
       (handle-evt
        (place-dead-evt pch)
-       (λ (_) (fail-place-dead 'hasher-hash-matches?)))))])
+       (λ (_) (oops 'hasher-hash-matches? "place crashed")))))])
 
 (define/contract ((make-argon2id-hasher-factory
                    #:parallelism [parallelism (processor-count)]
@@ -61,7 +60,7 @@
 
 (define (try-start-hasher-place! who h)
   (unless (argon2id-hasher-running? h)
-    (error who "hasher component is stopped"))
+    (oops who "hasher component is stopped"))
   (call-with-semaphore (argon2id-hasher-sema h)
     (lambda ()
       (unless (argon2id-hasher-ch h)
@@ -76,3 +75,10 @@
       (when ch
         (place-channel-put ch '(stop))
         (set-argon2id-hasher-ch! h #f)))))
+
+(define (command-result-evt who in)
+  (handle-evt
+   in
+   (match-lambda
+     [`(err ,msg) (oops who "~a" msg)]
+     [`(ok ,res) res])))
