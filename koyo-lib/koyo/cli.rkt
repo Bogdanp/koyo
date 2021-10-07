@@ -249,7 +249,9 @@
      [("--server-timeout") t "server startup timeout in seconds"
                            (set! server-timeout (or (string->number t) server-timeout))]
      #:args ([dynamic-module-path #f])
-     (or dynamic-module-path (infer-dynamic-module-path))))
+     (if dynamic-module-path
+         (string->path dynamic-module-path)
+         (infer-dynamic-module-path))))
 
   (run-forever
    #:recompile? recompile?
