@@ -12,10 +12,10 @@
 
 ### First-time Setup
 
-    $ nvm use && npm install && npm run build
-    $ raco pkg install chief
-    $ raco pkg install app-name-here/        # install and build the application and its deps
-    $ raco pkg install app-name-here-tests/  # install and build the tests and their deps
+    nvm use && npm install && npm run build
+    raco pkg install chief
+    raco pkg install app-name-here/        # install and build the application and its deps
+    raco pkg install app-name-here-tests/  # install and build the tests and their deps
 
 ### Development environment
 
@@ -31,8 +31,8 @@ application is started.
 
 ## Running the app locally
 
-    $ nvm use
-    $ raco chief start
+    nvm use
+    raco chief start
 
 
 [Postgres]: https://www.postgresql.org/
