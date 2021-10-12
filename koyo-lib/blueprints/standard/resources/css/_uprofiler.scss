@@ -1,10 +1,10 @@
 .uprofiler-content {
-  position: fixed;
   bottom: 10px;
-  left: 15px;
   box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2);
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
+  left: 15px;
+  position: fixed;
 }
 
 .uprofiler-toggle {
@@ -12,35 +12,35 @@
 }
 
 .uprofiler-label {
-  display: block;
   background: coral;
-  border: 1px solid #000;
-  padding: 6px 12px;
-  color: #fff;
+  border: 1px solid black;
+  color: white;
+  display: block;
   font-family: courier, monospace;
+  padding: 6px 12px;
 }
 
 .uprofiler-timings {
+  background: white;
+  border: 1px solid black;
+  color: black;
   display: none;
-  background: #fff;
-  border: 1px solid #000;
-  color: #000;
 
   &-inner {
-    padding: 12px;
     display: block;
     max-height: 400px;
     overflow-y: scroll;
+    padding: 12px;
   }
 }
 
 .uprofiler-close {
+  background: black;
+  color: white;
   display: block;
-  padding: 6px 12px;
-  background: #000;
-  color: #fff;
   font-family: courier, monospace;
   font-size: 0.8rem;
+  padding: 6px 12px;
   text-align: center;
   text-transform: uppercase;
 }
@@ -54,18 +54,18 @@
 }
 
 .uprofiler-timing {
+  border: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-left: 1px dashed #ddd;
+  border-right: none;
   display: block;
   margin: 0 0 0 10px;
   padding: 6px 0 0 6px;
-  border: 2px solid transparent;
-  border-left: 1px dashed #ddd;
-  border-right: none;
-  border-bottom: 2px solid transparent;
   transition: all 0.1s;
 
   label {
-    &:before {
-      content: "▶ ";
+    &::before {
+      content: '▶ ';
     }
   }
 
@@ -102,8 +102,8 @@
     display: none;
   }
 
-  &-toggle:checked ~ label:before {
-    content: "▼ ";
+  &-toggle:checked ~ label::before {
+    content: '▼ ';
   }
 
   &-toggle:checked ~ .uprofiler-timing {
@@ -119,5 +119,4 @@
     background: rgba(darkblue, 0.02);
     border-color: black;
   }
-
 }
