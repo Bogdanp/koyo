@@ -19,11 +19,11 @@
   (test-suite
    "flash"
    #:before
-   (lambda _
+   (lambda ()
      (system-start test-system))
 
    #:after
-   (lambda _
+   (lambda ()
      (system-stop test-system))
 
    (test-suite

@@ -24,7 +24,7 @@
 
     (check-equal?
      (with-output-to-bytes
-       (lambda _
+       (lambda ()
          (colorize
           `((fg ,(make-color 5 0 0))
             (bg ,(make-color 5 5 5)))

@@ -35,6 +35,6 @@
    (choice-evt chan
                (wrap-evt
                 (alarm-evt deadline)
-                (lambda _
+                (lambda (_)
                   (begin0 'timeout
                     (kill-thread worker)))))))

@@ -50,7 +50,7 @@
       [database make-test-database])
 
      #:before
-     (lambda _
+     (lambda ()
        (with-database-connection [conn database]
          (query-exec conn "truncate table koyo_jobs")))
 
@@ -103,7 +103,7 @@
       "worker"
 
       #:before
-      (lambda _
+      (lambda ()
         (system-start worker-system)
         (set! broker (system-ref worker-system 'broker))
         (set! database (system-ref worker-system 'database))
@@ -111,7 +111,7 @@
           (query-exec conn "truncate table koyo_jobs")))
 
       #:after
-      (lambda _
+      (lambda ()
         (system-stop worker-system))
 
       (test-case "jobs can be executed"

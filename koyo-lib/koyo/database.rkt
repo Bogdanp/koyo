@@ -157,7 +157,7 @@
 (define/contract (in-row conn stmt . args)
   (-> connection? statement? any/c ... sequence?)
   (let ([consumed #f])
-    (stop-before (apply in-rows conn stmt args) (lambda _
+    (stop-before (apply in-rows conn stmt args) (lambda _args
                                                   (begin0 consumed
                                                     (set! consumed #t))))))
 

@@ -26,7 +26,7 @@
 (define/contract current-production-error-page
   (parameter/c (-> request? exn? can-be-response?))
   (make-parameter
-   (lambda _
+   (lambda (_req _exn)
      (response/xexpr
       #:code 500
       (haml

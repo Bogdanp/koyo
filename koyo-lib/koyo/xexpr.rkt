@@ -184,12 +184,12 @@
 
 (define (read-tag)
   (with-output-to-string
-    (lambda _
+    (lambda ()
       (read-while alphanumeric?))))
 
 (define (read-class)
   (with-output-to-string
-    (lambda _
+    (lambda ()
       (unless (char=? #\. (peek-char))
         (raise-user-error 'read-class "classes must start with a period"))
 
@@ -198,7 +198,7 @@
 
 (define (read-id)
   (with-output-to-string
-    (lambda _
+    (lambda ()
       (unless (char=? #\# (peek-char))
         (raise-user-error 'read-id "ids must start with a pound sign"))
 
@@ -211,7 +211,7 @@
 (define (parse-selectors sel)
   (define selectors
     (with-input-from-string sel
-      (lambda _
+      (lambda ()
         (let loop ([current-selector (dyn:selector #f null)]
                    [selectors null])
           (match (peek-char)

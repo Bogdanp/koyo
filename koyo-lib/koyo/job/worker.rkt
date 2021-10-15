@@ -54,7 +54,7 @@
   (define ch (make-async-channel pool-size))
   (define pool (make-worker-pool pool-size ch))
   (thread
-   (lambda _
+   (lambda ()
      (let outer-loop ([listener (make-listener broker id queue)])
        (with-handlers ([exn:fail? (lambda (e)
                                     (log-worker-error "unexpected reactor failure: ~a" (exn-message e))
@@ -162,7 +162,7 @@
         (handle-evt
          (alarm-evt (+ (current-inexact-milliseconds)
                        (* (random 1 15) 1000)))
-         (lambda _
+         (lambda (_)
            (begin0 null
              (log-worker-debug "performing maintenance...")
              (broker-perform-maintenance! broker id))))))]))
@@ -210,7 +210,7 @@
   (sync
    (handle-evt
     (alarm-evt (+ (current-inexact-milliseconds) 60000))
-    (lambda _
+    (lambda (_)
       (for-each kill-thread pool)))
    (thread
     (lambda ()
