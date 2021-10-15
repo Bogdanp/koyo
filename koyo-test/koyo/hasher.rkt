@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require component
-         component/testing
+(require component/testing
          koyo/hasher
          rackunit)
 

@@ -60,7 +60,7 @@
 
 (define (try-start-hasher-place! who h)
   (unless (argon2id-hasher-running? h)
-    (oops who "hasher component is stopped"))
+    (oops who "hasher component is not running"))
   (call-with-semaphore (argon2id-hasher-sema h)
     (lambda ()
       (unless (argon2id-hasher-ch h)
