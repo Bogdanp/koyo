@@ -55,6 +55,13 @@
      [("verify" (integer-arg) (string-arg))
       (verify-page flashes users)]))
 
+  (define ((wrap-params handler) req)
+    (parameterize ([current-broker broker]
+                   [current-continuation-key-cookie-secure? (not debug?)]
+                   [current-continuation-wrapper stack]
+                   [current-reverse-uri-fn reverse-uri])
+      (handler req)))
+
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
     (~> handler
@@ -66,13 +73,8 @@
         (wrap-preload)
         (wrap-cors)
         (wrap-profiler)
-        ((wrap-errors debug?))))
-
-  (current-broker broker)
-  (when debug?
-    (current-continuation-key-cookie-secure? #f))
-  (current-continuation-wrapper stack)
-  (current-reverse-uri-fn reverse-uri)
+        ((wrap-errors debug?))
+        (wrap-params)))
 
   (define manager
     (make-threshold-LRU-manager (stack expired-page) memory-threshold))
