@@ -43,7 +43,7 @@
   (query-exec conn "create table if not exists __test_mutex()")
   (call-with-transaction conn
     #:isolation 'serializable
-    (lambda _
+    (lambda ()
       (query-exec conn "lock table __test_mutex")
       (run-tests test verbosity))))
 

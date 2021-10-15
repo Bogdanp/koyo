@@ -41,9 +41,9 @@
            (render-login-form (embed/url loop) render-widget error-message))))
 
        (match (form-run login-form req)
-         [(list 'passed (list username password) render-widget)
+         [`(passed (,username ,password) ,render-widget)
           (with-handlers ([exn:fail:auth-manager:unverified?
-                           (lambda _
+                           (lambda (_e)
                              (render render-widget (translate 'error-verify-email)))])
             (cond
               [(auth-manager-login! auth username password)
@@ -52,10 +52,10 @@
               [else
                (render render-widget (translate 'error-invalid-credentials))]))]
 
-         [(list _ _ render-widget)
+         [`(,_ ,_ ,render-widget)
           (render render-widget)])))))
 
-(define/contract ((logout-page auth) req)
+(define/contract ((logout-page auth) _req)
   (-> auth-manager? (-> request? response?))
   (auth-manager-logout! auth)
   (redirect-to (reverse-uri 'login-page)))
@@ -106,18 +106,18 @@
          (render-signup-form (embed/url (signup-page auth mailer users)) render-widget error-message))))
 
      (match (form-run signup-form req)
-       [(list 'passed (list username password) render-widget)
+       [`(passed (,username ,password) ,render-widget)
         (with-handlers ([exn:fail:user-manager:username-taken?
-                         (lambda _
+                         (lambda (_e)
                            (render render-widget (translate 'error-username-taken)))])
           (define user (user-manager-create! users username password))
           (mailer-send-welcome-email mailer user)
           (post-signup-page (redirect/get/forget)))]
 
-       [(list _ _ render-widget)
+       [`(,_ ,_ ,render-widget)
         (render render-widget)]))))
 
-(define (post-signup-page req)
+(define (post-signup-page _req)
   (page
    #:subtitle (translate 'subtitle-signed-up)
    (haml
@@ -125,8 +125,8 @@
      (:h1 (translate 'subtitle-signed-up))
      (:p (translate 'message-post-sign-up))))))
 
-(define/contract ((verify-page flashes users) req user-id verification-code)
-  (-> flash-manager? user-manager? (-> request? integer? string? response?))
+(define/contract ((verify-page users) _req user-id verification-code)
+  (-> user-manager? (-> request? integer? string? response?))
   (user-manager-verify! users user-id verification-code)
   (flash 'success (translate 'message-email-verified))
   (redirect-to (reverse-uri 'login-page)))
@@ -167,13 +167,13 @@
  request-password-reset-page
  password-reset-page)
 
-(define/contract ((request-password-reset-page flashes mailer users) req)
-  (-> flash-manager? mailer? user-manager? (-> request? response?))
+(define/contract ((request-password-reset-page mailer users) req)
+  (-> mailer? user-manager? (-> request? response?))
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run request-password-reset-form req)
-         [(list 'passed username render-widget)
+         [`(passed ,username ,_)
           (define-values (user token)
             (user-manager-create-reset-token! users
                                               #:username username
@@ -191,7 +191,7 @@
           (redirect/get/forget/protect)
           (redirect-to (reverse-uri 'login-page))]
 
-         [(list _ _ render-widget)
+         [`(,_ ,_ ,render-widget)
           (page
            #:subtitle (translate 'subtitle-request-password-reset)
            (haml
@@ -216,13 +216,13 @@
      ([:type "submit"])
      (translate 'action-request-password-reset)))))
 
-(define/contract ((password-reset-page flashes mailer users) req user-id token)
-  (-> flash-manager? mailer? user-manager? (-> request? id/c non-empty-string? response?))
+(define/contract ((password-reset-page users) req user-id token)
+  (-> user-manager? (-> request? id/c non-empty-string? response?))
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run password-reset-form req)
-         [(list 'passed password render-widget)
+         [`(passed ,password ,render-widget)
           (define reset?
             (user-manager-reset-password! users
                                           #:user-id user-id
@@ -235,7 +235,7 @@
 
           (redirect-to (reverse-uri 'login-page))]
 
-         [(list _ _ render-widget)
+         [`(,_ ,_ ,render-widget)
           (page
            #:subtitle (translate 'subtitle-reset-password)
            (haml

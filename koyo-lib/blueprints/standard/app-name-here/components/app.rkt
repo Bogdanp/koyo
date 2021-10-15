@@ -44,16 +44,16 @@
       (logout-page auth)]
 
      [("password-reset")
-      (request-password-reset-page flashes mailer users)]
+      (request-password-reset-page mailer users)]
 
      [("password-reset" (integer-arg) (string-arg))
-      (password-reset-page flashes mailer users)]
+      (password-reset-page users)]
 
      [("signup")
       (signup-page auth mailer users)]
 
      [("verify" (integer-arg) (string-arg))
-      (verify-page flashes users)]))
+      (verify-page users)]))
 
   (define ((wrap-params handler) req)
     (parameterize ([current-broker broker]

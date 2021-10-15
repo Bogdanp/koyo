@@ -18,7 +18,7 @@
                            [users (db hasher) make-user-manager]
                            [migrator (db) make-test-migrator])
     #:before
-    (lambda _
+    (lambda ()
       (truncate-tables! db 'users)
       (set! the-user (make-test-user! users)))
 

@@ -77,17 +77,17 @@
 (define/contract (user-manager-create! um username password)
   (-> user-manager? string? string? user?)
 
-  (define user
+  (define the-user
     (~> (make-user #:username username)
         (set-password um _ password)))
 
   (with-handlers ([exn:fail:sql:constraint-violation?
-                   (lambda _
+                   (lambda (_e)
                      (raise (exn:fail:user-manager:username-taken
                              (format "username '~a' is taken" username)
                              (current-continuation-marks))))])
     (with-database-transaction [conn (user-manager-db um)]
-      (insert-one! conn user))))
+      (insert-one! conn the-user))))
 
 (define/contract (user-manager-create-reset-token! um
                                                    #:username username

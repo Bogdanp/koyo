@@ -21,7 +21,7 @@
                            [sessions make-test-session-manager]
                            [users (db hasher) make-user-manager])
     #:before
-    (lambda _
+    (lambda ()
       (truncate-tables! db 'users)
       (set! user (user-manager-create! users "bogdan" "hunter2")))
 
@@ -39,7 +39,7 @@
      (test-case "fails if the user is not verified"
        (check-exn
         exn:fail:auth-manager:unverified?
-        (lambda _
+        (lambda ()
           (auth-manager-login! auth "bogdan" "hunter2"))))
 
      (test-case "returns the user when verified"
