@@ -181,11 +181,15 @@
 
   (define mod (path->module-path dynamic-module-path))
   (define (start)
-    (jobs:clear!)
-    (dynamic-rerequire mod)
-    (values
-     ((dynamic-require mod 'start))
-     (dynamic-require mod 'before-reload (λ () void))))
+    (with-handlers ([(λ (_) #t)
+                     (λ (e)
+                       ((error-display-handler) (exn-message e) e)
+                       (values void void))])
+      (jobs:clear!)
+      (dynamic-rerequire mod)
+      (values
+       ((dynamic-require mod 'start))
+       (dynamic-require mod 'before-reload void))))
 
   (let loop ()
     (let-values ([(stop before-reload) (start)])
@@ -195,7 +199,11 @@
                          (lambda (e)
                            (eprintf "koyo/runner: ~a~n" (exn-message e))
                            (delete-zos! root-path)
-                           (exit 0))])
+                           (exit 0))]
+                        [(λ (_) #t)
+                         (λ (e)
+                           ((error-display-handler) (exn-message e) e)
+                           (loop))])
           (sync/enable-break
            (handle-evt
             (current-input-port)
