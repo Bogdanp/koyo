@@ -134,8 +134,9 @@
           (log-runner-info "recompiling because '~a' changed" changed-path)
           (parameterize ([current-output-port (open-output-nowhere)]
                          [current-error-port  (open-output-nowhere)])
-            (unless (make! dynamic-module-path #:parallel? #f)
-              (log-runner-warning "compilation failed (output suppressed)"))))))))
+            (if (make! dynamic-module-path #:parallel? #f)
+                (log-runner-info "compilation succeeded")
+                (log-runner-warning "compilation failed (output suppressed)"))))))))
 
   (let process-loop ()
     (maybe-compile-app!)
