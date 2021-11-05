@@ -47,7 +47,12 @@
                 (system               . ,config:log-level))))
 
   (current-system prod-system)
-  (system-start prod-system)
+  (with-handlers ([(λ (_) #t)
+                   (λ (e)
+                     (current-system #f)
+                     (stop-logger)
+                     (raise e))])
+    (system-start prod-system))
 
   (lambda ()
     (system-stop prod-system)
