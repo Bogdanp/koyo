@@ -18,5 +18,5 @@ random strings.
              #:value generate-random-string]
    @defproc[(generate-random-string [len (exact-nonnegative-integer?)]) non-empty-string?])]{
   Generates a random string of length @racket[len] in a
-  cryptographically-secure manner.
+  cryptographically-secure manner. If @racket[len] is omitted, it will default to @racket[64].
 }
