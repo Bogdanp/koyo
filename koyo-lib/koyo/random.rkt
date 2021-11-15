@@ -14,7 +14,8 @@
 (define (crypto-generate-random-string len)
   (with-output-to-string
     (lambda ()
-      (for ([b (in-bytes (crypto-random-bytes (/ len 2)))])
+      (for ([b (in-bytes (crypto-random-bytes (/ (if (even? len) len (sub1 len))
+                                                 2)))])
         (when (fx< b 16)
           (display "0"))
         (display (number->string b 16))))))
