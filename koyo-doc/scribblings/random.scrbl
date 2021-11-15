@@ -16,7 +16,7 @@ random strings.
 @deftogether[
   (@defparam[current-random-string-generator generator (-> exact-positive-integer? non-empty-string?)
              #:value generate-random-string]
-   @defproc[(generate-random-string [len (exact-nonnegative-integer?)]) non-empty-string?])]{
+   @defproc[(generate-random-string [len (exact-nonnegative-integer?) 64]) non-empty-string?])]{
   Generates a random string of length @racket[len] in a
   cryptographically-secure manner.
 }
