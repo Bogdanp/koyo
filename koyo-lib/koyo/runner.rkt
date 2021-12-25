@@ -2,8 +2,6 @@
 
 (require racket/contract
          racket/file
-         racket/format
-         racket/future
          racket/match
          racket/path
          racket/port
@@ -179,11 +177,19 @@
      #:args (root-path dynamic-module-path)
      (values root-path dynamic-module-path)))
 
+  (define (display-exn e)
+    ((error-display-handler) (exn-message e) e))
+
   (define mod (path->module-path dynamic-module-path))
   (define (start)
-    (with-handlers ([(λ (_) #t)
+    (with-handlers ([need-recompile-exn?
+                     (lambda (e)
+                       (eprintf "koyo/runner: ~a~n" (exn-message e))
+                       (delete-zos! root-path)
+                       (exit 0))]
+                    [(λ (_) #t)
                      (λ (e)
-                       ((error-display-handler) (exn-message e) e)
+                       (display-exn e)
                        (values void void))])
       (jobs:clear!)
       (dynamic-rerequire mod)
@@ -194,26 +200,25 @@
   (let loop ()
     (let-values ([(stop before-reload) (start)])
       (let inner-loop ()
-        (with-handlers ([exn:break? (λ (_) (stop))]
-                        [constant-redefined-exn?
-                         (lambda (e)
-                           (eprintf "koyo/runner: ~a~n" (exn-message e))
-                           (delete-zos! root-path)
-                           (exit 0))]
-                        [(λ (_) #t)
-                         (λ (e)
-                           ((error-display-handler) (exn-message e) e)
-                           (loop))])
+        (with-handlers ([exn:break? (λ (_) (stop))])
           (sync/enable-break
            (handle-evt
             (current-input-port)
             (lambda (_)
               (match (read)
                 [`(reload ,changed-path)
-                 (stop)
+                 (with-handlers ([(λ (_) #t)
+                                  (λ (e)
+                                    (eprintf "koyo/runner: failed to stop application~n")
+                                    (display-exn e))])
+                   (stop))
                  (when should-touch-dependents?
                    (touch-dependents dynamic-module-path changed-path))
-                 (before-reload)
+                 (with-handlers ([(λ (_) #t)
+                                  (λ (e)
+                                    (eprintf "koyo/runner: before reload hook failed~n")
+                                    (display-exn e))])
+                   (before-reload))
                  (loop)]
 
                 [message

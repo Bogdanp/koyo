@@ -8,16 +8,22 @@
 ;; for transparently recovering from those cases.
 
 (provide
- constant-redefined-exn?
+ need-recompile-exn?
  delete-zos!
  mod-path->zo-path
  zo-dir
  zo-dir?
  zo-path?)
 
+(define (need-recompile-exn? e)
+  (or (constant-redefined-exn? e)
+      (module-redeclare-exn? e)))
+
 (define (constant-redefined-exn? e)
-  (and (exn:fail:contract:variable? e)
-       (regexp-match? #rx"cannot re-define a constant" (exn-message e))))
+  (regexp-match? #rx"cannot re-define a constant" (exn-message e)))
+
+(define (module-redeclare-exn? e)
+  (regexp-match? #rx"cannot redeclare module" (exn-message e)))
 
 (define (delete-zos! root)
   (for ([p (in-list (find-files zo-path? root))])
