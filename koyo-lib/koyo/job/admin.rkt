@@ -43,10 +43,10 @@
                    [current-path (string-join path "/")]
                    [current-path-prefix path-prefix])
       (match subpath
-        [(list)
+        [`()
          (dashboard-page req)]
 
-        [(list "jobs" (app string->number id))
+        [`("jobs" ,(app string->number id))
          (job-page req id)]
 
         [_

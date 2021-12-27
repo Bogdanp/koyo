@@ -153,3 +153,13 @@ pre, code {
 .button--primary:hover {
   background: #eaf6ff;
 }
+
+
+.button--danger {
+  background: #fcdfd8;
+  border: 1px solid #bf8a7d;
+}
+
+.button--danger:hover {
+  background: #fff1ee;
+}
