@@ -19,7 +19,7 @@
                      "gregor-doc"
                      "net-doc"
                      "racket-doc"
-                     "srfi-doc-nonfree"
+                     "srfi-doc"
                      "web-server-doc"))
 
 (define update-implies '("koyo-lib"))
