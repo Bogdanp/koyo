@@ -10,6 +10,7 @@
          racket/list
          racket/match
          racket/port
+         racket/pretty
          racket/runtime-path
          racket/string
          web-server/dispatchers/dispatch
@@ -84,12 +85,10 @@
       (:h1.island__title "Jobs")
       (.island__content
        (job-list the-jobs))
-      (.island__footer
-       (unless (null? the-jobs)
-         (haml
-          (:a.button
-           ([:href (make-uri #:params `((cursor . ,(number->string (job-meta-id (last the-jobs))))))])
-           "Next Page")))))
+      (unless (null? the-jobs)
+        (haml
+         (.island__footer
+          (button "Next Page" (make-uri #:params `((cursor . ,(number->string (job-meta-id (last the-jobs)))))))))))
      (:br)))))
 
 (define (job-page _req id)
@@ -152,17 +151,26 @@
        ,@content))))))
 
 (define (job-list jobs)
-  (haml (:ul.items ,@(map job-list-item jobs))))
+  (haml
+   (:table.jobs-table
+    (:thead
+     (:tr
+      (:th "ID")
+      (:th "Job")
+      (:th "Status")
+      (:th "Queue")
+      (:th "Created")))
+    (:tbody
+     ,@(map job-list-item jobs)))))
 
 (define (job-list-item j)
   (haml
-   (:li
-    ([:class (class-list "item" @~a{item--@(job-meta-status j)})]
-     [:data-job-uri (make-uri "jobs" (job-meta-id j))])
-    (.item__status (pp-status (job-meta-status j)))
-    (.item__queue (:span.status (job-meta-queue j)))
-    (.item__arguments
-     ,@(pp-job j)))))
+   (:tr
+    (:td (:pre (~a "#" (job-meta-id j))))
+    (:td (pp-job j))
+    (:td (pp-status (job-meta-status j)))
+    (:td (:span.status (job-meta-queue j)))
+    (:td (pp-moment (job-meta-created-at j))))))
 
 (define (job-table j embed/url)
   (define (row label content)
@@ -174,7 +182,7 @@
   (haml
    (:table.job-table
     (row "Queue" (job-meta-queue j))
-    (row "Job" (haml (:div ,@(pp-job j))))
+    (row "Job"  (pp-job j))
     (row "Status" (pp-status (job-meta-status j)))
     (row "Attempts" (number->string (job-meta-attempts j)))
     (row "Created" (pp-moment (job-meta-created-at j)))
@@ -207,22 +215,22 @@
 (define (pp-job j)
   (match-define (list kws kw-args args)
     (job-meta-arguments j))
+  (define expr-str
+    (call-with-output-string
+     (lambda (out)
+       (parameterize ([current-output-port out]
+                      [pretty-print-columns 40])
+         (pretty-write `(,(string->symbol (job-meta-job j))
+                         ,@(flatten
+                            (for/list ([kw (in-list kws)]
+                                       [kw-arg (in-list kw-args)])
+                              (list kw kw-arg)))
+                         ,@args))))))
 
   (haml
    (:a
     ([:href (make-uri "jobs" (job-meta-id j))])
-    (:pre "(" (job-meta-job j)))
-
-   (:div
-    ,@(for/list ([kw (in-list kws)]
-                 [kw-arg (in-list kw-args)])
-        (haml (:pre " " (~s kw) " " (~s kw-arg)))))
-
-   (:div
-    ,@(for/list ([arg (in-list args)])
-        (haml (:pre " " (~s arg)))))
-
-   (:pre " )")))
+    (:pre expr-str))))
 
 (define (pp-status s)
   (haml
