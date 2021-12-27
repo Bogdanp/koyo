@@ -100,7 +100,8 @@
 (provide
  (struct-out job-meta)
  broker-job
- broker-jobs)
+ broker-jobs
+ broker-delete!)
 
 (struct job-meta (id queue job arguments status priority attempts created-at scheduled-at started-at worker-id)
   #:transparent)
@@ -114,6 +115,10 @@
   (with-database-connection [conn (broker-database b)]
     (for/list ([job (in-jobs conn latest-jobs-stmt cursor)])
       job)))
+
+(define (broker-delete! b id)
+  (with-database-connection [conn (broker-database b)]
+    (query-exec conn delete-stmt id)))
 
 (define (make-job-meta id queue job arguments status priority attempts created-at scheduled-at started-at worker-id)
   (job-meta id queue job (deserialize arguments) status priority attempts created-at scheduled-at started-at worker-id))

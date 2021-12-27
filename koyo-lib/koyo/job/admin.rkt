@@ -182,7 +182,7 @@
   (haml
    (:table.job-table
     (row "Queue" (job-meta-queue j))
-    (row "Job"  (pp-job j))
+    (row "Job" (pp-job j))
     (row "Status" (pp-status (job-meta-status j)))
     (row "Attempts" (number->string (job-meta-attempts j)))
     (row "Created" (pp-moment (job-meta-created-at j)))
@@ -190,15 +190,27 @@
     (row "Started" (cond
                      [(job-meta-started-at j) => pp-moment]
                      [else 'mdash]))
-    (row "Actions" (button
-                    #:confirmation-required? #t
-                    #:style 'primary
-                    "Retry"
-                    (embed/url
-                     (lambda (_req)
-                       (broker-mark-for-retry! (current-broker) (job-meta-id j) (now/moment))
-                       (redirect/get/forget)
-                       (redirect-to (make-uri "jobs" (job-meta-id j))))))))))
+    (row "Actions" (haml
+                    (:div
+                     (button
+                      #:confirmation-required? #t
+                      #:style 'primary
+                      "Retry"
+                      (embed/url
+                       (lambda (_req)
+                         (broker-mark-for-retry! (current-broker) (job-meta-id j) (now/moment))
+                         (redirect/get/forget)
+                         (redirect-to (make-uri "jobs" (job-meta-id j))))))
+                     " "
+                     (button
+                      #:confirmation-required? #t
+                      #:style 'danger
+                      "Delete"
+                      (embed/url
+                       (lambda (_req)
+                         (broker-delete! (current-broker) (job-meta-id j))
+                         (redirect/get/forget)
+                         (redirect-to (make-uri )))))))))))
 
 (define (button label action
                 #:style [style #f]

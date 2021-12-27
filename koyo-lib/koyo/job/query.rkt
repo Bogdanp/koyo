@@ -41,3 +41,4 @@
 
 (define-stmt lookup-job)
 (define-stmt latest-jobs)
+(define-stmt delete)
