@@ -76,6 +76,11 @@ pre, code {
   padding: 16px;
 }
 
+.island__footer {
+  border-top: 1px solid #f0f0f2;
+  padding: 16px;
+}
+
 .items {
   list-style: none;
   display: flex;

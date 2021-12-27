@@ -1,9 +1,10 @@
 #lang at-exp racket/base
 
 (require (for-syntax racket/base)
-         component
          gregor
          koyo/continuation
+         koyo/http
+         net/uri-codec
          racket/contract
          racket/format
          racket/list
@@ -25,8 +26,7 @@
  broker-admin-handler)
 
 (struct broker-admin (handler)
-  #:transparent
-  #:methods gen:component [])
+  #:transparent)
 
 (define/contract ((make-broker-admin-factory [path "/_koyo/jobs"]) broker)
   (->* () (string?) (-> broker? broker-admin?))
@@ -71,42 +71,54 @@
   (call-with-input-file (build-path assets "screen.css")
     port->string))
 
-(define (dashboard-page _req)
+(define (dashboard-page req)
+  (define the-cursor
+    (bindings-ref-number (request-bindings/raw req) 'cursor))
+  (define the-jobs
+    (broker-jobs (current-broker)
+                 (or the-cursor -1)))
   (page
    (haml
     (.container
      (.island
       (:h1.island__title "Jobs")
       (.island__content
-       (job-list (broker-jobs (current-broker)))))))))
+       (job-list the-jobs))
+      (.island__footer
+       (unless (null? the-jobs)
+         (haml
+          (:a.button
+           ([:href (make-uri #:params `((cursor . ,(number->string (job-meta-id (last the-jobs))))))])
+           "Next Page")))))
+     (:br)))))
 
 (define (job-page _req id)
-  (cond
-    [(broker-job (current-broker) id)
-     => (lambda (j)
-          (send/suspend/dispatch/protect
-           (lambda (embed/url)
-             (page
-              (haml
-               (.container
-                (.island
-                 (:h1.island__title @~a{Job @(job-meta-id j)})
-                 (.island__content
-                  (job-table j embed/url)))))))))]
-
-    [else
-     (next-dispatcher)]))
+  (define j (broker-job (current-broker) id))
+  (unless j (next-dispatcher))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (page
+      (haml
+       (.container
+        (.island
+         (:h1.island__title @~a{Job @(job-meta-id j)})
+         (.island__content
+          (job-table j embed/url)))))))))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (make-uri . parts)
+(define (make-uri #:params [params null]
+                  . parts)
   (define the-uri
     (~a (current-path-prefix) "/" (string-join (map ~a parts) "/")))
-
-  (string-trim the-uri "/"
-               #:left? #f
-               #:right? #t))
+  (define trimmed-uri
+    (string-trim the-uri "/"
+                 #:left? #f
+                 #:right? #t))
+  (if (null? params)
+      trimmed-uri
+      (~a trimmed-uri "?" (alist->form-urlencoded params))))
 
 (define (page . content)
   (define (nav-item label path)
