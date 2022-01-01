@@ -195,7 +195,7 @@
       (dynamic-rerequire mod)
       (values
        ((dynamic-require mod 'start))
-       (dynamic-require mod 'before-reload void))))
+       (dynamic-require mod 'before-reload (λ () void)))))
 
   (let loop ()
     (let-values ([(stop before-reload) (start)])
