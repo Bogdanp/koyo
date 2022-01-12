@@ -12,6 +12,7 @@
                "gregor-lib"
                "html-lib"
                "net-lib"
+               "raco-invoke"
                "readline-lib"
                "srfi-lite-lib"
                "unix-socket-lib"

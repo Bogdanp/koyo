@@ -5,7 +5,6 @@
          racket/cmdline
          racket/file
          racket/format
-         racket/function
          racket/list
          racket/match
          racket/path
@@ -13,6 +12,7 @@
          racket/string
          racket/system
          raco/command-name
+         raco/invoke
          "console.rkt"
          "generator.rkt"
          "logging.rkt"
@@ -105,19 +105,17 @@
 
   (log-koyo-info "building executable")
   (unless (zero?
-           (apply system*/exit-code
-                  (find-executable-path "raco")
-                  "exe" "-o" temp-exe-path
+           (apply raco
+                  "exe"
+                  "-o" (~a temp-exe-path)
                   (append
                    (flatten (for/list ([l (in-list included-langs)])
                               (list "++lang" l)))
-                   (list dynamic-module-path))))
+                   (list (~a dynamic-module-path)))))
     (exit-with-errors! @~a{error: failed to build racket executable from application}))
 
   (log-koyo-info "creating distribution")
-  (unless (zero?
-           (system*/exit-code (find-executable-path "raco")
-                              "distribute" target-path temp-exe-path))
+  (unless (zero? (raco "distribute" (~a target-path) (~a temp-exe-path)))
     (exit-with-errors! @~a{error: failed to create distribution from application}))
 
   (define static-path
