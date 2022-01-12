@@ -77,6 +77,7 @@
 (define (handle-dist)
   (define target-path "dist")
   (define included-langs null)
+  (define included-libs null)
   (define dynamic-module-path
     (command-line
      #:program (current-program-name)
@@ -86,8 +87,11 @@
                         (set! target-path target-path)]
      #:multi
      [("++lang") lang
-                 "additional #langs to include into the executable"
+                 "additional #langs to include in the executable"
                  (set! included-langs (cons lang included-langs))]
+     [("++lib") a-lib
+                "additional libs to include in the executable"
+                (set! included-libs (cons a-lib included-libs))]
      #:args ([dynamic-module-path #f])
      (or dynamic-module-path (infer-dynamic-module-path))))
 
@@ -109,8 +113,8 @@
                   "exe"
                   "-o" (~a temp-exe-path)
                   (append
-                   (flatten (for/list ([l (in-list included-langs)])
-                              (list "++lang" l)))
+                   (flatten (for/list ([l (in-list included-langs)]) (list "++lang" l)))
+                   (flatten (for/list ([l (in-list included-libs)]) (list "++lib" l)))
                    (list (~a dynamic-module-path)))))
     (exit-with-errors! @~a{error: failed to build racket executable from application}))
 
