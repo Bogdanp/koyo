@@ -33,7 +33,7 @@ function.
                       [else else-fun])
    (method pat)
    (role id)
-   (name id)]
+   (name symbol?)]
    #:contracts
    [(else-fun (-> request? response?))
     (dispatch-fun (-> request? any/c ... response?))]]{
