@@ -56,10 +56,8 @@
   (parameter/c (-> request? response?))
   (make-parameter error-handler))
 
-(define/contract (((wrap-csrf sessions) handler) req)
-  (-> session-manager? (-> (-> request? response?)
-                           (-> request? response?)))
-
+(define/contract (((wrap-csrf sessions) handler) req . args)
+  (-> session-manager? (-> procedure? (-> request? any/c ... response?)))
   (with-timing 'csrf "wrap-csrf"
     (session-manager-update! sessions
                              session-key
@@ -73,8 +71,8 @@
       (cond
         [(request-protected? req)
          (if (equal? ((current-csrf-token-reader) req) csrf-token)
-             (handler req)
+             (apply handler req args)
              (error-handler req))]
 
         [else
-         (handler req)]))))
+         (apply handler req args)]))))
