@@ -36,9 +36,7 @@ page is processed.  Each message is bound to a specific user session.
   @racket[sessions].
 }
 
-@defproc[(wrap-flash [flashes flash-manager?]) (-> (-> request? can-be-response?)
-                                                   (-> request? can-be-response?))]{
-
+@defproc[((wrap-flash [flashes flash-manager?]) [handler procedure?]) (-> request? any/c ... response?)]{
   Wraps a handler such that flash messages from the previous request
   get collected into @racket[current-flash-messages] and then cleared
   from the current session.

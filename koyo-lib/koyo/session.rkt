@@ -10,6 +10,7 @@
          racket/string
          web-server/http
          web-server/http/id-cookie
+         "contract.rkt"
          "profiler.rkt"
          "random.rkt"
          "util.rkt")
@@ -282,9 +283,8 @@
 (provide
  wrap-session)
 
-(define/contract (((wrap-session sm) handler) req)
-  (-> session-manager? (-> (-> request? response?)
-                           (-> request? response?)))
+(define/contract (((wrap-session sm) handler) req . args)
+  (-> session-manager? middleware/c)
   (with-timing 'session "wrap-session"
     (define store (session-manager-store sm))
     (define session-id
@@ -296,7 +296,7 @@
 
     (parameterize ([current-session-manager sm]
                    [current-session-id session-id])
-      (define resp (handler req))
+      (define resp (apply handler req args))
       (define headers
         (cons (cookie->header (session-manager-cookie sm session-id))
               (response-headers resp)))

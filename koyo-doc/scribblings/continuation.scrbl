@@ -71,7 +71,7 @@ continuation function.
   parameter.
 }
 
-@defproc[((wrap-protect-continuations [handler (-> request? response?)]) [req request?]) response?]{
+@defproc[(wrap-protect-continuations [handler procedure?]) (-> request? any/c ... response?)]{
   This function sets up the continuation key and updates all responses
   that pass through it to include the continuation key cookie.
 

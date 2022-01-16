@@ -43,7 +43,7 @@ application against @csrf attacks.
   issue.
 }
 
-@defproc[((wrap-csrf [sessions session-manager?]) [handler (-> request? response?)]) (-> request? response?)]{
+@defproc[((wrap-csrf [sessions session-manager?]) [handler procedure?]) (-> request? any/c ... response?)]{
   Wraps a handler such that any incoming @emph{DELETE}, @emph{POST} or
   @emph{PUT} request that doesn't contain a valid CSRF token is
   rejected by passing the request to @racket[current-csrf-error-handler].

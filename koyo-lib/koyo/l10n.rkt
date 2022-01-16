@@ -6,6 +6,7 @@
          racket/string
          srfi/29
          web-server/http
+         "contract.rkt"
          "profiler.rkt"
          "session.rkt")
 
@@ -67,10 +68,8 @@
 (define language-spec-re
   #px"\\s*([^-]+)(?:-([^\\s;]+))?(?:;q=([\\d]+))?\\s*")
 
-(define/contract (((wrap-browser-locale sessions) handler) req)
-  (-> session-manager? (-> (-> request? response?)
-                           (-> request? response?)))
-
+(define/contract (((wrap-browser-locale sessions) handler) req . args)
+  (-> session-manager? middleware/c)
   (with-timing 'http "wrap-browser-locale"
     (define accept-language
       (bytes->string/utf-8
@@ -87,7 +86,7 @@
     (parameterize ([current-language language]
                    [current-country country]
                    [current-locale (format "~a_~a.UTF-8" language country)])
-      (handler req))))
+      (apply handler req args))))
 
 (define (make-locale-pair language country)
   (cons (string->symbol (string-downcase language))

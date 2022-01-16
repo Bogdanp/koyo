@@ -4,6 +4,7 @@
          racket/function
          racket/string
          web-server/http
+         "contract.rkt"
          "profiler.rkt"
          "url.rkt")
 
@@ -13,7 +14,8 @@
  current-cors-headers
  current-cors-max-age
  current-cors-credentials-allowed?
- wrap-cors)
+ (contract-out
+  [wrap-cors middleware/c]))
 
 (define/contract current-cors-origin
   (parameter/c (or/c #f non-empty-string?))
@@ -66,17 +68,14 @@
       (cons (make-header #"Access-Control-Allow-Credentials" #"true") headers)
       headers))
 
-(define/contract ((wrap-cors handler) req)
-  (-> (-> request? response?)
-      (-> request? response?))
-
+(define ((wrap-cors handler) req . args)
   (with-timing 'cors "wrap-cors"
     (cond
       [(bytes=? (request-method req) #"OPTIONS")
        (response/full 200 #"OK" (current-seconds) #f (make-options-headers) null)]
 
       [else
-       (define resp (handler req))
+       (define resp (apply handler req args))
        (define headers (cons (make-allow-origin-header)
                              (response-headers resp)))
 

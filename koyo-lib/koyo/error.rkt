@@ -1,16 +1,15 @@
 #lang racket/base
 
-(require errortrace/errortrace-key  ;; implementation detail!
-         errortrace/errortrace-lib
-         (for-syntax racket/base)
+(require (for-syntax racket/base)
+         errortrace/errortrace-key  ;; implementation detail!
          racket/contract
          racket/format
          racket/match
          racket/port
          racket/runtime-path
-         racket/string
          web-server/http
          web-server/servlet/servlet-structs
+         "contract.rkt"
          "haml.rkt")
 
 (provide
@@ -37,20 +36,17 @@
          (:h1 "Internal Error")
          (:p "An unexpected error occurred.  Please try again later."))))))))
 
-(define/contract ((wrap-errors debug?) handler)
-  (-> boolean?
-      (-> (-> request? can-be-response?)
-          (-> request? can-be-response?)))
-  (lambda (req)
-    (with-handlers ([exn:fail?
-                     (lambda (e)
-                       ((error-display-handler) (exn-message e) e)
-                       (if debug?
-                           (render-error-page req e)
-                           ((current-production-error-page) req e)))])
-      (handler req))))
+(define/contract (((wrap-errors debug?) handler) req . args)
+  (-> boolean? middleware/c)
+  (with-handlers ([exn:fail?
+                   (lambda (e)
+                     ((error-display-handler) (exn-message e) e)
+                     (if debug?
+                         (render-error-page req e)
+                         ((current-production-error-page) req e)))])
+    (apply handler req args)))
 
-(define (render-error-page req e)
+(define (render-error-page _req e)
   (response/xexpr
    #:code 500
    (haml
@@ -85,7 +81,7 @@
          (render-stack-frame frame))))))
 
 (define (render-errortrace-frame frame)
-  (match-define (list stx source line column position span) frame)
+  (match-define (list stx source line _column _position _span) frame)
   (render-frame stx source line))
 
 (define (render-stack-frame frame)

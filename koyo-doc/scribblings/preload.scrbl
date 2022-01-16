@@ -30,7 +30,7 @@ This module provides a middleware and facilities for working with
   @tt{Link} headers.
 }
 
-@defproc[(wrap-preload [handler (-> request? can-be-response?)]) (-> request? can-be-response?)]{
+@defproc[(wrap-preload [handler procedure?]) (-> request? any/c ... response?)]{
   Wraps @racket[handler] so that preload dependencies can be tracked
   during its execution.
 }

@@ -6,6 +6,7 @@
          racket/format
          web-server/servlet
          xml
+         "contract.rkt"
          "haml.rkt"
          "util.rkt")
 
@@ -29,9 +30,7 @@
  make-profile
  profile?
  profile-timings
- profile-write
-
- wrap-profiler)
+ profile-write)
 
 (define/contract profiler-enabled?
   (parameter/c boolean?)
@@ -171,13 +170,12 @@
 ;; Middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- wrap-profiler)
+ (contract-out
+  [wrap-profiler middleware/c]))
 
-(define/contract ((wrap-profiler handler) req)
-  (-> (-> request? can-be-response?)
-      (-> request? can-be-response?))
+(define ((wrap-profiler handler) req . args)
   (parameterize ([current-profile (make-profile)])
     (with-timing 'http (format "~a ~a"
                                (request-method req)
                                (url->string (request-uri req)))
-      (handler req))))
+      (apply handler req args))))

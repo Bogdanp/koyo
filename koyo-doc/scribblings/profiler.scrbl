@@ -33,7 +33,7 @@ profiler.
   widget will not be shown.
 }
 
-@defproc[(wrap-profiler [handler (-> request? can-be-response?)]) (-> request? can-be-response?)]{
+@defproc[(wrap-profiler [handler procedure?]) (-> request? any/c ... response?)]{
   Wraps a request handler for timing instrumentation.
 }
 

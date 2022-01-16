@@ -5,13 +5,15 @@
          racket/path
          racket/port
          web-server/servlet
+         "contract.rkt"
          "profiler.rkt")
 
 (provide
  current-preload-dependencies
  track-preload-dependency!
  make-preload-headers
- wrap-preload)
+ (contract-out
+  [wrap-preload middleware/c]))
 
 (define/contract current-preload-dependencies
   (parameter/c (listof string?))
@@ -47,9 +49,7 @@
                           (display ">; rel=preload; as=")
                           (display preload-as)))))))
 
-(define/contract ((wrap-preload handler) req)
-  (-> (-> request? can-be-response?)
-      (-> request? can-be-response?))
+(define ((wrap-preload handler) req . args)
   (with-timing 'preload "wrap-preload"
     (parameterize ([current-preload-dependencies null])
-      (handler req))))
+      (apply handler req args))))

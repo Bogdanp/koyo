@@ -1,8 +1,8 @@
 #lang racket/base
 
-(require component
-         racket/contract
+(require racket/contract
          web-server/servlet
+         "contract.rkt"
          "profiler.rkt"
          "session.rkt")
 
@@ -17,8 +17,7 @@
 
 (define session-key 'flash.messages)
 
-(struct flash-manager (sessions)
-  #:methods gen:component [])
+(struct flash-manager (sessions))
 
 (define/contract (make-flash-manager sessions)
   (-> session-manager? flash-manager?)
@@ -53,11 +52,8 @@
 (provide
  wrap-flash)
 
-(define/contract (((wrap-flash fm) handler) req)
-  (-> flash-manager?
-      (-> (-> request? can-be-response?)
-          (-> request? can-be-response?)))
-
+(define/contract (((wrap-flash fm) handler) req . args)
+  (-> flash-manager? middleware/c)
   (with-timing 'flash "wrap-flash"
     (define sessions (flash-manager-sessions fm))
     (define flash-messages (session-manager-ref sessions session-key null))
@@ -65,4 +61,4 @@
 
     (parameterize ([current-flash-manager fm]
                    [current-flash-messages flash-messages])
-      (handler req))))
+      (apply handler req args))))

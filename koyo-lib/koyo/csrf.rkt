@@ -3,6 +3,7 @@
 (require racket/contract
          racket/string
          web-server/http
+         "contract.rkt"
          "profiler.rkt"
          "random.rkt"
          "session.rkt")
@@ -31,9 +32,9 @@
       (let ([binding (bindings-assq #"csrf-token" (request-bindings/raw req))])
         (and binding (bytes->string/utf-8 (binding:form-value binding))))))
 
-(define (error-handler req)
+(define (error-handler _req)
   (response/xexpr
-   #:preamble #"<doctype html>"
+   #:preamble #"<!doctype html>"
    #:code 403
    #:message #"Forbidden"
    '(div
@@ -57,7 +58,7 @@
   (make-parameter error-handler))
 
 (define/contract (((wrap-csrf sessions) handler) req . args)
-  (-> session-manager? (-> procedure? (-> request? any/c ... response?)))
+  (-> session-manager? middleware/c)
   (with-timing 'csrf "wrap-csrf"
     (session-manager-update! sessions
                              session-key

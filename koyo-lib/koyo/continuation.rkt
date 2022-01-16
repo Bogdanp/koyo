@@ -6,6 +6,7 @@
          web-server/http
          web-server/servlet/servlet-structs
          web-server/servlet/web
+         "contract.rkt"
          "http.rkt"
          "profiler.rkt"
          "random.rkt")
@@ -27,7 +28,8 @@
  current-continuation-mismatch-handler
  current-continuation-wrapper
  protect-continuation
- wrap-protect-continuations
+ (contract-out
+  [wrap-protect-continuations middleware/c])
 
  send/suspend/protect
  send/back/protect
@@ -85,9 +87,7 @@
 
   (wrapped-k (protect-request req)))
 
-(define/contract ((wrap-protect-continuations handler) req)
-  (-> (-> request? can-be-response?)
-      (-> request? can-be-response?))
+(define ((wrap-protect-continuations handler) req . args)
   (with-timing 'continuation "wrap-protect-continuations"
     (define continuation-key
       (or (find-continuation-key (request-cookies req))
@@ -105,7 +105,7 @@
       (call-with-continuation-prompt
        (lambda ()
          (parameterize ([current-continuation-key continuation-key])
-           (handler req)))
+           (apply handler req args)))
        servlet-prompt))
 
     (struct-copy response res [headers (cons

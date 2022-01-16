@@ -37,7 +37,7 @@ This module provides a wrapper function and parameters for handling
   @racket[current-application-url-host].
 }
 
-@defproc[(wrap-cors [handler (-> request? response?)]) (-> request? response?)]{
+@defproc[(wrap-cors [handler procedure?]) (-> request? any/c ... response?)]{
   Augments @racket[handler] to add the various necessary bits of
   information to support CORS in its response.  For @emph{OPTIONS}
   requests, @racket[wrap-cors] takes full control of the request.

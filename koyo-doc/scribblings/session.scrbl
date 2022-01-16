@@ -104,8 +104,7 @@ browser session.
   @racket[k] is not set in the current session.
 }
 
-@defproc[(wrap-session [sm session-manager?]) (-> (-> request? response?)
-                                                  (-> request? response?))]{
+@defproc[((wrap-session [sm session-manager?]) [handler procedure?]) (-> request? any/c ... response?)]{
   Wraps a handler such that the appropriate session information for
   the current visitor is loaded and, eventually, stored.
 
