@@ -186,11 +186,7 @@
                      (lambda (e)
                        (eprintf "koyo/runner: ~a~n" (exn-message e))
                        (delete-zos! root-path)
-                       (exit 0))]
-                    [(λ (_) #t)
-                     (λ (e)
-                       (display-exn e)
-                       (values void void))])
+                       (exit 0))])
       (jobs:clear!)
       (dynamic-rerequire mod)
       (values
