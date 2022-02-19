@@ -1,6 +1,6 @@
 #lang info
 
-(define version "0.12.1")
+(define version "0.13")
 (define collection 'multi)
 
 (define deps '("base"
@@ -11,6 +11,7 @@
                "errortrace-lib"
                "gregor-lib"
                "html-lib"
+               "mime-type-lib"
                "net-lib"
                "raco-invoke"
                "readline-lib"

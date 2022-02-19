@@ -1,14 +1,14 @@
 #lang racket/base
 
-(require net/url
+(require net/mime-type
+         net/url
          racket/contract
          racket/list
          racket/string
          web-server/dispatchers/dispatch
          (prefix-in files: web-server/dispatchers/dispatch-files)
          (prefix-in filter: web-server/dispatchers/dispatch-filter)
-         web-server/dispatchers/filesystem-map
-         "mime.rkt")
+         web-server/dispatchers/filesystem-map)
 
 (provide
  make-static-dispatcher)
@@ -24,5 +24,5 @@
   (define static-dispatcher
     (files:make
      #:url->path static-url->path
-     #:path->mime-type path->mime-type))
+     #:path->mime-type path-mime-type))
   (filter:make prefix-re static-dispatcher))

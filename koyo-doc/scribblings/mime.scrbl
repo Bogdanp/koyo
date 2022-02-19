@@ -1,6 +1,7 @@
 #lang scribble/doc
 
 @(require (for-label koyo
+                     net/mime-type
                      racket/base
                      racket/contract)
           "koyo.rkt")
@@ -11,9 +12,10 @@
 
 This module provides utilities for working with MIME types.
 
-@defproc[(path->mime-type [p path?]) (or/c false/c bytes?)]{
-  Given a path @racket[p], this function looks up the mime type for
-  that path (based on its extension) and returns it.  The backing mime
-  type mapping for this function is the same one that the nginx web
-  server uses.
+@defproc[(path->mime-type [p path?]) (or/c #f bytes?)]{
+  An alias for @racket[path-mime-type].  This function is deprecated
+  and will be removed in a future version.
+
+  @history[#:changed "0.13" @elem{The implementation of this function
+  was extracted into the @tt{mime-type-lib} package.}]
 }

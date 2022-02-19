@@ -10,6 +10,8 @@
                      "gregor-lib"
                      "koyo-lib"
                      "libargon2"
+                     "mime-type"
+                     "mime-type-lib"
                      "sandbox-lib"
                      "scribble-lib"
                      "srfi-lite-lib"
