@@ -82,16 +82,16 @@
     (command-line
      #:program (current-program-name)
      #:once-each
-     [("-t" "--target") target-path
+     [("-t" "--target") TARGET-PATH
                         "where to put the distribution"
-                        (set! target-path target-path)]
+                        (set! target-path TARGET-PATH)]
      #:multi
-     [("++lang") lang
+     [("++lang") LANG
                  "additional #langs to include in the executable"
-                 (set! included-langs (cons lang included-langs))]
-     [("++lib") a-lib
+                 (set! included-langs (cons LANG included-langs))]
+     [("++lib") LIB
                 "additional libs to include in the executable"
-                (set! included-libs (cons a-lib included-libs))]
+                (set! included-libs (cons LIB included-libs))]
      #:args ([dynamic-module-path #f])
      (or dynamic-module-path (infer-dynamic-module-path))))
 
