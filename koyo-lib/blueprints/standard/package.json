@@ -1,15 +1,19 @@
 {
+  "engines": {
+    "node": ">=16",
+    "npm": ">=7"
+  },
   "devDependencies": {
     "broccoli": "^3.0.0",
     "broccoli-cli": "^1.0.0",
-    "broccoli-concat": "^3.7.3",
-    "broccoli-funnel": "^2.0.2",
-    "broccoli-merge-trees": "^3.0.2",
+    "broccoli-concat": "^4.2.5",
+    "broccoli-funnel": "^3.0.8",
+    "broccoli-merge-trees": "^4.2.0",
     "broccoli-sass-source-maps": "^4.0.0",
-    "broccoli-uglify-sourcemap": "^3.1.1",
-    "eslint": "^5.15.0",
-    "node-sass": "^4.12.0",
-    "prettier": "^1.16.4"
+    "broccoli-uglify-sourcemap": "^4.0.0",
+    "eslint": "^8.10.0",
+    "node-sass": "^7.0.1",
+    "prettier": "^2.5.1"
   },
   "scripts": {
     "build": "broccoli b --output-path static",
