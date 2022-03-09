@@ -186,6 +186,8 @@
      (cond
        [(string=? name ".")
         (exit-with-errors! @~a{error: "." cannot be used as project name})]
+       [(not (regexp-match-exact? #rx"[-_a-zA-Z0-9]*" name))
+        (exit-with-errors! @~a{error: '@name' cannot be used as project name (invalid collection name)})]
        [(or (directory-exists? name) (file-exists? name))
         (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory})])
 
