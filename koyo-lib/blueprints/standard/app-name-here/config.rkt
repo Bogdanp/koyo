@@ -11,11 +11,17 @@
 
 ;; locales ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(provide
+ reload-locales!)
+
 (define-runtime-path locales-path
   (build-path 'up "resources" "locales"))
 
 (current-locale-specifier 'app-name-here)
 (load-locales! locales-path)
+
+(define (reload-locales!)
+  (load-locales! locales-path))
 
 
 ;; config values ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
