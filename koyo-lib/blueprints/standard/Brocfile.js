@@ -45,7 +45,6 @@ let appJs = new BroccoliConcat(appJsFunnel, {
 
 if (FOR_PRODUCTION) {
   appJs = new BroccoliUglify(appJs, {
-    async: true,
     annotation: 'App JS Uglify'
   })
 }

@@ -16,7 +16,7 @@
     "prettier": "^2.5.1"
   },
   "scripts": {
-    "build": "broccoli b --output-path static",
+    "build": "NODE_ENV=production broccoli b --output-path static",
     "watch": "broccoli b --output-path static --watch"
   }
 }
