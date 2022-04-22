@@ -68,23 +68,17 @@
               #:when (string=? continuation-key-cookie-name (client-cookie-name cookie)))
     (client-cookie-value cookie)))
 
-(define/contract (protect-request req)
-  (-> request? request?)
+(define (protect-request req)
   (with-timing 'continuation "protect-request"
-    (cond
-      [(equal? (find-continuation-key (request-cookies req))
-               (current-continuation-key))
-       req]
+    (define expected-key (current-continuation-key))
+    (define maybe-key (find-continuation-key (request-cookies req)))
+    (if (and maybe-key (string=? maybe-key expected-key))
+        req
+        (send/back ((current-continuation-mismatch-handler) req)))))
 
-      [else
-       (send/back ((current-continuation-mismatch-handler) req))])))
-
-(define/contract ((protect-continuation k) req)
-  (-> (-> request? can-be-response?)
-      (-> request? can-be-response?))
+(define ((protect-continuation k) req)
   (define wrapped-k
     ((current-continuation-wrapper) k))
-
   (wrapped-k (protect-request req)))
 
 (define ((wrap-protect-continuations handler) req . args)
@@ -101,9 +95,18 @@
                    continuation-key-cookie-name
                    continuation-key))
 
+    ;; By introducing a prompt here, we can ensure that even handlers
+    ;; that escape (via send/suspend) return normally back into the
+    ;; wrapper stack, assuming `wrap-protect-continuations' is placed
+    ;; at the top of said stack.
     (define res
       (call-with-continuation-prompt
        (lambda ()
+         ;; Extend the parameterization here (as opposed to outside of
+         ;; the `call/prompt') to ensure the key is available to
+         ;; `protect-request' later.
+         ;;
+         ;; xref. https://github.com/racket/racket/issues/4216
          (parameterize ([current-continuation-key continuation-key])
            (apply handler req args)))
        servlet-prompt))

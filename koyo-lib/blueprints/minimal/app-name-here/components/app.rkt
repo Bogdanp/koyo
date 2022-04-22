@@ -36,8 +36,8 @@
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
     (~> handler
-        ((wrap-session sessions))
         (wrap-protect-continuations)
+        ((wrap-session sessions))
         (wrap-preload)
         (wrap-cors)
         (wrap-profiler)
