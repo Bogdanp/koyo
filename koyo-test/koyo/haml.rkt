@@ -229,6 +229,32 @@
          ([class "articles"])
          "a" "b" "c")))
 
+    (test-case "expressions can be spliced at the root"
+      (check-equal?
+       (haml
+        ,@(list
+           '(div "a")
+           '(div "b")))
+       '((div "a")
+         (div "b")))
+
+      (check-equal?
+       (haml
+        ,@(list
+           (haml (:a ([:href "http://example.com"]) "example"))))
+       '((a ((href "http://example.com")) "example")))
+
+      (check-equal?
+       (let ([anchors (list
+                       (haml (:a ([:href "http://example-b.com"]) "example-b"))
+                       (haml (:a ([:href "http://example-c.com"]) "example-c")))])
+         (haml
+          (:a ([:href "http://example-a.com"]) "example-a")
+          ,@anchors))
+       '((a ((href "http://example-a.com")) "example-a")
+         (a ((href "http://example-b.com")) "example-b")
+         (a ((href "http://example-c.com")) "example-c"))))
+
     (test-case "a list of elements produces a list of xexprs"
       (check-equal?
        (haml

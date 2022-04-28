@@ -200,6 +200,15 @@
 
 (define-syntax (haml stx)
   (syntax-parse stx
+    #:literals (unquote-splicing)
+    [(_ (unquote-splicing el)) #'el]
     [(_ el:element) #'`el.xexpr]
     [(_ el ...+)
-     #'(list (haml el) ...)]))
+     #:with (lst ...)
+     (for/list ([stx (in-list (syntax-e #'(el ...)))])
+       (syntax-parse stx
+         #:literals (unquote-splicing)
+         [(unquote-splicing el) #'el]
+         [el #'(list (haml el))]))
+     (syntax/loc stx
+       (append lst ...))]))
