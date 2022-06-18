@@ -15,7 +15,6 @@
     "mime-type-lib"
     "net-lib"
     "raco-invoke"
-    "readline-lib"
     "srfi-lite-lib"
     "unix-socket-lib"
     "web-server-lib"))
