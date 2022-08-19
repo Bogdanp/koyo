@@ -6,6 +6,7 @@
 (define deps '("base"))
 (define build-deps '("component-doc"
                      "component-lib"
+                     "crontab"
                      "db-lib"
                      "gregor-lib"
                      "koyo-lib"

@@ -1,12 +1,13 @@
 #lang info
 
-(define version "0.15")
+(define version "0.16")
 (define collection 'multi)
 
 (define deps
   '("base"
     "compatibility-lib"
     ("component-lib" #:version "1.0")
+    "crontab-lib"
     ("crypto-lib" #:version "1.6")
     "db-lib"
     "errortrace-lib"
