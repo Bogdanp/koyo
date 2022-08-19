@@ -28,7 +28,7 @@ based on @other-doc['(lib "crontab/crontab-manual.scrbl")].
   the documentation of @racket[crontab] for details.
 
   @examples[
-    (require component koyo)
+    #:eval sandbox
     (define-system prod
       [app () (lambda () 'the-app)]
       [cron (app) (lambda (app)
