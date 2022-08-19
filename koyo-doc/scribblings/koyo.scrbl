@@ -60,6 +60,7 @@ needs in a complete package.
 @include-section["preload.scrbl"]
 @include-section["profiler.scrbl"]
 @include-section["random.scrbl"]
+@include-section["scheduling.scrbl"]
 @include-section["server.scrbl"]
 @include-section["session.scrbl"]
 @include-section["static.scrbl"]
