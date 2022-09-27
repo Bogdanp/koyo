@@ -13,12 +13,12 @@
  start-logger)
 
 (define/contract (start-logger #:levels levels
-                               #:parent [parent (current-logger)]
                                #:color? [color? #t]
+                               #:parent [parent (current-logger)]
                                #:output-port [out (current-error-port)])
   (->* (#:levels (listof (cons/c symbol? log-level/c)))
-       (#:parent logger?
-        #:color? boolean?
+       (#:color? boolean?
+        #:parent logger?
         #:output-port port?)
        (-> void?))
 
@@ -44,9 +44,17 @@
            [(error)   `((fg ,(make-color 3 0 0)))]
            [else      null])
          (write-string (~a level #:align 'right #:width 7))))))
-  (define preformatted-levels
-    (for/list ([level (in-list '(debug info warning error))])
-      (cons level (format-level level))))
+  (define-syntax-rule (define-level-writer id [level ...])
+    (begin
+      (define level (format-level 'level)) ...
+      (define (id sym [out (current-output-port)])
+        (write-bytes
+         (case sym
+           [(level) level] ...
+           [else (format-level sym)])
+         out))))
+  (define-level-writer write-level
+    [debug info warning error])
 
   (define (receive-logs)
     (sync
@@ -60,12 +68,7 @@
          (write-bytes #"] [" out)
          (write-bytes preformatted-pid out)
          (write-bytes #"] [" out)
-         (cond
-           [(assq level preformatted-levels)
-            => (λ (formatted-level)
-                 (write-bytes (cdr formatted-level) out))]
-           [else
-            (write-bytes (format-level level) out)])
+         (write-level level out)
          (write-bytes #"] " out)
          (write-string message out)
          (write-char #\newline out)
