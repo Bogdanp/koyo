@@ -14,12 +14,12 @@
 
 (define/contract (start-logger #:levels levels
                                #:parent [parent (current-logger)]
-                               #:output-port [out (current-error-port)]
-                               #:color? [color? #t])
+                               #:color? [color? #t]
+                               #:output-port [out (current-error-port)])
   (->* (#:levels (listof (cons/c symbol? log-level/c)))
        (#:parent logger?
-        #:output-port port?
-        #:color? boolean?)
+        #:color? boolean?
+        #:output-port port?)
        (-> void?))
 
   (define stopped (make-semaphore))
@@ -29,7 +29,7 @@
             (for/list ([level (in-list levels)])
               (list (cdr level) (car level))))))
 
-  (define formatted-pid
+  (define preformatted-pid
     (string->bytes/utf-8
      (~a (getpid) #:align 'right #:width 8)))
 
@@ -37,18 +37,16 @@
     (with-output-to-bytes
       (lambda ()
         (colorize
-         (case level
+         (case (and color? level)
            [(debug)   `((fg ,(make-color 0 0 4)))]
            [(info)    `((fg ,(make-color 0 3 0)))]
            [(warning) `((fg ,(make-color 3 1 0)))]
            [(error)   `((fg ,(make-color 3 0 0)))]
            [else      null])
          (write-string (~a level #:align 'right #:width 7))))))
-  (define formatted-levels
-    (cond [color?
-           (for/list ([level (in-list '(debug info warning error))])
-             (cons level (format-level level)))]
-          [else (list)]))
+  (define preformatted-levels
+    (for/list ([level (in-list '(debug info warning error))])
+      (cons level (format-level level))))
 
   (define (receive-logs)
     (sync
@@ -60,10 +58,10 @@
          (write-bytes #"[" out)
          (write-timestamp out)
          (write-bytes #"] [" out)
-         (write-bytes formatted-pid out)
+         (write-bytes preformatted-pid out)
          (write-bytes #"] [" out)
          (cond
-           [(assq level formatted-levels)
+           [(assq level preformatted-levels)
             => (λ (formatted-level)
                  (write-bytes (cdr formatted-level) out))]
            [else
