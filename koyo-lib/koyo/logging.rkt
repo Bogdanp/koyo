@@ -14,10 +14,12 @@
 
 (define/contract (start-logger #:levels levels
                                #:parent [parent (current-logger)]
-                               #:output-port [out (current-error-port)])
+                               #:output-port [out (current-error-port)]
+                               #:color? [color? #t])
   (->* (#:levels (listof (cons/c symbol? log-level/c)))
        (#:parent logger?
-        #:output-port port?)
+        #:output-port port?
+        #:color? boolean?)
        (-> void?))
 
   (define stopped (make-semaphore))
@@ -43,8 +45,10 @@
            [else      null])
          (write-string (~a level #:align 'right #:width 7))))))
   (define formatted-levels
-    (for/list ([level (in-list '(debug info warning error))])
-      (cons level (format-level level))))
+    (cond [color?
+           (for/list ([level (in-list '(debug info warning error))])
+             (cons level (format-level level)))]
+          [else (list)]))
 
   (define (receive-logs)
     (sync

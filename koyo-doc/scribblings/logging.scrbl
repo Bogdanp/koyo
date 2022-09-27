@@ -15,7 +15,8 @@ This module provides utilities for displaying log messages.
 
 @defproc[(start-logger [#:levels levels (listof (cons/c symbol? log-level/c))]
                        [#:parent parent logger? (current-logger)]
-                       [#:output-port out port? (current-error-port)]) (-> void?)]{
+                       [#:output-port out port? (current-error-port)]
+		       [#:color? color? boolean?]) (-> void?)]{
 
   Starts a background thread that receives logs based on
   @racket[levels] and writes them to @racket[out] using the following
@@ -28,4 +29,11 @@ This module provides utilities for displaying log messages.
   The return value is a function that will stop the background thread
   when called.  Calling the stopper function after the thread has been
   stopped has no effect.
+
+  By default, @racket[#:color] is @racket[#t], in which case
+  the log messages with the levels debug, info, warning, and
+  error are all prepended with a color, helpfully indicating
+  their level of severity. If @racket[color?] is
+  @racket[#f], the output will not be colored.
+
 }
