@@ -79,7 +79,7 @@ can send e-mail.
                                     [#:html-content html-content (or/c #f string?) #f]) void?]
   @defproc[(mail-adapter-send-email-with-template [adapter mail-adapter?]
                                                   [#:to to non-empty-string?]
-                                                  [#:form from non-empty-string?]
+                                                  [#:from from non-empty-string?]
                                                   [#:template-id template-id (or/c exact-positive-integer?) #f]
                                                   [#:template-alias template-alias (or/c symbol?) #f]
                                                   [#:template-model template-model (hash/c symbol? string?)]) void?]
