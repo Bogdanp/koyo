@@ -2,7 +2,9 @@
 
 (require koyo/haml
          (submod koyo/haml selectors)
-         rackunit)
+         racket/port
+         rackunit
+         (only-in xml write-xexpr))
 
 (provide
  haml-tests)
@@ -278,7 +280,19 @@
          ([class "foo bar baz boo"]
           [data-empty ""]
           [data-example "1 2"])
-         "boo"))))))
+         "boo")))
+
+    (test-case "allows attributes beginning with @"
+      (check-equal?
+       (call-with-output-string
+        (lambda (out)
+          (write-xexpr
+           (haml
+            (:button
+             ([:@click "open = true"])
+             "Open"))
+           out)))
+       "<button @click=\"open = true\">Open</button>")))))
 
 (module+ test
   (require rackunit/text-ui)
