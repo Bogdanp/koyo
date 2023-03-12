@@ -84,7 +84,7 @@
        (datum->syntax stx attrs)]))
 
   (define attribute-re
-    #px"^:([:a-zA-Z0-9_][:a-zA-Z0-9_-]*)$")
+    #px"^:([:a-zA-Z0-9_@][:a-zA-Z0-9_-]*)$")
 
   (define (attribute? stx)
     (regexp-match? attribute-re (symbol->string (syntax-e stx))))
