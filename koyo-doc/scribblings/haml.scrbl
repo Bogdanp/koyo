@@ -136,6 +136,9 @@ of @racket[xexpr?]s:
 ]
 
 @history[
+  #:changed "0.17" @elem{
+    Element attributes may now begin with an @tt{@"@"} symbol.
+  }
   #:changed "0.10" @elem{
     @racket[when], @racket[unless] and @racket[unquote-splicing] are
     now recognized by binding.  The @"@"-style splicing syntax is no
