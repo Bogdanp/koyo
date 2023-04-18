@@ -182,7 +182,11 @@
 
   (define mod (path->module-path dynamic-module-path))
   (define (start)
-    (with-handlers ([need-recompile-exn?
+    (with-handlers ([module-redeclare-exn?
+                     (lambda (e)
+                       (eprintf "koyo/runner: ~a~n" (exn-message e))
+                       (exit 0))]
+                    [need-recompile-exn?
                      (lambda (e)
                        (eprintf "koyo/runner: ~a~n" (exn-message e))
                        (delete-zos! root-path)

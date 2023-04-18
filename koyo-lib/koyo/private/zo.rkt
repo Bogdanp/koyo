@@ -9,6 +9,7 @@
 
 (provide
  need-recompile-exn?
+ module-redeclare-exn?
  delete-zos!
  mod-path->zo-path
  zo-dir
@@ -16,8 +17,7 @@
  zo-path?)
 
 (define (need-recompile-exn? e)
-  (or (constant-redefined-exn? e)
-      (module-redeclare-exn? e)))
+  (constant-redefined-exn? e))
 
 (define (constant-redefined-exn? e)
   (regexp-match? #rx"cannot re-define a constant" (exn-message e)))

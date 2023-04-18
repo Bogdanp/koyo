@@ -20,7 +20,9 @@
 (define racket-exe (find-executable-path "racket"))
 (define raco-exe (find-executable-path "raco"))
 (define (raco . args)
-  (apply system*/exit-code raco-exe args))
+  (begin0 (apply system*/exit-code raco-exe args)
+    (flush-output (current-output-port))
+    (flush-output (current-error-port))))
 
 (define make!-sema (make-semaphore 1))
 (define (make! path #:parallel? [parallel? make-in-parallel?])
@@ -28,5 +30,5 @@
     (lambda ()
       (zero?
        (if parallel?
-           (raco "make" "--disable-constant" "-j" (~a (processor-count)) path)
+           (raco "make" "--disable-constant" "-j" (~a (processor-count)) "-v" path)
            (raco "make" "--disable-constant" "-v" path))))))
