@@ -4,7 +4,6 @@
          db
          gregor
          mzlib/os
-         racket/async-channel
          racket/class
          racket/contract
          racket/list
@@ -51,8 +50,10 @@
 (define (make-reactor broker queue pool-size)
   (log-worker-debug "starting reactor...")
   (define id (broker-register-worker! broker (getpid) (gethostname)))
-  (define ch (make-async-channel pool-size))
-  (define pool (make-worker-pool pool-size ch))
+  (define ch (make-channel))
+  (define pool
+    (parameterize ([current-broker broker])
+      (make-worker-pool pool-size ch)))
   (thread
    (lambda ()
      (let outer-loop ([listener (make-listener broker id queue)])
@@ -60,56 +61,74 @@
                                     (log-worker-error "unexpected reactor failure: ~a" (exn-message e))
                                     (outer-loop (make-listener broker id queue)))])
          (let loop ([idle pool]
-                    [busy null])
+                    [busy null]
+                    [deadline #f])
            (define (continue t)
-             (loop (cons t idle) (remq t busy)))
+             (loop
+              (cons t idle)
+              (remq t busy)
+              deadline))
 
            (sync
+            (handle-evt
+             (cond
+               [(and deadline (null? busy)) always-evt]
+               [deadline deadline]
+               [else never-evt])
+             (lambda (_)
+               (log-worker-debug
+                (if (null? busy)
+                    "stopping reactor..."
+                    "reactor stop timed out; stopping..."))))
+
             (handle-evt
              (thread-receive-evt)
              (lambda (_)
                (match (thread-receive)
-                 [(list 'stop)
-                  (listener-stop listener)
-                  (worker-pool-stop pool)
-                  (broker-unregister-worker! broker id)])))
+                 ['(stop)
+                  (log-worker-debug "reactor received stop event")
+                  (loop idle busy (alarm-evt (+ (current-inexact-milliseconds) 60000)))])))
 
             (handle-evt
-             (listener-jobs-evt listener (length idle))
+             (cond
+               [deadline never-evt]
+               [else (listener-jobs-evt listener (length idle))])
              (lambda (jobs)
-               (loop (drop idle (length jobs))
-                     (for/fold ([busy busy])
-                               ([t (in-list idle)]
-                                [j (in-list jobs)])
-                       (thread-send t (list 'exec j))
-                       (cons t busy)))))
+               (loop
+                (drop idle (length jobs))
+                (for/fold ([busy busy])
+                          ([t (in-list idle)]
+                           [j (in-list jobs)])
+                  (thread-send t `(exec ,j))
+                  (cons t busy))
+                deadline)))
 
             (handle-evt
              ch
              (match-lambda
-               [(list 'done t (vector id queue job-id arguments attempts))
+               [`(done ,t ,(vector id _queue _job-id _arguments _attempts))
                 (log-worker-debug "job ~a done" id)
-                (with-handlers ([exn:fail? (lambda (e)
-                                             (log-worker-error "failed to mark job ~a done: ~a" id (exn-message e)))])
+                (with-handlers ([exn:fail? (λ (e) (log-worker-error "failed to mark job ~a done: ~a" id (exn-message e)))])
                   (broker-mark-done! broker id))
                 (continue t)]
 
-               [(list 'retry t (vector id queue job-id arguments attempts) reason delay-ms)
-                (log-worker-debug "job ~a requested retry with delay ~.s" id delay-ms)
-                (with-handlers ([exn:fail? (lambda (e)
-                                             (log-worker-error "failed to mark job ~a for retry: ~a" id (exn-message e)))])
+               [`(retry ,t ,(vector id _queue _job-id _arguments _attempts) ,reason ,delay-ms)
+                (log-worker-debug "job ~a requested retry with delay ~.s~n  reason: ~a" id delay-ms reason)
+                (with-handlers ([exn:fail? (λ (e) (log-worker-error "failed to mark job ~a for retry: ~a" id (exn-message e)))])
                   (broker-mark-for-retry! broker id (+milliseconds (now/moment) delay-ms)))
                 (continue t)]
 
-               [(list 'fail t (vector id queue job-id arguments attempts) message)
+               [`(fail ,t ,(vector id _queue _job-id _arguments _attempts) ,message)
                 (log-worker-warning "job ~a failed: ~a" id message)
-                (with-handlers ([exn:fail? (lambda (e)
-                                             (log-worker-error "failed to mark job ~a failed: ~a" id (exn-message e)))])
+                (with-handlers ([exn:fail? (λ (e) (log-worker-error "failed to mark job ~a failed: ~a" id (exn-message e)))])
                   (broker-mark-failed! broker id))
-                (continue t)])))))))))
+                (continue t)]))))
+
+         (listener-stop listener)
+         (worker-pool-stop pool)
+         (broker-unregister-worker! broker id))))))
 
 (define (reactor-stop r)
-  (log-worker-debug "stopping reactor...")
   (thread-send r '(stop))
   (thread-wait r))
 
@@ -218,7 +237,7 @@
 
 (define (make-worker-thread id ch)
   (define-syntax-rule (send id arg ...)
-    (async-channel-put ch (list 'id arg ...)))
+    (channel-put ch (list 'id arg ...)))
 
   (define thd
     (thread
@@ -226,10 +245,10 @@
        (log-worker-debug "worker thread ~a started..." id)
        (let loop ()
          (match (thread-receive)
-           [(list 'stop)
+           ['(stop)
             (log-worker-debug "stopping worker thread ~a..." id)]
 
-           [(list 'exec (and (vector id queue job-id arguments attempts) job))
+           [`(exec ,(and (vector id queue job-id arguments attempts) job))
             (log-worker-debug "processing job ~a (id: ~.s, queue: ~.s, attempts: ~.s)" job-id id queue attempts)
             (with-handlers ([exn:job:retry?
                              (lambda (e)
@@ -237,6 +256,10 @@
 
                             [exn:fail?
                              (lambda (e)
+                               ((error-display-handler)
+                                (format "job failed: ~s~n  id: ~.s~n  queue: ~.s~n  attempts: ~.s"
+                                        (exn-message e) job-id queue)
+                                e)
                                (send fail thd job (exn-message e)))])
               (define proc (job-proc (lookup (format "~a.~a" queue job-id))))
               (apply keyword-apply proc (deserialize arguments))

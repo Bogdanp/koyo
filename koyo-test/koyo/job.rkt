@@ -41,6 +41,18 @@
      (set! retried? #t)
      (retry! 5000)]))
 
+(define recursive-done
+  (make-semaphore))
+
+(define-job (recursive n)
+  (cond
+    [(zero? n)
+     (semaphore-post recursive-done)]
+    [else
+     (schedule-at
+      (+seconds (now/moment) 1)
+      (recursive (sub1 n)))]))
+
 (define job-tests
   (test-suite
    "job"
@@ -122,7 +134,12 @@
       (test-case "jobs can be retried"
         (parameterize ([current-broker broker])
           (do-retry-once)
-          (check-equal? (sync messages) 'retried)))))))
+          (check-equal? (sync messages) 'retried)))
+
+     (test-case "jobs can be scheduled recursively"
+       (parameterize ([current-broker broker])
+         (recursive 1))
+       (check-not-false (sync/timeout 60 recursive-done)))))))
 
 (module+ test
   (require rackunit/text-ui)
