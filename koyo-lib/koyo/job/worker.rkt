@@ -257,7 +257,7 @@
                             [exn:fail?
                              (lambda (e)
                                ((error-display-handler)
-                                (format "job failed: ~a~n  id: ~.s~n  queue: ~.s~n  attempts: ~.s"
+                                (format "job failed: ~a~n  job id: ~.s~n  job queue: ~.s~n  job attempts: ~.s"
                                         (exn-message e) job-id queue attempts)
                                 e)
                                (send fail thd job (exn-message e)))])
