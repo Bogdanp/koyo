@@ -258,7 +258,7 @@
                              (lambda (e)
                                ((error-display-handler)
                                 (format "job failed: ~s~n  id: ~.s~n  queue: ~.s~n  attempts: ~.s"
-                                        (exn-message e) job-id queue)
+                                        (exn-message e) job-id queue attempts)
                                 e)
                                (send fail thd job (exn-message e)))])
               (define proc (job-proc (lookup (format "~a.~a" queue job-id))))
