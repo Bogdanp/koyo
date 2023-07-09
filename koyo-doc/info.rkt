@@ -2,7 +2,7 @@
 
 (define license 'BSD-3-Clause)
 (define collection "koyo")
-(define scribblings '(("scribblings/koyo.scrbl" (multi-page))))
+(define scribblings '(("scribblings/koyo.scrbl" (multi-page) ("Web Development"))))
 (define deps '("base"))
 (define build-deps '("component-doc"
                      "component-lib"

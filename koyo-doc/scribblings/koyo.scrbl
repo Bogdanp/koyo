@@ -6,7 +6,7 @@
           scribble/html-properties
           "koyo.rkt")
 
-@title{@exec{koyo}: Web Development Toolkit}
+@title{@tt{koyo}: Web Development Toolkit}
 @author[(author+email "Bogdan Popa" "bogdan@defn.io")]
 
 @defmodule[koyo]
