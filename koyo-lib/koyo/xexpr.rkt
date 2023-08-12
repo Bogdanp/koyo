@@ -183,9 +183,10 @@
       (loop (peek-char)))))
 
 (define (read-tag)
-  (with-output-to-string
-    (lambda ()
-      (read-while alphanumeric?))))
+  (string->symbol
+   (with-output-to-string
+     (lambda ()
+       (read-while alphanumeric?)))))
 
 (define (read-class)
   (with-output-to-string
@@ -208,37 +209,30 @@
 (struct dyn:selector (tag attributes)
   #:transparent)
 
-(define (parse-selectors sel)
+(define (set-tag s t)
+  (struct-copy dyn:selector s [tag t]))
+
+(define (append-attribute s attr)
+  (struct-copy dyn:selector s [attributes (append (dyn:selector-attributes s) (list attr))]))
+
+(define (parse-selectors s)
   (define selectors
-    (with-input-from-string sel
+    (with-input-from-string s
       (lambda ()
-        (let loop ([current-selector (dyn:selector #f null)]
+        (let loop ([selector (dyn:selector #f null)]
                    [selectors null])
           (match (peek-char)
-            [(? eof-object?)
-             (reverse (cons current-selector selectors))]
-
-            [#\.
-             (loop (struct-copy dyn:selector current-selector
-                                [attributes (append (dyn:selector-attributes current-selector)
-                                                    (list (cons 'class (read-class))))])
-                   selectors)]
-
-            [#\#
-             (loop (struct-copy dyn:selector current-selector
-                                [attributes (append (dyn:selector-attributes current-selector)
-                                                    (list (cons 'id (read-id))))])
-                   selectors)]
+            [(? eof-object?) (reverse (cons selector selectors))]
+            [#\. (loop (append-attribute selector (cons 'class (read-class))) selectors)]
+            [#\# (loop (append-attribute selector (cons 'id (read-id))) selectors)]
 
             [#\space
-             (read-char)
+             (void (read-char))
              (loop (dyn:selector #f null)
-                   (cons current-selector selectors))]
+                   (cons selector selectors))]
 
             [_
-             (loop (struct-copy dyn:selector current-selector
-                                [tag (string->symbol (read-tag))])
-                   selectors)])))))
+             (loop (set-tag selector (read-tag)) selectors)])))))
 
   (for/list ([selector (in-list selectors)])
     (define attributes

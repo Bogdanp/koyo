@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require koyo/xexpr
-         racket/function
          rackunit)
 
 (provide xexpr-tests)
@@ -20,7 +19,7 @@
                            (i () "2")))))
 
     (test-case "turns html strings into lists of xexprs"
-      (check-equal? (html->xexpr "<b>1</b><i>2</i>" identity)
+      (check-equal? (html->xexpr "<b>1</b><i>2</i>" values)
                     '((b () "1")
                       (i () "2")))))
 
