@@ -42,15 +42,14 @@
 
        (match (form-run login-form req)
          [`(passed (,username ,password) ,render-widget)
-          (with-handlers ([exn:fail:auth-manager:unverified?
-                           (lambda (_e)
-                             (render render-widget (translate 'error-verify-email)))])
-            (cond
-              [(auth-manager-login! auth username password)
-               (redirect-to return-url)]
-
-              [else
-               (render render-widget (translate 'error-invalid-credentials))]))]
+          (define user-or-message
+            (with-handlers ([exn:fail:auth-manager:unverified?
+                             (λ (_e) (translate 'error-verify-email))])
+              (or (auth-manager-login! auth username password)
+                  (translate 'error-invalid-credentials))))
+          (match user-or-message
+            [(? user?) (redirect-to return-url)]
+            [message (render render-widget message)])]
 
          [`(,_ ,_ ,render-widget)
           (render render-widget)])))))
@@ -107,12 +106,16 @@
 
      (match (form-run signup-form req)
        [`(passed (,username ,password) ,render-widget)
-        (with-handlers ([exn:fail:user-manager:username-taken?
-                         (lambda (_e)
-                           (render render-widget (translate 'error-username-taken)))])
-          (define user (user-manager-create! users username password))
-          (mailer-send-welcome-email mailer user)
-          (post-signup-page (redirect/get/forget)))]
+        (define user-or-message
+          (with-handlers ([exn:fail:user-manager:username-taken?
+                           (λ (_e) (translate 'error-username-taken))])
+            (user-manager-create! users username password)))
+        (match user-or-message
+          [(? user? u)
+           (mailer-send-welcome-email mailer u)
+           (post-signup-page (redirect/get/forget))]
+          [message
+           (render render-widget message)])]
 
        [`(,_ ,_ ,render-widget)
         (render render-widget)]))))
