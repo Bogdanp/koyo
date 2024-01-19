@@ -5,14 +5,14 @@
 ### Requirements
 
 * You need [Racket] since this is a Racket application.
-* You need [node] and [nvm] to build the assets.
+* You need [Node.js] version 18 or higher to build the assets.
 * You need access to a couple local [Postgres] databases.  One named
   `app_name_here` and the other `app_name_here_tests`.  The latter is
   exercised by unit tests.
 
 ### First-time Setup
 
-    nvm use && npm install && npm run build
+    npm install && npm run build
     raco pkg install chief
     raco pkg install app-name-here/        # install and build the application and its deps
     raco pkg install app-name-here-tests/  # install and build the tests and their deps
@@ -31,7 +31,6 @@ application is started.
 
 ## Running the app locally
 
-    nvm use
     raco chief start
 
 
@@ -40,4 +39,3 @@ application is started.
 [argon2]: https://www.argon2.com/
 [chief]: https://github.com/Bogdanp/racket-chief
 [node]: https://nodejs.org/en/
-[nvm]: https://github.com/nvm-sh/nvm
