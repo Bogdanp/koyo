@@ -2,18 +2,17 @@
 
 (require koyo/mail
          koyo/url
-         racket/contract
+         racket/contract/base
          racket/string
          "user.rkt")
 
 (provide
  (all-from-out koyo/mail)
- mailer-send-welcome-email
- mailer-send-password-reset-email)
+ (contract-out
+  [mailer-send-welcome-email (-> mailer? user? void?)]
+  [mailer-send-password-reset-email (-> mailer? user? non-empty-string? void?)]))
 
-(define/contract (mailer-send-welcome-email m user)
-  (-> mailer? user? void?)
-
+(define (mailer-send-welcome-email m user)
   (define action-url
     (make-application-url "verify" (number->string (user-id user)) (user-verification-code user)))
 
@@ -27,9 +26,7 @@
                       'name (user-username user)
                       'username (user-username user))))
 
-(define/contract (mailer-send-password-reset-email m user token)
-  (-> mailer? user? non-empty-string? void?)
-
+(define (mailer-send-password-reset-email m user token)
   (define action-url
     (make-application-url "password-reset" (number->string (user-id user)) token))
 

@@ -2,7 +2,8 @@
 
 (require koyo
          koyo/database/migrator
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/list
          threading
          web-server/dispatch
@@ -26,10 +27,10 @@
                            #:debug? [debug? #f]
                            #:memory-threshold [memory-threshold (* 1 1024 1024 1024)]
                            #:static-path [static-path #f])
-  (->* (auth-manager? broker? flash-manager? mailer? migrator? session-manager? user-manager?)
-       (#:debug? boolean?
+  (->* [auth-manager? broker? flash-manager? mailer? migrator? session-manager? user-manager?]
+       [#:debug? boolean?
         #:memory-threshold exact-positive-integer?
-        #:static-path (or/c #f path-string?))
+        #:static-path (or/c #f path-string?)]
        app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles

@@ -1,15 +1,15 @@
 #lang racket/base
 
 (require koyo/haml
-         racket/contract
+         racket/contract/base
          web-server/http
          "../components/template.rkt")
 
 (provide
- dashboard-page)
+ (contract-out
+  [dashboard-page (-> request? response?)]))
 
-(define/contract (dashboard-page _req)
-  (-> request? response?)
+(define (dashboard-page _req)
   (page
    (haml
     (.container

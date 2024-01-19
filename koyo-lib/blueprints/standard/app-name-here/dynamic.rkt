@@ -13,7 +13,6 @@
          koyo/mail/postmark
          koyo/server
          koyo/session
-         racket/contract
          racket/runtime-path
          "components/app.rkt"
          "components/auth.rkt"
@@ -84,9 +83,7 @@
  start
  before-reload)
 
-(define/contract (start)
-  (-> (-> void?))
-
+(define (start)
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)

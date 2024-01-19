@@ -4,8 +4,7 @@
          koyo/session
          koyo/url
          net/url
-         racket/contract
-         racket/string
+         racket/contract/base
          threading
          web-server/http
          "user.rkt")
@@ -13,21 +12,23 @@
 ;; auth-manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- current-user
-
- make-auth-manager
- auth-manager?
- auth-manager-login!
- auth-manager-logout!
- wrap-auth-required
-
  exn:fail:auth-manager?
- exn:fail:auth-manager:unverified?)
+ exn:fail:auth-manager:unverified?
+
+ (contract-out
+  [current-user (parameter/c (or/c #f user?))]
+  [make-auth-manager (-> session-manager? user-manager? auth-manager?)]
+  [auth-manager? (-> any/c boolean?)]
+  [auth-manager-login! (-> auth-manager? string? string? (or/c #f user?))]
+  [auth-manager-logout! (-> auth-manager? void?)]
+  [wrap-auth-required (-> auth-manager?
+                          (-> request? (listof symbol?))
+                          (-> (-> request? response?)
+                              (-> request? response?)))]))
 
 (define session-key 'uid)
 
-(define/contract current-user
-  (parameter/c (or/c false/c user?))
+(define current-user
   (make-parameter #f))
 
 (struct exn:fail:auth-manager exn:fail ())
@@ -36,12 +37,10 @@
 (struct auth-manager (sessions users)
   #:transparent)
 
-(define/contract (make-auth-manager sessions users)
-  (-> session-manager? user-manager? auth-manager?)
+(define (make-auth-manager sessions users)
   (auth-manager sessions users))
 
-(define/contract (auth-manager-login! am username password)
-  (-> auth-manager? non-empty-string? non-empty-string? (or/c false/c user?))
+(define (auth-manager-login! am username password)
   (cond
     [(user-manager-login (auth-manager-users am) username password)
      => (lambda (u)
@@ -53,16 +52,10 @@
 
     [else #f]))
 
-(define/contract (auth-manager-logout! _am)
-  (-> auth-manager? void?)
+(define (auth-manager-logout! _am)
   (session-remove! session-key))
 
-(define/contract (((wrap-auth-required am req-roles) handler) req)
-  (-> auth-manager?
-      (-> request? (listof symbol?))
-      (-> (-> request? response?)
-          (-> request? response?)))
-
+(define (((wrap-auth-required am req-roles) handler) req)
   (with-timing 'auth "wrap-auth-required"
     (define roles (req-roles req))
     (cond

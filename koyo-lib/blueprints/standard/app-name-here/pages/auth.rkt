@@ -8,7 +8,7 @@
          koyo/http
          koyo/l10n
          koyo/url
-         racket/contract
+         racket/contract/base
          racket/match
          racket/string
          threading
@@ -22,12 +22,11 @@
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- login-page
- logout-page)
+ (contract-out
+  [login-page (-> auth-manager? (-> request? response?))]
+  [logout-page (-> auth-manager? (-> request? response?))]))
 
-(define/contract ((login-page auth) req)
-  (-> auth-manager? (-> request? response?))
-
+(define ((login-page auth) req)
   (define return-url
     (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'dashboard-page)))
 
@@ -54,8 +53,7 @@
          [`(,_ ,_ ,render-widget)
           (render render-widget)])))))
 
-(define/contract ((logout-page auth) _req)
-  (-> auth-manager? (-> request? response?))
+(define ((logout-page auth) _req)
   (auth-manager-logout! auth)
   (redirect-to (reverse-uri 'login-page)))
 
@@ -91,11 +89,11 @@
 ;; signup & verify ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- signup-page
- verify-page)
+ (contract-out
+  [signup-page (-> auth-manager? mailer? user-manager? (-> request? response?))]
+  [verify-page (-> user-manager? (-> request? integer? string? response?))]))
 
-(define/contract ((signup-page auth mailer users) req)
-  (-> auth-manager? mailer? user-manager? (-> request? response?))
+(define ((signup-page auth mailer users) req)
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (define (render render-widget [error-message #f])
@@ -128,8 +126,7 @@
      (:h1 (translate 'subtitle-signed-up))
      (:p (translate 'message-post-sign-up))))))
 
-(define/contract ((verify-page users) _req user-id verification-code)
-  (-> user-manager? (-> request? integer? string? response?))
+(define ((verify-page users) _req user-id verification-code)
   (user-manager-verify! users user-id verification-code)
   (flash 'success (translate 'message-email-verified))
   (redirect-to (reverse-uri 'login-page)))
@@ -167,11 +164,11 @@
 ;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- request-password-reset-page
- password-reset-page)
+ (contract-out
+  [request-password-reset-page (-> mailer? user-manager? (-> request? response?))]
+  [password-reset-page (-> user-manager? (-> request? id/c non-empty-string? response?))]))
 
-(define/contract ((request-password-reset-page mailer users) req)
-  (-> mailer? user-manager? (-> request? response?))
+(define ((request-password-reset-page mailer users) req)
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
@@ -219,13 +216,12 @@
      ([:type "submit"])
      (translate 'action-request-password-reset)))))
 
-(define/contract ((password-reset-page users) req user-id token)
-  (-> user-manager? (-> request? id/c non-empty-string? response?))
+(define ((password-reset-page users) req user-id token)
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run password-reset-form req)
-         [`(passed ,password ,render-widget)
+         [`(passed ,password ,_)
           (define reset?
             (user-manager-reset-password! users
                                           #:user-id user-id

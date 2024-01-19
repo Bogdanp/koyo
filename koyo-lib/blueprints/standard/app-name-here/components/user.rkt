@@ -8,7 +8,7 @@
          koyo/hasher
          koyo/profiler
          koyo/random
-         racket/contract
+         racket/contract/base
          racket/string
          threading)
 
@@ -54,15 +54,25 @@
  exn:fail:user-manager?
  exn:fail:user-manager:username-taken?
 
- make-user-manager
- user-manager?
- user-manager-lookup/id
- user-manager-lookup/username
- user-manager-create!
- user-manager-create-reset-token!
- user-manager-login
- user-manager-verify!
- user-manager-reset-password!)
+ (contract-out
+  [make-user-manager (-> database? hasher? user-manager?)]
+  [user-manager? (-> any/c boolean?)]
+  [user-manager-create! (-> user-manager? string? string? user?)]
+  [user-manager-create-reset-token! (-> user-manager?
+                                        #:username non-empty-string?
+                                        #:ip-address non-empty-string?
+                                        #:user-agent non-empty-string?
+                                        (values (or/c #f user?)
+                                                (or/c #f string?)))]
+  [user-manager-lookup/id (-> user-manager? exact-positive-integer? (or/c false/c user?))]
+  [user-manager-lookup/username (-> user-manager? string? (or/c false/c user?))]
+  [user-manager-login (-> user-manager? string? string? (or/c false/c user?))]
+  [user-manager-verify! (-> user-manager? exact-positive-integer? string? void?)]
+  [user-manager-reset-password! (-> user-manager?
+                                    #:user-id id/c
+                                    #:token non-empty-string?
+                                    #:password non-empty-string?
+                                    boolean?)]))
 
 (struct exn:fail:user-manager exn:fail ())
 (struct exn:fail:user-manager:username-taken exn:fail:user-manager ())
@@ -70,13 +80,10 @@
 (struct user-manager (db hasher)
   #:transparent)
 
-(define/contract (make-user-manager db h)
-  (-> database? hasher? user-manager?)
+(define (make-user-manager db h)
   (user-manager db h))
 
-(define/contract (user-manager-create! um username password)
-  (-> user-manager? string? string? user?)
-
+(define (user-manager-create! um username password)
   (define the-user
     (~> (make-user #:username username)
         (set-password um _ password)))
@@ -89,56 +96,44 @@
     (with-database-transaction [conn (user-manager-db um)]
       (insert-one! conn the-user))))
 
-(define/contract (user-manager-create-reset-token! um
-                                                   #:username username
-                                                   #:ip-address ip-address
-                                                   #:user-agent user-agent)
-  (-> user-manager?
-      #:username non-empty-string?
-      #:ip-address non-empty-string?
-      #:user-agent non-empty-string?
-      (values (or/c false/c user?)
-              (or/c false/c string?)))
+(define (user-manager-create-reset-token! um
+                                          #:username username
+                                          #:ip-address ip-address
+                                          #:user-agent user-agent)
   (with-timing 'user-manager "user-manager-create-reset-token!"
     (with-database-transaction [conn (user-manager-db um)]
       (cond
         [(user-manager-lookup/username um username)
-         => (lambda (user)
+         => (lambda (u)
               (query-exec conn (delete (~> (from password-reset #:as pr)
-                                           (where (= pr.user-id ,(user-id user))))))
-
-              (values user
-                      (~> (make-password-reset #:user-id (user-id user)
-                                               #:ip-address ip-address
-                                               #:user-agent user-agent)
-                          (insert-one! conn _)
-                          (password-reset-token))))]
+                                           (where (= pr.user-id ,(user-id u))))))
+              (values u (~> (make-password-reset #:user-id (user-id u)
+                                                 #:ip-address ip-address
+                                                 #:user-agent user-agent)
+                            (insert-one! conn _)
+                            (password-reset-token))))]
 
         [else
          (values #f #f)]))))
 
-(define/contract (user-manager-lookup/id um id)
-  (-> user-manager? exact-positive-integer? (or/c false/c user?))
+(define (user-manager-lookup/id um id)
   (with-timing 'user-manager (format "(user-manager-lookup/id ~v)" id)
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
                        (where (= u.id ,id)))))))
 
-(define/contract (user-manager-lookup/username um username)
-  (-> user-manager? string? (or/c false/c user?))
+(define (user-manager-lookup/username um username)
   (with-timing 'user-manager (format "(user-manager-lookup/username ~v)" username)
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
                        (where (= u.username ,(string-downcase username))))))))
 
-(define/contract (user-manager-login um username password)
-  (-> user-manager? string? string? (or/c false/c user?))
+(define (user-manager-login um username password)
   (with-timing 'user-manager "user-manager-login"
-    (define user (user-manager-lookup/username um username))
-    (and user (password-valid? um user password) user)))
+    (define u (user-manager-lookup/username um username))
+    (and u (password-valid? um u password) u)))
 
-(define/contract (user-manager-verify! um id verification-code)
-  (-> user-manager? exact-positive-integer? string? void?)
+(define (user-manager-verify! um id verification-code)
   (with-timing 'user-manager "user-manager-verify!"
     (void
      (with-database-transaction [conn (user-manager-db um)]
@@ -147,38 +142,33 @@
                             (where (and (= u.id ,id)
                                         (= u.verification-code ,verification-code)))))))))
 
-(define/contract (user-manager-reset-password! um
-                                               #:user-id user-id
-                                               #:token token
-                                               #:password password)
-  (-> user-manager?
-      #:user-id id/c
-      #:token non-empty-string?
-      #:password non-empty-string?
-      boolean?)
+(define (user-manager-reset-password! um
+                                      #:user-id id
+                                      #:token token
+                                      #:password password)
   (with-timing 'user-manager "user-manager-reset-password!"
     (with-database-transaction [conn (user-manager-db um)]
       (cond
-        [(lookup-password-reset conn user-id token)
+        [(lookup-password-reset conn id token)
          => (lambda (_pr)
               (begin0 #t
-                (clear-password-reset! conn user-id)
+                (clear-password-reset! conn id)
                 (and~> (lookup conn
                                (~> (from user #:as u)
-                                   (where (= u.id ,user-id))))
+                                   (where (= u.id ,id))))
                        (set-password um _ password)
                        (update! conn _))))]
 
 
         [else #f]))))
 
-(define (lookup-password-reset conn user-id token)
+(define (lookup-password-reset conn id token)
   (lookup conn (~> (from password-reset #:as pr)
-                   (where (and (= pr.user-id ,user-id)
+                   (where (and (= pr.user-id ,id)
                                (= pr.token ,token)
                                (> pr.expires-at (now)))))))
 
-(define (clear-password-reset! conn user-id)
+(define (clear-password-reset! conn id)
   (query-exec conn (~> (from password-reset #:as pr)
-                       (where (= pr.user-id ,user-id))
+                       (where (= pr.user-id ,id))
                        (delete))))
