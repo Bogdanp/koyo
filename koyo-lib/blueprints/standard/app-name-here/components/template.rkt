@@ -58,8 +58,11 @@
          (:meta ([:name "viewport"] [:content "width=device-width, initial-scale=1"]))
 
          (:title (if subtitle (~a subtitle " - AppNameHere") "AppNameHere"))
+         (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
          (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
-         (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
+
+         (:script ([:src (static-uri "vendor/unpoly.min.js")] [:defer "defer"]))
+         (:script ([:src (static-uri "js/app.js")] [:defer "defer"])))
         (:body
          (when show-nav?
            (if (current-user)
@@ -79,10 +82,7 @@
                     ([:class (format "flash__item flash__item--~a" (car flash))])
                     (cdr flash))))))))
 
-         (.content ,@content)
-
-         (:script ([:src (static-uri "vendor/unpoly.min.js")]))
-         (:script ([:src (static-uri "js/app.js")]))))))
+         (.content ,@content)))))
 
     (response
      200

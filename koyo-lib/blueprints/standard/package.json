@@ -12,8 +12,8 @@
     "broccoli-sass-source-maps": "^4.0.0",
     "broccoli-uglify-sourcemap": "^4.0.0",
     "eslint": "^8.10.0",
-    "node-sass": "^7.0.1",
-    "prettier": "^2.5.1"
+    "node-sass": "^9.0.0",
+    "prettier": "^3.0.0"
   },
   "scripts": {
     "build": "NODE_ENV=production broccoli b --output-path static",
