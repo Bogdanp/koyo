@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base
                      racket/function
-                     syntax/parse)
+                     syntax/parse/pre)
          (prefix-in h: html)
          racket/contract
          racket/function

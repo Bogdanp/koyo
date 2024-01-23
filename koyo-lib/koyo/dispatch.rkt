@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse)
+                     syntax/parse/pre)
          racket/function
          web-server/dispatch
          web-server/dispatchers/dispatch)

@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base
                      racket/stxparam
-                     syntax/parse)
+                     syntax/parse/pre)
          gregor
          racket/contract
          racket/stxparam

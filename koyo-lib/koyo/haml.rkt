@@ -3,7 +3,7 @@
 (require (for-syntax racket/base
                      racket/match
                      racket/string
-                     syntax/parse)
+                     syntax/parse/pre)
          racket/string)
 
 (provide
