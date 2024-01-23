@@ -1,15 +1,15 @@
 #lang info
 
 (define license 'BSD-3-Clause)
-(define version "0.17.2")
+(define version "0.18")
 (define collection 'multi)
 
 (define deps
   '("base"
     "compatibility-lib"
-    ("component-lib" #:version "1.0")
+    ["component-lib" #:version "1.0"]
     "crontab-lib"
-    ("crypto-lib" #:version "1.6")
+    ["crypto-lib" #:version "1.6"]
     "db-lib"
     "errortrace-lib"
     "gregor-lib"
