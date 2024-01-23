@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/contract
+(require racket/contract/base
          racket/function
          racket/string
          web-server/http
@@ -9,32 +9,27 @@
          "url.rkt")
 
 (provide
- current-cors-origin
- current-cors-methods
- current-cors-headers
- current-cors-max-age
- current-cors-credentials-allowed?
  (contract-out
+  [current-cors-origin (parameter/c (or/c #f non-empty-string?))]
+  [current-cors-methods (parameter/c (listof non-empty-string?))]
+  [current-cors-headers (parameter/c (listof non-empty-string?))]
+  [current-cors-max-age (parameter/c exact-nonnegative-integer?)]
+  [current-cors-credentials-allowed? (parameter/c boolean?)]
   [wrap-cors middleware/c]))
 
-(define/contract current-cors-origin
-  (parameter/c (or/c #f non-empty-string?))
+(define current-cors-origin
   (make-parameter #f))
 
-(define/contract current-cors-methods
-  (parameter/c (listof non-empty-string?))
+(define current-cors-methods
   (make-parameter '("HEAD" "DELETE" "GET" "PATCH" "POST" "PUT" "OPTIONS")))
 
-(define/contract current-cors-headers
-  (parameter/c (listof non-empty-string?))
+(define current-cors-headers
   (make-parameter (list "*")))
 
-(define/contract current-cors-max-age
-  (parameter/c exact-nonnegative-integer?)
+(define current-cors-max-age
   (make-parameter 86400))
 
-(define/contract current-cors-credentials-allowed?
-  (parameter/c boolean?)
+(define current-cors-credentials-allowed?
   (make-parameter #t))
 
 (define (make-allow-origin-header)

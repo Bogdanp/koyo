@@ -16,7 +16,7 @@
 This module exposes a component for storing and retrieving data from a
 browser session.
 
-@defparam[current-session-manager sessions (or/c false/c session-manager?)]{
+@defparam[current-session-manager sessions (or/c #f session-manager?)]{
   This parameter holds a reference to the current session manager.
 
   Functions @racket[session-ref], @racket[session-set!],
@@ -26,7 +26,7 @@ browser session.
   The parameter is installed by @racket[wrap-session].
 }
 
-@defparam[current-session-id session-id (or/c false/c non-empty-string?)]{
+@defparam[current-session-id session-id (or/c #f non-empty-string?)]{
   This parameter holds the session id for the current request.  If the
   current request handler is wrapped with @racket[wrap-session], then
   this is guaranteed not to be @racket[#f].

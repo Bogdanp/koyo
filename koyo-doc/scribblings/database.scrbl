@@ -47,7 +47,7 @@ working with database connections.
 
 @defproc[(call-with-database-transaction [database database?]
                                          [proc (-> connection? any)]
-                                         [#:isolation isolation (or/c false/c
+                                         [#:isolation isolation (or/c #f
                                                                       'serializable
                                                                       'repeatable-read
                                                                       'read-committed
@@ -77,7 +77,7 @@ working with database connections.
     #:grammar ([maybe-isolation (code:line)
                                 (code:line #:isolation isolation)])
     #:contracts ([database database?]
-                 [isolation (or/c false/c
+                 [isolation (or/c #f
                                   'serializable
                                   'repeatable-read
                                   'read-committed

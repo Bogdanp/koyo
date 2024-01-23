@@ -21,7 +21,7 @@ page is processed.  Each message is bound to a specific user session.
   request.
 }
 
-@defparam[current-flash-manager flashes (or/c false/c flash-manager?)]{
+@defparam[current-flash-manager flashes (or/c #f flash-manager?)]{
   This parameters holds the current flash manager for a particular
   request.  It is installed by @racket[wrap-flash] and automatically
   used by @racket[flash] if an explicit manager is not passed in.

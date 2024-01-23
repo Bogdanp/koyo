@@ -1,14 +1,15 @@
 #lang racket/base
 
-(require racket/contract
+(require racket/contract/base
          racket/fixnum
          racket/port
          racket/random
          racket/string)
 
 (provide
- current-random-string-generator
- generate-random-string)
+ (contract-out
+  [current-random-string-generator (parameter/c (-> exact-positive-integer? non-empty-string?))]
+  [generate-random-string (->* [] [exact-positive-integer?] non-empty-string?)]))
 
 (define (crypto-generate-random-string len)
   (define num-bs
@@ -28,10 +29,8 @@
       (substring str 0 len)
       str))
 
-(define/contract current-random-string-generator
-  (parameter/c (-> exact-positive-integer? non-empty-string?))
+(define current-random-string-generator
   (make-parameter crypto-generate-random-string))
 
-(define/contract (generate-random-string [len 64])
-  (->* () (exact-positive-integer?) non-empty-string?)
+(define (generate-random-string [len 64])
   ((current-random-string-generator) len))

@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require koyo
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          threading
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          web-server/managers/lru
@@ -19,9 +20,9 @@
 (define/contract (make-app sessions
                            #:debug? [debug? #f]
                            #:memory-threshold [memory-threshold (* 512 1024 1024)])
-  (->* (session-manager?)
-       (#:debug? boolean?
-        #:memory-threshold exact-positive-integer?)
+  (->* [session-manager?]
+       [#:debug? boolean?
+        #:memory-threshold exact-positive-integer?]
        app?)
   (define-values (dispatch reverse-uri _req-roles)
     (dispatch-rules+roles

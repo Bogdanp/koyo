@@ -6,19 +6,32 @@
          db
          db/util/postgresql
          gregor
-         racket/contract
+         racket/contract/base
          racket/match
          racket/sequence
          "profiler.rkt")
 
 (provide
- current-database-connection
- make-database-factory
- database?
- call-with-database-connection
- call-with-database-transaction
- database-borrow-connection
- database-release-connection
+ (contract-out
+  [current-database-connection (parameter/c (or/c #f connection?))]
+  [database? (-> any/c boolean?)]
+  [make-database-factory
+   (->* [(-> connection?)]
+        [#:max-connections exact-positive-integer?
+         #:max-idle-connections exact-positive-integer?]
+        (-> database?))]
+  [call-with-database-connection
+    (-> database? (-> connection? any) any)]
+  [call-with-database-transaction
+    (->* [database? (-> connection? any)]
+         [#:isolation (or/c #f
+                            'serializable
+                            'repeatable-read
+                            'read-committed
+                            'read-uncommitted)]
+         any)]
+  [database-borrow-connection (-> database? connection?)]
+  [database-release-connection (-> database? connection? void?)])
 
  with-database-connection
  with-database-transaction)
@@ -38,13 +51,9 @@
    (define (component-stop db)
      (struct-copy database db [connection-pool #f]))])
 
-(define/contract ((make-database-factory connector
-                                         #:max-connections [max-connections 16]
-                                         #:max-idle-connections [max-idle-connections 2]))
-  (->* ((-> connection?))
-       (#:max-connections exact-positive-integer?
-        #:max-idle-connections exact-positive-integer?)
-       (-> database?))
+(define ((make-database-factory connector
+                                #:max-connections [max-connections 16]
+                                #:max-idle-connections [max-idle-connections 2]))
   (database #f (hasheq 'connector connector
                        'max-connections max-connections
                        'max-idle-connections max-idle-connections)))
@@ -52,53 +61,44 @@
 (define current-database-connection
   (make-parameter #f))
 
-(define/contract (call-with-database-connection database proc)
-  (-> database? (-> connection? any) any)
+(define (call-with-database-connection db proc)
   (with-timing 'database "call-with-database-connection"
-    (define-values (connection disconnecter)
-      (cond
-        [(current-database-connection)
-         => (lambda (conn)
-              (values conn void))]
-
-        [else
-         (define connection
-           (connection-pool-lease (database-connection-pool database)))
-
-         (values connection (lambda ()
-                              (disconnect connection)))]))
-
+    (define conn #f)
+    (define close void)
     (dynamic-wind
-      (lambda () #f)
+      (lambda ()
+        (with-timing "lease"
+          (cond
+            [(current-database-connection)
+             => (lambda (the-conn)
+                  (set! conn the-conn)
+                  (set! close void))]
+            [else
+             (define the-conn
+               (connection-pool-lease
+                (database-connection-pool db)))
+             (set! conn the-conn)
+             (set! close (λ () (disconnect the-conn)))])))
       (lambda ()
         (with-timing "proc"
-          (parameterize ([current-database-connection connection])
-            (proc connection))))
+          (parameterize ([current-database-connection conn])
+            (proc conn))))
       (lambda ()
         (with-timing "disconnect"
-          (disconnecter))))))
+          (close))))))
 
-(define/contract (call-with-database-transaction database proc #:isolation [isolation #f])
-  (->* (database? (-> connection? any))
-       (#:isolation (or/c false/c
-                          'serializable
-                          'repeatable-read
-                          'read-committed
-                          'read-uncommitted))
-       any)
+(define (call-with-database-transaction db proc #:isolation [isolation #f])
   (with-timing 'database "call-with-database-transaction"
-    (with-database-connection [conn database]
+    (with-database-connection [conn db]
       (call-with-transaction conn
         #:isolation isolation
         (lambda ()
           (proc conn))))))
 
-(define/contract (database-borrow-connection database)
-  (-> database? connection?)
-  (connection-pool-lease (database-connection-pool database)))
+(define (database-borrow-connection db)
+  (connection-pool-lease (database-connection-pool db)))
 
-(define/contract (database-release-connection database conn)
-  (-> database? connection? void?)
+(define (database-release-connection _db conn)
   (disconnect conn))
 
 (define-syntax (with-database-connection stx)
@@ -130,52 +130,48 @@
 
  exn:fail:sql:constraint-violation?
 
- in-rows
- in-row
-
- sql-date->date
- sql-timestamp->moment
-
- ->sql-date
- ->sql-timestamp)
+ (contract-out
+  [in-rows (-> connection? statement? any/c ... sequence?)]
+  [in-row (-> connection? statement? any/c ... sequence?)]
+  [sql-date->date (-> sql-date? date?)]
+  [sql-timestamp->moment (-> sql-timestamp? moment?)]
+  [->sql-date (-> date-provider? sql-date?)]
+  [->sql-timestamp (-> time-provider? sql-timestamp?)]))
 
 (define id/c exact-positive-integer?)
-(define maybe-id/c (or/c false/c id/c))
+(define maybe-id/c (or/c #f id/c))
 
-(define/contract exn:fail:sql:constraint-violation?
-  (-> any/c boolean?)
+(define exn:fail:sql:constraint-violation?
   (match-lambda
     [(exn:fail:sql _ _ (or "23503" "23505") _) #t]
     [_ #f]))
 
-(define/contract (in-rows conn stmt . args)
-  (-> connection? statement? any/c ... sequence?)
-  (sequence-map (lambda cols
-                  (apply values (map sql-> cols)))
-                (apply in-query conn stmt args)))
+(define (in-rows conn stmt . args)
+  (sequence-map
+   (lambda cols
+     (apply values (map sql-> cols)))
+   (apply in-query conn stmt args)))
 
-(define/contract (in-row conn stmt . args)
-  (-> connection? statement? any/c ... sequence?)
-  (let ([consumed #f])
-    (stop-before (apply in-rows conn stmt args) (lambda _args
-                                                  (begin0 consumed
-                                                    (set! consumed #t))))))
+(define (in-row conn stmt . args)
+  (define consumed? #f)
+  (stop-before
+   (apply in-rows conn stmt args)
+   (lambda _args
+     (begin0 consumed?
+       (set! consumed? #t)))))
 
 (define (sql-> v)
   (cond
     [(sql-null? v)
      #f]
-
     [(pg-array? v)
      (pg-array->list v)]
-
     [(sql-date? v)
      (sql-date->date v)]
-
     [(sql-timestamp? v)
      (sql-timestamp->moment v)]
-
-    [else v]))
+    [else
+     v]))
 
 (define (sql-date->date d)
   (date (sql-date-year d)
@@ -192,14 +188,12 @@
           (sql-timestamp-nanosecond t)
           #:tz (or (sql-timestamp-tz t) (current-timezone))))
 
-(define/contract (->sql-date m)
-  (-> date-provider? sql-date?)
+(define (->sql-date m)
   (sql-date (->year m)
             (->month m)
             (->day m)))
 
-(define/contract (->sql-timestamp m)
-  (-> time-provider? sql-timestamp?)
+(define (->sql-timestamp m)
   (sql-timestamp (->year m)
                  (->month m)
                  (->day m)

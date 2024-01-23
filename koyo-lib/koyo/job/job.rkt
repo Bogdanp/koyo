@@ -4,7 +4,6 @@
                      racket/stxparam
                      syntax/parse/pre)
          gregor
-         racket/contract
          racket/stxparam
          "broker.rkt"
          "registry.rkt")
@@ -33,12 +32,10 @@
  job?
  job-proc)
 
-(define/contract execute-jobs-synchronously?
-  (parameter/c boolean?)
+(define execute-jobs-synchronously?
   (make-parameter #f))
 
-(define/contract current-job-scheduled-at
-  (parameter/c (or/c false/c moment?))
+(define current-job-scheduled-at
   (make-parameter #f))
 
 (struct job (id queue priority proc)
@@ -60,7 +57,8 @@
                          (job-queue job)
                          (job-id job)
                          (job-priority job)
-                         (or (current-job-scheduled-at) (now/moment))
+                         (or (current-job-scheduled-at)
+                             (now/moment))
                          (list kws kw-args args))]))))
 
 (define (make-job #:id id

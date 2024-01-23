@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/contract
+(require racket/contract/base
          racket/string
          web-server/http
          "contract.rkt"
@@ -12,11 +12,12 @@
  request-csrf-token
  request-protected?
 
- current-csrf-error-handler
- current-csrf-token-generator
- current-csrf-token-reader
- current-csrf-token
- wrap-csrf)
+ (contract-out
+  [current-csrf-error-handler (parameter/c (-> request? response?))]
+  [current-csrf-token-generator (parameter/c (-> non-empty-string?))]
+  [current-csrf-token-reader (parameter/c (-> request? (or/c #f non-empty-string?)))]
+  [current-csrf-token (parameter/c (or/c #f non-empty-string?))]
+  [wrap-csrf (-> session-manager? middleware/c)]))
 
 (define session-key 'csrf.token)
 
@@ -41,33 +42,25 @@
      (h1 "Error")
      (p "Invalid CSRF token."))))
 
-(define/contract current-csrf-token-generator
-  (parameter/c (-> non-empty-string?))
+(define current-csrf-token-generator
   (make-parameter generate-random-string))
 
-(define/contract current-csrf-token
-  (parameter/c (or/c false/c non-empty-string?))
+(define current-csrf-token
   (make-parameter #f))
 
-(define/contract current-csrf-token-reader
-  (parameter/c (-> request? (or/c false/c non-empty-string?)))
+(define current-csrf-token-reader
   (make-parameter request-csrf-token))
 
-(define/contract current-csrf-error-handler
-  (parameter/c (-> request? response?))
+(define current-csrf-error-handler
   (make-parameter error-handler))
 
-(define/contract (((wrap-csrf sessions) handler) req . args)
-  (-> session-manager? middleware/c)
+(define (((wrap-csrf sessions) handler) req . args)
   (with-timing 'csrf "wrap-csrf"
     (session-manager-update! sessions
                              session-key
                              (lambda (token-from-session)
                                (or token-from-session ((current-csrf-token-generator)))) #f)
-
-    (define csrf-token
-      (session-manager-ref sessions session-key))
-
+    (define csrf-token (session-manager-ref sessions session-key))
     (parameterize [(current-csrf-token csrf-token)]
       (cond
         [(request-protected? req)

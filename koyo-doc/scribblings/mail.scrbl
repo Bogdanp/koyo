@@ -51,8 +51,8 @@ the template model properties.
 @defproc[(mailer-send-email-with-template [m mailer?]
                                           [#:to to non-empty-string?]
                                           [#:from from non-empty-string? (mailer-sender m)]
-                                          [#:template-id template-id (or/c false/c exact-positive-integer?) #f]
-                                          [#:template-alias template-alias (or/c false/c symbol?) #f]
+                                          [#:template-id template-id (or/c #f exact-positive-integer?) #f]
+                                          [#:template-alias template-alias (or/c #f symbol?) #f]
                                           [#:template-model template-model (hash/c symbol? string?) (hasheq)]) void?]{
 
   Sends a templated e-mail using the underlying @tech{mail adapter}.

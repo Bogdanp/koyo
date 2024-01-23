@@ -1,14 +1,14 @@
 #lang racket/base
 
-(require racket/contract)
+(require racket/contract/base)
 
 ;; Boxes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- box-swap!)
+ (contract-out
+  [box-swap! (-> box? (-> any/c any/c) void?)]))
 
-(define/contract (box-swap! b f)
-  (-> box? (-> any/c any/c) void?)
+(define (box-swap! b f)
   (let loop ([v (unbox b)])
     (unless (box-cas! b v (f v))
       (loop (unbox b)))))
@@ -17,13 +17,13 @@
 ;; Threads ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- call-with-timeout)
+ (contract-out
+  [call-with-timeout
+   (->* [(-> any/c)]
+        [#:timeout exact-nonnegative-integer?]
+        (or/c 'timeout any/c))]))
 
-(define/contract (call-with-timeout f #:timeout [timeout 5000])
-  (->* ((-> any/c))
-       (#:timeout exact-nonnegative-integer?)
-       (or/c 'timeout any/c))
-
+(define (call-with-timeout f #:timeout [timeout 5000])
   (define deadline (+ (current-inexact-milliseconds) timeout))
   (define chan (make-channel))
   (define worker

@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require net/url
-         racket/contract
+         racket/contract/base
          racket/string
          web-server/http
          web-server/servlet/servlet-structs
@@ -22,45 +22,41 @@
 ;; session.
 
 (provide
- current-continuation-key
- current-continuation-key-cookie-path
- current-continuation-key-cookie-secure?
- current-continuation-mismatch-handler
- current-continuation-wrapper
- protect-continuation
  (contract-out
-  [wrap-protect-continuations middleware/c])
+  [current-continuation-key (parameter/c (or/c #f non-empty-string?))]
+  [current-continuation-key-cookie-path (parameter/c non-empty-string?)]
+  [current-continuation-key-cookie-secure? (parameter/c boolean?)]
+  [current-continuation-mismatch-handler (parameter/c (-> request? response?))]
+  [current-continuation-wrapper (parameter/c (-> (-> request? response?)
+                                                 (-> request? response?)))]
+  [protect-continuation (-> (-> request? response?)
+                            (-> request? response?))]
+  [wrap-protect-continuations middleware/c]
 
- send/suspend/protect
- send/back/protect
- send/forward/protect
- send/suspend/dispatch/protect
- redirect/get/protect
- redirect/get/forget/protect)
+  [send/suspend/protect (-> (-> string? can-be-response?) request?)]
+  [send/back/protect (-> response? void?)]
+  [send/forward/protect (-> (-> string? can-be-response?) request?)]
+  [send/suspend/dispatch/protect (-> (-> (-> (-> request? any) string?) can-be-response?) any)]
+  [redirect/get/protect (->* [] [#:headers (listof header?)] request?)]
+  [redirect/get/forget/protect (->* [] [#:headers (listof header?)] request?)]))
 
 (define continuation-key-cookie-name "_k")
 
-(define/contract current-continuation-key
-  (parameter/c (or/c false/c non-empty-string?))
+(define current-continuation-key
   (make-parameter #f))
 
-(define/contract current-continuation-key-cookie-path
-  (parameter/c non-empty-string?)
+(define current-continuation-key-cookie-path
   (make-parameter "/"))
 
-(define/contract current-continuation-key-cookie-secure?
-  (parameter/c boolean?)
+(define current-continuation-key-cookie-secure?
   (make-parameter #t))
 
-(define/contract current-continuation-mismatch-handler
-  (parameter/c (-> request? response?))
+(define current-continuation-mismatch-handler
   (make-parameter
    (lambda (req)
      (redirect-to (url->string (url-scrub (request-uri req)))))))
 
-(define/contract current-continuation-wrapper
-  (parameter/c (-> (-> request? response?)
-                   (-> request? response?)))
+(define current-continuation-wrapper
   (make-parameter values))
 
 (define (find-continuation-key cookies)
@@ -115,30 +111,25 @@
                                         (cookie->header the-cookie)
                                         (response-headers res))])))
 
-(define/contract (send/suspend/protect f)
-  (-> (-> string? can-be-response?) request?)
+(define (send/suspend/protect f)
   (protect-request (send/suspend f)))
 
 (define send/back/protect send/back)
 
-(define/contract (send/forward/protect f)
-  (-> (-> string? can-be-response?) request?)
+(define (send/forward/protect f)
   (protect-request (send/forward f)))
 
-(define/contract (send/suspend/dispatch/protect f)
-  (-> (-> (-> (-> request? any) string?) can-be-response?) any)
+(define (send/suspend/dispatch/protect f)
   (send/suspend/dispatch
    (lambda (embed/url)
      (f (compose1 embed/url protect-continuation)))))
 
-(define/contract (redirect/get/protect #:headers [hs null])
-  (->* () (#:headers (listof header?)) request?)
+(define (redirect/get/protect #:headers [hs null])
   (send/suspend/protect
    (lambda (k-url)
      (redirect-to k-url #:headers hs))))
 
-(define/contract (redirect/get/forget/protect #:headers [hs null])
-  (->* () (#:headers (listof header?)) request?)
+(define (redirect/get/forget/protect #:headers [hs null])
   (send/forward/protect
    (lambda (k-url)
      (redirect-to k-url #:headers hs))))

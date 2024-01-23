@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base)
          errortrace/errortrace-key  ;; implementation detail!
-         racket/contract
+         racket/contract/base
          racket/format
          racket/match
          racket/port
@@ -13,8 +13,9 @@
          "haml.rkt")
 
 (provide
- current-production-error-page
- wrap-errors)
+ (contract-out
+  [current-production-error-page (parameter/c (-> request? exn? can-be-response?))]
+  [wrap-errors (-> boolean? middleware/c)]))
 
 (define-runtime-path css-path
   (build-path "resources" "error.css"))
@@ -22,8 +23,7 @@
 (define debug-styles
   (call-with-input-file css-path port->string))
 
-(define/contract current-production-error-page
-  (parameter/c (-> request? exn? can-be-response?))
+(define current-production-error-page
   (make-parameter
    (lambda (_req _exn)
      (response/xexpr
@@ -36,8 +36,7 @@
          (:h1 "Internal Error")
          (:p "An unexpected error occurred.  Please try again later."))))))))
 
-(define/contract (((wrap-errors debug?) handler) req . args)
-  (-> boolean? middleware/c)
+(define (((wrap-errors debug?) handler) req . args)
   (with-handlers ([exn:fail?
                    (lambda (e)
                      ((error-display-handler) (exn-message e) e)

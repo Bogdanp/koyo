@@ -4,7 +4,7 @@
                      racket/function
                      syntax/parse/pre)
          (prefix-in h: html)
-         racket/contract
+         racket/contract/base
          racket/function
          racket/match
          racket/port
@@ -13,9 +13,19 @@
          xml)
 
 (provide
- html->xexpr
- html->xexpr/first
- xexpr->text
+ (contract-out
+  [html->xexpr
+   (->* [string?]
+        [(-> string? string?)]
+        (listof xexpr?))]
+  [html->xexpr/first
+   (-> string? xexpr?)])
+
+ (contract-out
+  [xexpr->text
+   (->* [xexpr?]
+        [string?]
+        string?)])
  xexpr-select
  xexpr-select-first
  xexpr-select-text
@@ -25,10 +35,7 @@
 (define (default-surround s)
   (string-append "<div>" s "</div>"))
 
-(define/contract (html->xexpr s [surround default-surround])
-  (->* (string?)
-       ((-> string? string?))
-       (listof xexpr?))
+(define (html->xexpr s [surround default-surround])
   (call-with-input-string (surround s)
     (lambda (in)
       (map xml->xexpr (h:read-html-as-xml in)))))
@@ -36,8 +43,7 @@
 (define html->xexpr/first
   (compose1 car html->xexpr))
 
-(define/contract (xexpr->text e [sep " "])
-  (->* (xexpr?) (string?) string?)
+(define (xexpr->text e [sep " "])
   (match e
     [(? symbol?) (format "&~a;" e)]
     [(? number?) (format "&#~a;" e)]
@@ -49,10 +55,6 @@
 
     [(list _ e ...)
      (string-join (map xexpr->text e) sep)]))
-
-(define selector/c
-  (listof (or/c symbol?
-                (listof (list/c symbol? string?)))))
 
 (define (attribute-pairs->hash xs)
   (for/hash ([pair (in-list xs)])
@@ -111,21 +113,15 @@
 
        (loop selected* remaining*)])))
 
-(define/contract (make-xexpr-selector selectors)
-  (-> (listof selector/c)
-      (-> xexpr? (listof xexpr?)))
-
-  (define (xexpr-selector xexpr)
-    (let loop ([selectors selectors]
-               [selected (list xexpr)])
-      (match selectors
-        [(list) selected]
-        [(cons selector selectors)
-         (loop selectors
-               (apply append (for/list ([xexpr selected])
-                               (xexpr-selector-select selector xexpr))))])))
-
-  xexpr-selector)
+(define ((make-xexpr-selector selectors) xexpr)
+  (let loop ([selectors selectors]
+             [selected (list xexpr)])
+    (match selectors
+      [(list) selected]
+      [(cons selector selectors)
+       (loop selectors
+             (apply append (for/list ([xexpr selected])
+                             (xexpr-selector-select selector xexpr))))])))
 
 (begin-for-syntax
   (define-syntax-class selector

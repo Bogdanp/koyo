@@ -22,13 +22,13 @@ application against @csrf attacks.
   Contains the function that is used to generate new CSRF tokens.
 }
 
-@defparam[current-csrf-token token (or/c false/c non-empty-string?)]{
+@defparam[current-csrf-token token (or/c #f non-empty-string?)]{
   Holds the CSRF token for the current request.  If the current
   request handler was wrapped with @racket[wrap-csrf], then this is
   guaranteed to contain a non-empty string.
 }
 
-@defparam[current-csrf-token-reader reader (-> request? (or/c false/c non-empty-string?))]{
+@defparam[current-csrf-token-reader reader (-> request? (or/c #f non-empty-string?))]{
   Contains the function that is used to extract the current CSRF token
   from the request.  The default implementation tries to extract the
   CSRF token from a header called @emph{x-csrf-token} and, if that

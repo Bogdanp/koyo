@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require gregor
-         racket/contract
+         racket/contract/base
          racket/match
          racket/string
          srfi/29
@@ -13,23 +13,20 @@
 ;; Translate ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- current-locale-specifier
- current-locales
- load-locales!
+ (contract-out
+  [current-locale-specifier (parameter/c symbol?)]
+  [current-locales (parameter/c (listof (cons/c symbol? symbol?)))]
+  [load-locales! (-> path-string? void?)]
+  [translate (-> symbol? any/c ... string?)]
+  [localize-date (-> date-provider? string?)]))
 
- translate
- localize-date)
-
-(define/contract current-locale-specifier
-  (parameter/c symbol?)
+(define current-locale-specifier
   (make-parameter 'koyo))
 
-(define/contract current-locales
-  (parameter/c (listof (cons/c symbol? symbol?)))
+(define current-locales
   (make-parameter null))
 
-(define/contract (load-locales! locales-path)
-  (-> path-string? void?)
+(define (load-locales! locales-path)
   (current-locales
    (for*/list ([language-dir (directory-list locales-path)]
                [country-file (directory-list (build-path locales-path language-dir))])
@@ -39,8 +36,7 @@
      (declare-bundle! specifier (call-with-input-file (build-path locales-path language-dir country-file) read))
      (cons language country))))
 
-(define/contract (translate message-name . args)
-  (-> symbol? any/c ... string?)
+(define (translate message-name . args)
   (cond
     [(localized-template (current-locale-specifier) message-name)
      => (lambda (message)
@@ -48,8 +44,7 @@
 
     [else (symbol->string message-name)]))
 
-(define/contract (localize-date d)
-  (-> date-provider? string?)
+(define (localize-date d)
   (match (current-language)
     ['ro (~t d "dd MMMM, yyyy")]
     ['de (~t d "dd.MM.yyyy")]
@@ -59,8 +54,9 @@
 ;; Middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- language-header->locale
- wrap-browser-locale)
+ (contract-out
+  [language-header->locale (-> string? (or/c #f (cons/c symbol? symbol?)))]
+  [wrap-browser-locale (-> session-manager? middleware/c)]))
 
 (define accept-language-header
   #"accept-language")
@@ -68,8 +64,7 @@
 (define language-spec-re
   #px"\\s*([^-]+)(?:-([^\\s;]+))?(?:;q=([\\d]+))?\\s*")
 
-(define/contract (((wrap-browser-locale sessions) handler) req . args)
-  (-> session-manager? middleware/c)
+(define (((wrap-browser-locale sessions) handler) req . args)
   (with-timing 'http "wrap-browser-locale"
     (define accept-language
       (bytes->string/utf-8
@@ -92,8 +87,7 @@
   (cons (string->symbol (string-downcase language))
         (string->symbol (string-downcase (or country language)))))
 
-(define/contract (language-header->locale header)
-  (-> string? (or/c false/c (cons/c symbol? symbol?)))
+(define (language-header->locale header)
   (define specs
     (for/list ([spec (string-split header ",")])
       (match-define (list _ language country weight)

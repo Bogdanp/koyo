@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require component
-         racket/contract
+         racket/contract/base
          racket/match
          racket/place
          "argon2id-place.rkt"
@@ -9,8 +9,14 @@
          "generic.rkt")
 
 (provide
- make-argon2id-hasher-factory
- argon2id-hasher?)
+ argon2id-hasher?
+ (contract-out
+  [make-argon2id-hasher-factory
+   (->* []
+        [#:parallelism exact-positive-integer?
+         #:iterations exact-positive-integer?
+         #:memory exact-positive-integer?]
+        (-> argon2id-hasher?))]))
 
 (struct argon2id-hasher (config sema [ch #:mutable] running?)
   #:methods gen:component
@@ -46,16 +52,14 @@
        (place-dead-evt pch)
        (λ (_) (oops 'hasher-hash-matches? "place crashed")))))])
 
-(define/contract ((make-argon2id-hasher-factory
-                   #:parallelism [parallelism (processor-count)]
-                   #:iterations [iterations 256]
-                   #:memory [memory 2048]))
-  (->* ()
-       (#:parallelism exact-positive-integer?
-        #:iterations exact-positive-integer?
-        #:memory exact-positive-integer?)
-       (-> argon2id-hasher?))
-  (define config `((p ,parallelism) (t ,iterations) (m ,memory)))
+(define ((make-argon2id-hasher-factory
+          #:parallelism [parallelism (processor-count)]
+          #:iterations [iterations 256]
+          #:memory [memory 2048]))
+  (define config
+    `((p ,parallelism)
+      (t ,iterations)
+      (m ,memory)))
   (argon2id-hasher config (make-semaphore 1) #f #f))
 
 (define (try-start-hasher-place! who h)

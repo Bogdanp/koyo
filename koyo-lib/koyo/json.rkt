@@ -1,20 +1,20 @@
 #lang racket/base
 
 (require json
-         racket/contract
+         racket/contract/base
          web-server/http)
 
 (provide
- response/json)
+ (contract-out
+  [response/json
+   (->* [jsexpr?]
+        [#:code exact-positive-integer?
+         #:headers (listof header?)]
+        response?)]))
 
-(define/contract (response/json body
-                                #:code [code 200]
-                                #:headers [headers '()])
-  (->* (jsexpr?)
-       (#:code exact-positive-integer?
-        #:headers (listof header?))
-       response?)
-
+(define (response/json body
+                       #:code [code 200]
+                       #:headers [headers '()])
   (response/output
    #:code code
    #:headers headers

@@ -2,15 +2,16 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
-         racket/contract
+         racket/contract/base
          racket/string)
 
 (provide
- current-option-name-prefix
+ (contract-out
+  [current-option-name-prefix
+   (parameter/c non-empty-string?)])
  define-option)
 
-(define/contract current-option-name-prefix
-  (parameter/c non-empty-string?)
+(define current-option-name-prefix
   (make-parameter "KOYO"))
 
 (define (make-option-name s)

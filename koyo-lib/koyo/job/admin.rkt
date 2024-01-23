@@ -5,7 +5,7 @@
          koyo/continuation
          koyo/http
          net/uri-codec
-         racket/contract
+         racket/contract/base
          racket/format
          racket/list
          racket/match
@@ -22,15 +22,18 @@
 ;; component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- make-broker-admin-factory
  broker-admin?
- broker-admin-handler)
+ broker-admin-handler
+ (contract-out
+  [make-broker-admin-factory
+   (->* []
+        [string?]
+        (-> broker? broker-admin?))]))
 
 (struct broker-admin (handler)
   #:transparent)
 
-(define/contract ((make-broker-admin-factory [path "/_koyo/jobs"]) broker)
-  (->* () (string?) (-> broker? broker-admin?))
+(define ((make-broker-admin-factory [path "/_koyo/jobs"]) broker)
   (broker-admin (make-handler path broker)))
 
 (define (make-handler path-prefix broker)

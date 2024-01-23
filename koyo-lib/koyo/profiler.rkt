@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
-         racket/contract
+         racket/contract/base
          racket/format
          web-server/servlet
          xml
@@ -26,58 +26,56 @@
  timing-description
  timing-duration
 
- current-profile
- make-profile
- profile?
- profile-timings
- profile-write)
+ (contract-out
+  [current-profile (parameter/c profile?)]
+  [make-profile (-> profile?)]
+  [profile? (-> any/c boolean?)]
+  [profile-timings (-> profile? (listof timing?))]
+  [profile-write (->* [] [profile? output-port?] void?)]))
 
-(define/contract profiler-enabled?
-  (parameter/c boolean?)
+(define profiler-enabled?
   (make-parameter #f))
 
 (struct timing (id parent label description duration))
 (struct pdata (seq timings))
 (struct profile (data))
 
-(define/contract (make-profile)
-  (-> profile?)
+(define (make-profile)
   (profile (box (pdata 0 null))))
 
-(define/contract profile-timings
-  (-> profile? (listof timing?))
+(define profile-timings
   (compose1 pdata-timings unbox profile-data))
 
-(define (profile-generate-id! profile)
+(define (profile-generate-id! p)
   (let ([next-id #f])
     (box-swap!
-     (profile-data profile)
+     (profile-data p)
      (lambda (data)
        (set! next-id (add1 (pdata-seq data)))
        (struct-copy pdata data [seq next-id])))
     next-id))
 
-(define (profile-add-timing! profile timing)
+(define (profile-add-timing! p t)
   (box-swap!
-   (profile-data profile)
+   (profile-data p)
    (lambda (data)
-     (define timings (cons timing (pdata-timings data)))
+     (define timings (cons t (pdata-timings data)))
      (struct-copy pdata data [timings timings]))))
 
-(define (profile-find-roots profile)
+(define (profile-find-roots p)
   (reverse
    (filter (lambda (t)
              (= (timing-parent t) 0))
-           (profile-timings profile))))
+           (profile-timings p))))
 
-(define (profile-find-children profile timing)
+(define (profile-find-children p t)
   (reverse
-   (filter (lambda (t)
-             (= (timing-id timing) (timing-parent t)))
-           (profile-timings profile))))
+   (filter (lambda (child-t)
+             (= (timing-id t)
+                (timing-parent child-t)))
+           (profile-timings p))))
 
-(define/contract current-profile
-  (parameter/c profile?)
+(define current-profile
   (make-parameter (make-profile)))
 
 (define current-profile-label
@@ -86,7 +84,7 @@
 (define current-timing-id
   (make-parameter 0))
 
-(define (record-timing #:profile [profile (current-profile)]
+(define (record-timing #:profile [the-profile (current-profile)]
                        #:label [label (current-profile-label)]
                        #:description description
                        f)
@@ -96,7 +94,7 @@
   (dynamic-wind
     (lambda ()
       (set! p  (current-timing-id))
-      (set! id (profile-generate-id! profile))
+      (set! id (profile-generate-id! the-profile))
       (set! st (current-inexact-milliseconds))
       (current-timing-id id))
     (lambda ()
@@ -105,7 +103,7 @@
     (lambda ()
       (define duration (- (current-inexact-milliseconds) st))
       (define current-timing (timing id p label description duration))
-      (profile-add-timing! profile current-timing)
+      (profile-add-timing! the-profile current-timing)
       (current-timing-id p))))
 
 (define-syntax (with-timing stx)
@@ -121,18 +119,17 @@
 
            [else (f)]))]))
 
-(define/contract (profile-write [profile (current-profile)]
-                                [out (current-output-port)])
-  (->* () (profile? output-port?) void?)
-
+(define (profile-write [p (current-profile)]
+                       [out (current-output-port)])
   (define roots
-    (profile-find-roots profile))
+    (profile-find-roots p))
 
   (define (format-duration duration)
     (~a (~r duration #:precision '(= 2)) "ms"))
 
-  (define (render-timing timing)
-    (define toggle-id (format "uprofiler-timing-toggle-~a" (timing-id timing)))
+  (define (render-timing t)
+    (define toggle-id
+      (format "uprofiler-timing-toggle-~a" (timing-id t)))
     (haml
      (.uprofiler-timing
       (:input.uprofiler-timing-toggle
@@ -141,12 +138,12 @@
       (:label
        ([:for toggle-id])
        (:span.uprofiler-timing-label
-        (symbol->string (timing-label timing)))
+        (symbol->string (timing-label t)))
        (:span.uprofiler-timing-description
-        (:code (timing-description timing)))
+        (:code (timing-description t)))
        (:span.uprofiler-timing-duration
-        (format-duration (timing-duration timing))))
-      ,@(map render-timing (profile-find-children profile timing)))))
+        (format-duration (timing-duration t))))
+      ,@(map render-timing (profile-find-children p t)))))
 
   (unless (null? roots)
     (define content

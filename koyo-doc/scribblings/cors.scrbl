@@ -18,7 +18,7 @@ This module provides a wrapper function and parameters for handling
 @cors requests.
 
 @deftogether[
-  (@defparam[current-cors-origin origin (or/c false/c non-empty-string?)
+  (@defparam[current-cors-origin origin (or/c #f non-empty-string?)
              #:value #f]
    @defparam[current-cors-methods methods (listof non-empty-string?)
              #:value '("HEAD" "DELETE" "GET" "PATCH" "POST" "PUT" "OPTIONS")]

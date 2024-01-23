@@ -5,7 +5,7 @@
          gregor
          mzlib/os
          racket/class
-         racket/contract
+         racket/contract/base
          racket/list
          racket/match
          racket/string
@@ -18,8 +18,13 @@
 ;; worker ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- make-worker-factory
- worker?)
+ worker?
+ (contract-out
+  [make-worker-factory
+   (->* []
+        [#:queue non-empty-string?
+         #:pool-size exact-positive-integer?]
+        (-> broker? worker?))]))
 
 (define-logger worker)
 
@@ -36,12 +41,8 @@
      (reactor-stop (worker-reactor w))
      (struct-copy worker w [reactor #f]))])
 
-(define/contract ((make-worker-factory #:queue [queue "default"]
-                                       #:pool-size [pool-size 8]) broker)
-  (->* ()
-       (#:queue non-empty-string?
-        #:pool-size exact-positive-integer?)
-       (-> broker? worker?))
+(define ((make-worker-factory #:queue [queue "default"]
+                              #:pool-size [pool-size 8]) broker)
   (worker broker queue pool-size #f))
 
 

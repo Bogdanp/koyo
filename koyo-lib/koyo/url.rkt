@@ -2,43 +2,39 @@
 
 (require net/uri-codec
          net/url
-         racket/contract
-         racket/function
+         racket/contract/base
          racket/match
          racket/string)
 
 ;; External URLs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- current-application-url-scheme
- current-application-url-host
- current-application-url-port
- make-application-url)
+ (contract-out
+  [current-application-url-scheme (parameter/c (or/c "http" "https"))]
+  [current-application-url-host (parameter/c non-empty-string?)]
+  [current-application-url-port (parameter/c (integer-in 0 65535))]
+  [make-application-url
+   (->* []
+        [#:query (listof (cons/c symbol? string?))
+         #:fragment (or/c #f string?)]
+        #:rest (listof string?)
+        string?)]))
 
-(define/contract current-application-url-scheme
-  (parameter/c (or/c "http" "https"))
+(define current-application-url-scheme
   (make-parameter "http"))
 
-(define/contract current-application-url-host
-  (parameter/c non-empty-string?)
+(define current-application-url-host
   (make-parameter "127.0.0.1"))
 
-(define/contract current-application-url-port
-  (parameter/c (integer-in 0 65535))
+(define current-application-url-port
   (make-parameter 8000))
 
-(define/contract (make-application-url #:query [query null]
-                                       #:fragment [fragment #f]
-                                       . path-elements)
-  (->* ()
-       (#:query (listof (cons/c symbol? string?))
-        #:fragment (or/c false/c string?))
-       #:rest (listof string?)
-       string?)
-
+(define (make-application-url #:query [query null]
+                              #:fragment [fragment #f]
+                              . path-elements)
   (define path
-    (map (curryr path/param null) path-elements))
-
+    (for/list ([elt (in-list path-elements)])
+      (path/param elt null)))
   (define port
     (match (current-application-url-port)
       [80   #f]
@@ -59,20 +55,20 @@
 ;; Internal URLs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- current-reverse-uri-fn
- reverse-uri)
+ (contract-out
+  [current-reverse-uri-fn
+   (parameter/c (-> symbol? any/c ... string?))]
+  [reverse-uri
+   (->* [symbol?]
+        [#:query (listof (cons/c symbol? (or/c #f string?)))]
+        #:rest any/c
+        string?)]))
 
-(define/contract current-reverse-uri-fn
-  (parameter/c (-> symbol? any/c ... string?))
-  (make-parameter (lambda (name . args)
+(define current-reverse-uri-fn
+  (make-parameter (lambda (_name . _args)
                     (error "current-reverse-uri-fn not installed"))))
 
-(define/contract (reverse-uri where #:query [query null] . args)
-  (->* (symbol?)
-       (#:query (listof (cons/c symbol? (or/c false/c string?))))
-       #:rest any/c
-       string?)
-
+(define (reverse-uri where #:query [query null] . args)
   (define uri (apply (current-reverse-uri-fn) where args))
   (cond
     [(null? query) uri]

@@ -64,9 +64,9 @@
                                         #:user-agent non-empty-string?
                                         (values (or/c #f user?)
                                                 (or/c #f string?)))]
-  [user-manager-lookup/id (-> user-manager? exact-positive-integer? (or/c false/c user?))]
-  [user-manager-lookup/username (-> user-manager? string? (or/c false/c user?))]
-  [user-manager-login (-> user-manager? string? string? (or/c false/c user?))]
+  [user-manager-lookup/id (-> user-manager? exact-positive-integer? (or/c #f user?))]
+  [user-manager-lookup/username (-> user-manager? string? (or/c #f user?))]
+  [user-manager-login (-> user-manager? string? string? (or/c #f user?))]
   [user-manager-verify! (-> user-manager? exact-positive-integer? string? void?)]
   [user-manager-reset-password! (-> user-manager?
                                     #:user-id id/c

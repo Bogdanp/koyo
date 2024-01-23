@@ -2,7 +2,7 @@
 
 (require net/mime-type
          net/url
-         racket/contract
+         racket/contract/base
          racket/list
          racket/string
          web-server/dispatchers/dispatch
@@ -11,10 +11,13 @@
          web-server/dispatchers/filesystem-map)
 
 (provide
- make-static-dispatcher)
+ (contract-out
+  [make-static-dispatcher
+   (->* [path-string?]
+        [non-empty-string?]
+        dispatcher/c)]))
 
-(define/contract (make-static-dispatcher root-path [root "/static/"])
-  (->* (path-string?) (non-empty-string?) dispatcher/c)
+(define (make-static-dispatcher root-path [root "/static/"])
   (define prefix-length (length (string-split root "/")))
   (define prefix-re (regexp (string-append "^" root ".+$")))
   (define url->path

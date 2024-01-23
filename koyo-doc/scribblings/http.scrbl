@@ -22,16 +22,16 @@ structures.
 @deftogether[
   (@defproc[(bindings-ref [bindings (listof binding?)]
                           [name symbol?]
-                          [default (or/c false/c string?) #f]) (or/c false/c string?)]
+                          [default (or/c #f string?) #f]) (or/c #f string?)]
    @defproc[(bindings-ref-bytes [bindings (listof binding?)]
                                 [name symbol?]
-                                [default (or/c false/c bytes?) #f]) (or/c false/c bytes?)]
+                                [default (or/c #f bytes?) #f]) (or/c #f bytes?)]
    @defproc[(bindings-ref-number [bindings (listof binding?)]
                                  [name symbol?]
-                                 [default (or/c false/c number?) #f]) (or/c false/c number?)]
+                                 [default (or/c #f number?) #f]) (or/c #f number?)]
    @defproc[(bindings-ref-symbol [bindings (listof binding?)]
                                  [name symbol?]
-                                 [default (or/c false/c symbol?) #f]) (or/c false/c symbol?)])]{
+                                 [default (or/c #f symbol?) #f]) (or/c #f symbol?)])]{
 
   Finds the first binding in @racket[bindings] whose name is
   @racket[name] and returns its value or @racket[default].

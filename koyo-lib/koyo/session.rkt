@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require component
-         racket/contract
+         racket/contract/base
          racket/file
          racket/format
          racket/function
@@ -29,7 +29,12 @@
  session-store-remove!
 
  memory-session-store?
- make-memory-session-store)
+ (contract-out
+  [make-memory-session-store
+   (->* []
+        [#:ttl exact-positive-integer?
+         #:file-path path-string?]
+        session-store?)]))
 
 (define-generics session-store
   (session-store-generate-id! session-store)
@@ -122,13 +127,8 @@
   (log-memory-session-store-debug "found ~a stale sessions out of ~a" expired-count (hash-count current-sessions))
   (struct-copy mss-data data [sessions live-sessions]))
 
-(define/contract (make-memory-session-store #:ttl [ttl (* 7 86400)]
-                                            #:file-path [file-path (make-temporary-file)])
-  (->* ()
-       (#:ttl exact-positive-integer?
-        #:file-path path-string?)
-       session-store?)
-
+(define (make-memory-session-store #:ttl [ttl (* 7 86400)]
+                                   #:file-path [file-path (make-temporary-file)])
   (define custodian (make-custodian))
   (parameterize ([current-custodian custodian])
     (define data-box (box (mss-data 0 (hasheq))))
@@ -146,22 +146,37 @@
 ;; Session manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- current-session-manager
- current-session-id
- session-manager?
- make-session-manager-factory
- session-manager-ref
- session-manager-set!
- session-manager-update!
- session-manager-remove!)
+ (contract-out
+  [current-session-manager (parameter/c (or/c #f session-manager?))]
+  [current-session-id (parameter/c (or/c #f non-empty-string?))]
+  [session-manager? (-> any/c boolean?)]
+  [make-session-manager-factory
+   (->* [#:cookie-name non-empty-string?
+         #:shelf-life exact-positive-integer?
+         #:secret-key bytes?
+         #:store session-store?]
+        [#:cookie-path path-string?
+         #:cookie-secure? boolean?
+         #:cookie-http-only? boolean?
+         #:cookie-same-site (or/c 'lax 'strict)]
+        (-> session-manager?))]
+  [session-manager-ref
+   (case-> (-> session-manager? symbol? any/c)
+           (-> session-manager? symbol? any/c any/c))]
+  [session-manager-set!
+   (-> session-manager? symbol? serializable? void?)]
+  [session-manager-update!
+   (case-> (-> session-manager? symbol? (-> any/c serializable?) serializable?)
+           (-> session-manager? symbol? (-> any/c serializable?) any/c serializable?))]
+  [session-manager-remove!
+   (-> session-manager? symbol? void?)]))
 
 (define-logger session)
 
 (define current-session-manager
   (make-parameter #f))
 
-(define/contract current-session-id
-  (parameter/c (or/c false/c non-empty-string?))
+(define current-session-id
   (make-parameter #f))
 
 (struct session-manager (cookie-name
@@ -181,23 +196,14 @@
      (begin0 sm
        (session-store-persist! (session-manager-store sm))))])
 
-(define/contract ((make-session-manager-factory #:cookie-name cookie-name
-                                                #:cookie-path [cookie-path "/"]
-                                                #:cookie-secure? [cookie-secure? #t]
-                                                #:cookie-http-only? [cookie-http-only? #t]
-                                                #:cookie-same-site [cookie-same-site 'strict]
-                                                #:shelf-life shelf-life
-                                                #:secret-key secret-key
-                                                #:store store))
-  (->* (#:cookie-name non-empty-string?
-        #:shelf-life exact-positive-integer?
-        #:secret-key bytes?
-        #:store session-store?)
-       (#:cookie-path path-string?
-        #:cookie-secure? boolean?
-        #:cookie-http-only? boolean?
-        #:cookie-same-site (or/c 'lax 'strict))
-       (-> session-manager?))
+(define ((make-session-manager-factory #:cookie-name cookie-name
+                                       #:cookie-path [cookie-path "/"]
+                                       #:cookie-secure? [cookie-secure? #t]
+                                       #:cookie-http-only? [cookie-http-only? #t]
+                                       #:cookie-same-site [cookie-same-site 'strict]
+                                       #:shelf-life shelf-life
+                                       #:secret-key secret-key
+                                       #:store store))
   (session-manager cookie-name
                    cookie-path
                    cookie-secure?
@@ -207,10 +213,7 @@
                    secret-key
                    store))
 
-(define/contract session-manager-ref
-  (case-> (-> session-manager? symbol? any/c)
-          (-> session-manager? symbol? any/c any/c))
-
+(define session-manager-ref
   (case-lambda
     [(sm key)
      (session-manager-ref sm key (lambda ()
@@ -220,19 +223,15 @@
      (with-timing 'session "session-manager-ref"
        (session-store-ref (session-manager-store sm) (current-session-id) key default))]))
 
-(define/contract (session-manager-set! sm key value)
-  (-> session-manager? symbol? serializable? void?)
+(define (session-manager-set! sm key value)
   (with-timing 'session "session-manager-set!"
     (session-store-set! (session-manager-store sm) (current-session-id) key value)))
 
-(define/contract (session-manager-remove! sm key)
-  (-> session-manager? symbol? void?)
+(define (session-manager-remove! sm key)
   (with-timing 'session "session-manager-remove!"
     (session-store-remove! (session-manager-store sm) (current-session-id) key)))
 
-(define/contract session-manager-update!
-  (case-> (-> session-manager? symbol? (-> any/c serializable?) serializable?)
-          (-> session-manager? symbol? (-> any/c serializable?) any/c serializable?))
+(define session-manager-update!
   (case-lambda
     [(sm key f)
      (session-manager-update! sm key f (lambda ()
@@ -281,10 +280,10 @@
 ;; Middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- wrap-session)
+ (contract-out
+  [wrap-session (-> session-manager? middleware/c)]))
 
-(define/contract (((wrap-session sm) handler) req . args)
-  (-> session-manager? middleware/c)
+(define (((wrap-session sm) handler) req . args)
   (with-timing 'session "wrap-session"
     (define store (session-manager-store sm))
     (define session-id

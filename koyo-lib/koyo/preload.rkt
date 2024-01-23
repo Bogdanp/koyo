@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/contract
+(require racket/contract/base
          racket/match
          racket/path
          racket/port
@@ -9,18 +9,16 @@
          "profiler.rkt")
 
 (provide
- current-preload-dependencies
- track-preload-dependency!
- make-preload-headers
  (contract-out
+  [current-preload-dependencies (parameter/c (listof string?))]
+  [track-preload-dependency! (-> string? void?)]
+  [make-preload-headers (-> (listof header?))]
   [wrap-preload middleware/c]))
 
-(define/contract current-preload-dependencies
-  (parameter/c (listof string?))
+(define current-preload-dependencies
   (make-parameter null))
 
-(define/contract (track-preload-dependency! dependency)
-  (-> string? void?)
+(define (track-preload-dependency! dependency)
   (current-preload-dependencies (cons dependency (current-preload-dependencies))))
 
 (define query-re
@@ -36,8 +34,7 @@
     [#".mjs" "script"]
     [_       #f]))
 
-(define/contract (make-preload-headers)
-  (-> (listof header?))
+(define (make-preload-headers)
   (with-timing 'preload "make-preload-headers"
     (for*/list ([path (in-list (current-preload-dependencies))]
                 [preload-as (in-value (path->preload-as path))]

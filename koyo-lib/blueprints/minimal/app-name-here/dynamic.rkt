@@ -4,7 +4,7 @@
          koyo/logging
          koyo/server
          koyo/session
-         racket/contract
+         racket/contract/base
          "components/app.rkt"
          (prefix-in config: "config.rkt"))
 
@@ -35,9 +35,7 @@
  prod-system
  start)
 
-(define/contract (start)
-  (-> (-> void?))
-
+(define (start)
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)

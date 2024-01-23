@@ -3,7 +3,7 @@
 (require db
          net/uri-codec
          net/url
-         racket/contract
+         racket/contract/base
          racket/match
          racket/promise
          racket/string
@@ -13,10 +13,10 @@
 ;; db ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- truncate-tables!)
+ (contract-out
+  [truncate-tables! (-> database? (or/c string? symbol?) ... void?)]))
 
-(define/contract (truncate-tables! db . tables)
-  (-> database? (or/c string? symbol?) ... void?)
+(define (truncate-tables! db . tables)
   (with-database-connection [conn db]
     (for ([table tables])
       (query-exec conn (format "truncate table ~a cascade" table)))))
@@ -25,13 +25,26 @@
 ;; http ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- make-test-request)
+ (contract-out
+  [make-test-request
+   (->* []
+        [#:method maybe-stringy/c
+         #:content maybe-stringy/c
+         #:headers (listof (or/c header? (cons/c stringy/c stringy/c)))
+         #:bindings (listof binding?)
+         #:scheme string?
+         #:host string?
+         #:port (integer-in 0 65535)
+         #:path string?
+         #:query (listof (cons/c symbol? (or/c #f string?)))
+         #:client-ip string?]
+        request?)]))
 
 (define stringy/c
   (or/c string? bytes?))
 
 (define maybe-stringy/c
-  (or/c false/c stringy/c))
+  (or/c #f stringy/c))
 
 (define (stringy->bytes s)
   (cond
@@ -42,29 +55,16 @@
 (define (maybe-stringy->bytes s)
   (and s (stringy->bytes s)))
 
-(define/contract (make-test-request #:method [method "GET"]
-                                    #:content [content #f]
-                                    #:headers [headers null]
-                                    #:bindings [bindings null]
-                                    #:scheme [scheme "http"]
-                                    #:host [host "127.0.0.1"]
-                                    #:port [port 80]
-                                    #:path [path "/"]
-                                    #:query [query null]
-                                    #:client-ip [client-ip "127.0.0.1"])
-  (->* ()
-       (#:method maybe-stringy/c
-        #:content maybe-stringy/c
-        #:headers (listof (or/c header? (cons/c stringy/c stringy/c)))
-        #:bindings (listof binding?)
-        #:scheme string?
-        #:host string?
-        #:port (integer-in 0 65535)
-        #:path string?
-        #:query (listof (cons/c symbol? (or/c false/c string?)))
-        #:client-ip string?)
-       request?)
-
+(define (make-test-request #:method [method "GET"]
+                           #:content [content #f]
+                           #:headers [headers null]
+                           #:bindings [bindings null]
+                           #:scheme [scheme "http"]
+                           #:host [host "127.0.0.1"]
+                           #:port [port 80]
+                           #:path [path "/"]
+                           #:query [query null]
+                           #:client-ip [client-ip "127.0.0.1"])
   (let* ([method (maybe-stringy->bytes method)]
          [path (map (lambda (segment)
                       (define segment/split (string-split segment ";"))
@@ -77,8 +77,9 @@
          [headers (for/list ([header headers])
                     (match header
                       [(? header?) header]
-                      [(cons name value) (make-header (stringy->bytes name)
-                                                      (stringy->bytes value))]))]
+                      [(cons name value)
+                       (make-header (stringy->bytes name)
+                                    (stringy->bytes value))]))]
          [bindings (delay (append bindings (for/list ([param query])
                                              (make-binding:form (string->bytes/utf-8 (symbol->string (car param)))
                                                                 (string->bytes/utf-8 (cdr param))))))]

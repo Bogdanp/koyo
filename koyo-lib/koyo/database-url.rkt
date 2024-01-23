@@ -2,22 +2,22 @@
 
 (require db
          net/url
-         racket/contract
+         racket/contract/base
          racket/match
          racket/string)
 
 (provide
- parse-database-url)
+ (contract-out
+  [parse-database-url
+   (-> non-empty-string?
+       (values procedure?
+               (or/c #f non-empty-string?)
+               (or/c #f (integer-in 1 65535))
+               (or/c non-empty-string? 'memory 'temporary)
+               (or/c #f string?)
+               (or/c #f string?)))]))
 
-(define/contract (parse-database-url s)
-  (-> non-empty-string?
-      (values procedure?
-              (or/c false/c non-empty-string?)
-              (or/c false/c (integer-in 1 65535))
-              (or/c non-empty-string? 'memory 'temporary)
-              (or/c false/c string?)
-              (or/c false/c string?)))
-
+(define (parse-database-url s)
   (define u (string->url s))
   (define-values (dbsystem connector)
     (scheme->dbystem&connector (url-scheme u)))

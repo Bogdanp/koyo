@@ -2,7 +2,7 @@
 
 (require component
          db
-         racket/contract
+         racket/contract/base
          racket/sequence
          "../database.rkt"
          "query.rkt"
@@ -10,8 +10,10 @@
          "serialize.rkt")
 
 (provide
- current-broker
- make-broker
+ (contract-out
+  [current-broker (parameter/c (or/c #f broker?))]
+  [make-broker (-> database? broker?)])
+
  broker?
  broker-borrow-connection
  broker-release-connection
@@ -32,13 +34,12 @@
      (begin0 b
        (ensure-latest-schema! (broker-database b))))])
 
-(define/contract (make-broker database)
+(define current-broker
+  (make-parameter #f))
+
+(define (make-broker database)
   (-> database? broker?)
   (broker database))
-
-(define/contract current-broker
-  (parameter/c (or/c false/c broker?))
-  (make-parameter #f))
 
 (define (broker-borrow-connection b)
   (database-borrow-connection (broker-database b)))

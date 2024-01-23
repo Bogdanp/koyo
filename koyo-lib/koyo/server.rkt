@@ -3,7 +3,7 @@
 (require component
          net/tcp-unit
          racket/async-channel
-         racket/contract
+         racket/contract/base
          racket/string
          racket/unix-socket-tcp-unit
          web-server/dispatchers/dispatch
@@ -11,8 +11,15 @@
          web-server/web-server)
 
 (provide
- make-server-factory
- server?)
+ server?
+ (contract-out
+  [make-server-factory
+   (->* []
+        [#:unix-socket (or/c #f path-string?)
+         #:host non-empty-string?
+         #:port (integer-in 0 65535)
+         #:limits safety-limits?]
+        (-> dispatcher/c server?))]))
 
 (define-logger server)
 
@@ -52,14 +59,8 @@
          (delete-file socket-path)))
      (struct-copy server a-server [stopper #f]))])
 
-(define/contract ((make-server-factory #:unix-socket [socket-path #f]
-                                       #:host [host "127.0.0.1"]
-                                       #:port [port 8000]
-                                       #:limits [limits (make-safety-limits)]) dispatcher)
-  (->* ()
-       (#:unix-socket (or/c #f path-string?)
-        #:host non-empty-string?
-        #:port (integer-in 0 65535)
-        #:limits safety-limits?)
-       (-> dispatcher/c server?))
+(define ((make-server-factory #:unix-socket [socket-path #f]
+                              #:host [host "127.0.0.1"]
+                              #:port [port 8000]
+                              #:limits [limits (make-safety-limits)]) dispatcher)
   (server host port socket-path limits dispatcher #f))

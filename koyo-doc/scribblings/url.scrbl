@@ -27,7 +27,7 @@ application.
 
 @defproc[(make-application-url [path-element string?] ...
                                [#:query query (listof (cons/c symbol? string?)) null]
-                               [#:fragment fragment (or/c false/c string?) #f]) string?]{
+                               [#:fragment fragment (or/c #f string?) #f]) string?]{
 
   Generates absolute URLs based on the given arguments.
 }

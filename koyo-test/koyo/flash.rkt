@@ -2,7 +2,6 @@
 
 (require component
          koyo/flash
-         (submod koyo/flash private)
          koyo/session
          rackunit)
 

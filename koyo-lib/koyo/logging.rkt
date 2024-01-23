@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require mzlib/os
-         racket/contract
+         racket/contract/base
          racket/format
          racket/list
          racket/logging
@@ -10,18 +10,18 @@
          "private/term.rkt")
 
 (provide
- start-logger)
+ (contract-out
+  [start-logger
+   (->* [#:levels (listof (cons/c symbol? log-level/c))]
+        [#:color? boolean?
+         #:parent logger?
+         #:output-port port?]
+        (-> void?))]))
 
-(define/contract (start-logger #:levels levels
-                               #:color? [color? #t]
-                               #:parent [parent (current-logger)]
-                               #:output-port [out (current-error-port)])
-  (->* (#:levels (listof (cons/c symbol? log-level/c)))
-       (#:color? boolean?
-        #:parent logger?
-        #:output-port port?)
-       (-> void?))
-
+(define (start-logger #:levels levels
+                      #:color? [color? #t]
+                      #:parent [parent (current-logger)]
+                      #:output-port [out (current-error-port)])
   (define stopped (make-semaphore))
   (define receiver
     (apply make-log-receiver parent

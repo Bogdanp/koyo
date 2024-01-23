@@ -12,8 +12,8 @@
 
 This module provides utilities for testing request handlers.
 
-@defproc[(make-test-request [#:method method (or/c false/c bytes? string?) "GET"]
-                            [#:content content (or/c false/c bytes? string?) #f]
+@defproc[(make-test-request [#:method method (or/c #f bytes? string?) "GET"]
+                            [#:content content (or/c #f bytes? string?) #f]
                             [#:headers headers (listof (or/c header?
                                                              (cons/c (or/c bytes? string?)
                                                                      (or/c bytes? string?)))) null]
@@ -22,7 +22,7 @@ This module provides utilities for testing request handlers.
                             [#:host host string? "127.0.0.1"]
                             [#:port port (integer-in 0 65535) 80]
                             [#:path path string? "/"]
-                            [#:query query (listof (cons/c symbol? (or/c false/c string?))) null]
+                            [#:query query (listof (cons/c symbol? (or/c #f string?))) null]
                             [#:client-ip client-ip string? "127.0.0.1"]) request?]{
 
   Generates @racket[request] values.

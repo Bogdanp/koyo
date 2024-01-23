@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/contract
+(require racket/contract/base
          racket/file
          racket/match
          racket/path
@@ -10,7 +10,13 @@
          "private/tool.rkt")
 
 (provide
- run-forever)
+ (contract-out
+  [run-forever
+   (->* [path-string?]
+        [#:recompile? boolean?
+         #:errortrace? boolean?
+         #:server-timeout (and/c real? positive?)]
+        void?)]))
 
 (define-logger runner)
 (define-logger watcher)
@@ -44,16 +50,10 @@
            (filesystem-change-evt-cancel chg)))
         (handle-evt chg (λ (_) p)))))))
 
-(define/contract (run-forever dynamic-module-path
-                              #:recompile? [recompile? #t]
-                              #:errortrace? [errortrace? #t]
-                              #:server-timeout [server-timeout 30])
-  (->* (path-string?)
-       (#:recompile? boolean?
-        #:errortrace? boolean?
-        #:server-timeout (and/c real? positive?))
-       void?)
-
+(define (run-forever dynamic-module-path
+                     #:recompile? [recompile? #t]
+                     #:errortrace? [errortrace? #t]
+                     #:server-timeout [server-timeout 30])
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
 
