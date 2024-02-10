@@ -1,22 +1,20 @@
 {
+  "name": "app-name-here",
   "engines": {
     "node": ">=16",
     "npm": ">=7"
   },
   "devDependencies": {
-    "broccoli": "^3.0.0",
-    "broccoli-cli": "^1.0.0",
-    "broccoli-concat": "^4.2.5",
-    "broccoli-funnel": "^3.0.8",
-    "broccoli-merge-trees": "^4.2.0",
-    "broccoli-sass-source-maps": "^4.0.0",
-    "broccoli-uglify-sourcemap": "^4.0.0",
+    "esbuild": "^0.20.0",
+    "esbuild-sass-plugin": "^3.0.0",
     "eslint": "^8.10.0",
-    "node-sass": "^9.0.0",
     "prettier": "^3.0.0"
   },
   "scripts": {
-    "build": "NODE_ENV=production broccoli b --output-path static",
-    "watch": "broccoli b --output-path static --watch"
+    "build": "NODE_ENV=production node build.mjs",
+    "watch": "node build.mjs"
+  },
+  "dependencies": {
+    "unpoly": "^3.7.3"
   }
 }

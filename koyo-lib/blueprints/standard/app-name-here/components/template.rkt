@@ -58,11 +58,9 @@
          (:meta ([:name "viewport"] [:content "width=device-width, initial-scale=1"]))
 
          (:title (if subtitle (~a subtitle " - AppNameHere") "AppNameHere"))
-         (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
-         (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
+         (:link ([:rel "stylesheet"] [:href (static-uri "app.css")]))
 
-         (:script ([:src (static-uri "vendor/unpoly.min.js")] [:defer "defer"]))
-         (:script ([:src (static-uri "js/app.js")] [:defer "defer"])))
+         (:script ([:src (static-uri "app.js")] [:defer "defer"])))
         (:body
          (when show-nav?
            (if (current-user)
