@@ -7,6 +7,7 @@ const production = process.env.NODE_ENV === "production";
 const ctx = await esbuild.context({
   entryPoints: ["resources/js/app.ts"],
   outdir: "static",
+  target: ["es2020"],
   bundle: true,
   minify: production,
   sourcemap: production,
