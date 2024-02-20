@@ -19,26 +19,35 @@ working with database connections.
 }
 
 @defproc[(make-database-factory [connector (-> connection?)]
+                                [#:log-statements? log-statements? boolean? #f]
                                 [#:max-connections max-connections exact-positive-integer? 16]
                                 [#:max-idle-connections max-idle-connections exact-positive-integer? 2]) (-> database?)]{
 
-  Returns a function that will create a database component containing
-  a DB connection pool of size @racket[#:max-connections] which
-  connects to the database using the @racket[connector].
+  Returns a function that will create a database component containing a
+  DB connection pool of size @racket[#:max-connections] which connects
+  to the database using the @racket[connector].
 
-  @history[#:changed "0.8" @elem{The component no longer forcefully
-  shuts down its associated custodian when the component is
-  stopped. There is now a lower bound on @tt{crypto-lib} for version
-  1.6 to ensure that shared libraries (eg. for libargon2) correctly
-  get included in distributions (using @tt{koyo dist} or @tt{raco
-  distribute}).}]
+  When the @racket[#:log-statements?] argument is @racket[#t],
+  statements are logged to the @racket['koyo:db-statements] topic. The
+  data part of the log message includes the thread the statement was
+  executed from, the name of the procedure that executed the query and
+  the statement itself.
+
+  @history[
+    #:changed "0.8" @elem{The component no longer forcefully shuts
+     down its associated custodian when the component is stopped. There
+     is now a lower bound on @tt{crypto-lib} for version 1.6 to ensure
+     that shared libraries (eg. for libargon2) correctly get included in
+     distributions (using @tt{koyo dist} or @tt{raco distribute}).}
+    #:changed "0.20" @elem{Addded the @racket[#:log-statements?]
+     argument.}]
 }
 
 @defproc[(call-with-database-connection [database database?]
                                         [proc (-> connection? any)]) any]{
 
   Retrieves a database connection from the pool and passes it to
-  @racket[proc].  Once @racket[proc] completes, the connection is
+  @racket[proc]. Once @racket[proc] completes, the connection is
   returned to the pool.
 
   Nested calls to @racket[call-with-database-connection] reuse the

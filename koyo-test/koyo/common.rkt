@@ -8,6 +8,7 @@
 
 (define (make-test-database)
   ((make-database-factory
+    #:log-statements? #t
     (lambda ()
       (postgresql-connect
        #:server   (or (getenv "KOYO_TEST_DB_HOST") "127.0.0.1")

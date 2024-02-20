@@ -4,8 +4,12 @@
                      syntax/parse/pre)
          component
          db
+         (only-in db/private/generic/interfaces
+                  connection<%>
+                  statement-binding-pst)
          db/util/postgresql
          gregor
+         racket/class
          racket/contract/base
          racket/match
          racket/sequence
@@ -17,7 +21,8 @@
   [database? (-> any/c boolean?)]
   [make-database-factory
    (->* [(-> connection?)]
-        [#:max-connections exact-positive-integer?
+        [#:log-statements? boolean?
+         #:max-connections exact-positive-integer?
          #:max-idle-connections exact-positive-integer?]
         (-> database?))]
   [call-with-database-connection
@@ -36,27 +41,31 @@
  with-database-connection
  with-database-transaction)
 
-(struct database (connection-pool options)
+(struct database
+  (connection-pool
+   connector ;; noqa
+   max-connections ;; noqa
+   max-idle-connections ;; noqa
+   log-statements?)
   #:methods gen:component
-  [(define (component-start db)
-     (define options (database-options db))
-     (define connect (hash-ref options 'connector))
+  [(define (component-start db) ;; noqa
+     (match-define (database _ connector max-conns max-idle-conns _log?)
+       db)
      (define pool
        (connection-pool
-        #:max-connections (hash-ref options 'max-connections)
-        #:max-idle-connections (hash-ref options 'max-idle-connections)
-        connect))
+        #:max-connections max-conns
+        #:max-idle-connections max-idle-conns
+        connector))
      (struct-copy database db [connection-pool pool]))
 
-   (define (component-stop db)
+   (define (component-stop db) ;; noqa
      (struct-copy database db [connection-pool #f]))])
 
 (define ((make-database-factory connector
+                                #:log-statements? [log-statements? #f]
                                 #:max-connections [max-connections 16]
                                 #:max-idle-connections [max-idle-connections 2]))
-  (database #f (hasheq 'connector connector
-                       'max-connections max-connections
-                       'max-idle-connections max-idle-connections)))
+  (database #f connector max-connections max-idle-connections log-statements?))
 
 (define current-database-connection
   (make-parameter #f))
@@ -82,7 +91,9 @@
       (lambda ()
         (with-timing "proc"
           (parameterize ([current-database-connection conn])
-            (proc conn))))
+            (proc (if (database-log-statements? db)
+                      (new logged-connection% [base conn])
+                      conn)))))
       (lambda ()
         (with-timing "disconnect"
           (close))))))
@@ -120,6 +131,49 @@
          #:isolation isolation
          (lambda (name)
            e ...))]))
+
+
+;; Query Logging ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-syntax-rule (proxy target-id (meth-id arg-id ...) ...)
+  (begin
+    (define/public (meth-id arg-id ...)
+      (send target-id meth-id arg-id ...)) ...))
+
+(define logged-connection%
+  (class* object% (connection<%>)
+    (init-field base)
+    (super-new)
+
+    (define/public (get-base)
+      base)
+
+    (define/public (query fsym stmt cursor?)
+      (define logger
+        (current-logger))
+      (when (log-level? logger 'debug)
+        (define the-stmt
+          (if (statement-binding? stmt)
+              (send (statement-binding-pst stmt) get-stmt)
+              stmt))
+        (log-message
+         logger 'debug 'koyo:db-statements
+         (format "~a" the-stmt)
+         (list (current-thread) fsym the-stmt)))
+      (send base query fsym stmt cursor?))
+
+    (proxy
+     base
+     [connected?]
+     [disconnect]
+     [get-dbsystem]
+     [prepare fsym stmt close-on-exec?]
+     [fetch/cursor fsym cursor fetch-size]
+     [list-tables fsym schema]
+     [start-transaction fsym isolation option cwt?]
+     [end-transaction fsym mode cwt?]
+     [transaction-status fsym]
+     [free-statement pst need-lock?])))
 
 
 ;; Utilities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
