@@ -43,6 +43,7 @@
   [auth (sessions users) make-auth-manager]
   [broker (db) make-broker]
   [db (make-database-factory
+       #:log-statements? config:debug
        (lambda ()
          (postgresql-connect
           #:database config:db-name
@@ -115,7 +116,6 @@
 
 (module+ main
   (define stop (start))
-  (with-handlers ([exn:break?
-                   (lambda (_)
-                     (stop))])
-    (sync/enable-break never-evt)))
+  (with-handlers ([exn:break? void])
+    (sync/enable-break never-evt))
+  (stop))
