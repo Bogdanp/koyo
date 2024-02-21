@@ -64,16 +64,18 @@
 
 (define (profile-find-roots p)
   (reverse
-   (filter (lambda (t)
-             (= (timing-parent t) 0))
-           (profile-timings p))))
+   (filter
+    (lambda (t)
+      (= (timing-parent t) 0))
+    (profile-timings p))))
 
 (define (profile-find-children p t)
   (reverse
-   (filter (lambda (child-t)
-             (= (timing-id t)
-                (timing-parent child-t)))
-           (profile-timings p))))
+   (filter
+    (lambda (child-t)
+      (= (timing-id t)
+         (timing-parent child-t)))
+    (profile-timings p))))
 
 (define current-profile
   (make-parameter (make-profile)))
@@ -87,7 +89,7 @@
 (define (record-timing #:profile [the-profile (current-profile)]
                        #:label [label (current-profile-label)]
                        #:description description
-                       f)
+                       proc)
   (define p  #f)
   (define id #f)
   (define st #f)
@@ -99,7 +101,7 @@
       (current-timing-id id))
     (lambda ()
       (parameterize ([current-profile-label label])
-        (f)))
+        (proc)))
     (lambda ()
       (define duration (- (current-inexact-milliseconds) st))
       (define current-timing (timing id p label description duration))
@@ -111,13 +113,13 @@
     [(_ (~optional label:expr #:defaults ([label #'(current-profile-label)]))
         description
         e ...+)
-     #'(let ([f (lambda () e ...)])
-         (cond
-           [(profiler-enabled?)
-            (record-timing #:label label
-                           #:description description f)]
-
-           [else (f)]))]))
+     #'(let ([proc (lambda () e ...)])
+         (if (profiler-enabled?)
+             (record-timing
+              #:label label
+              #:description description
+              proc)
+             (proc)))]))
 
 (define (profile-write [p (current-profile)]
                        [out (current-output-port)])
