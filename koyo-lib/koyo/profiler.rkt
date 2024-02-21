@@ -4,6 +4,7 @@
                      syntax/parse/pre)
          racket/contract/base
          racket/format
+         racket/match
          web-server/servlet
          xml
          "contract.rkt"
@@ -25,6 +26,7 @@
  timing-label
  timing-description
  timing-duration
+ timing-db-statements
 
  (contract-out
   [current-profile (parameter/c profile?)]
@@ -36,7 +38,7 @@
 (define profiler-enabled?
   (make-parameter #f))
 
-(struct timing (id parent label description duration))
+(struct timing (id parent label description duration db-statements))
 (struct pdata (seq timings))
 (struct profile (data))
 
@@ -86,13 +88,46 @@
 (define current-timing-id
   (make-parameter 0))
 
-(define (record-timing #:profile [the-profile (current-profile)]
-                       #:label [label (current-profile-label)]
+(define (make-db-statement-collector predicate)
+  (define collector
+    (thread
+     (lambda ()
+       (define receiver
+         (make-log-receiver
+          (current-logger)
+          'debug 'koyo:db-statements))
+       (let loop ([statements null])
+         (sync
+          (handle-evt
+           (thread-receive-evt)
+           (lambda (_)
+             (match-define `(stop ,ch)
+               (thread-receive))
+             (channel-put ch statements)))
+          (handle-evt
+           receiver
+           (match-lambda
+             [(vector _level _message `(,source-thread ,fsym ,stmt) _topic)
+              (if (predicate source-thread fsym stmt)
+                  (loop (cons stmt statements))
+                  (loop statements))])))))))
+  (lambda ()
+    (define statements-ch (make-channel))
+    (thread-send collector `(stop ,statements-ch))
+    (channel-get statements-ch)))
+
+(define (record-timing #:label [label (current-profile-label)]
                        #:description description
+                       #:profile [the-profile (current-profile)]
                        proc)
   (define p  #f)
   (define id #f)
   (define st #f)
+  (define get-collected-statements
+    (make-db-statement-collector
+     (let ([timing-thread (current-thread)])
+       (lambda (query-thread _fsym _stmt)
+         (eq? query-thread timing-thread)))))
   (dynamic-wind
     (lambda ()
       (set! p  (current-timing-id))
@@ -104,7 +139,8 @@
         (proc)))
     (lambda ()
       (define duration (- (current-inexact-milliseconds) st))
-      (define current-timing (timing id p label description duration))
+      (define statements (get-collected-statements))
+      (define current-timing (timing id p label description duration statements))
       (profile-add-timing! the-profile current-timing)
       (current-timing-id p))))
 
