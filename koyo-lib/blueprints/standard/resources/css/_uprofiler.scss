@@ -72,7 +72,7 @@
     display: grid;
     grid-template-columns: auto auto auto 1fr;
 
-    > :nth-child(3) {
+    .uprofiler-timing-duration {
       justify-self: end;
     }
   }
@@ -100,6 +100,12 @@
 
   &-description {
     display: inline-block;
+  }
+
+  &-db-statements {
+    color: darkblue;
+    display: inline-block;
+    margin: 4px 0px 2px 12px;
   }
 
   &-toggle {
