@@ -5,6 +5,7 @@
          racket/contract/base
          racket/format
          racket/match
+         racket/string
          web-server/servlet
          xml
          "contract.rkt"
@@ -33,6 +34,7 @@
   [make-profile (-> profile?)]
   [profile? (-> any/c boolean?)]
   [profile-timings (-> profile? (listof timing?))]
+  [profile-xexpr (-> profile? xexpr?)]
   [profile-write (->* [] [profile? output-port?] void?)]))
 
 (define profiler-enabled?
@@ -157,10 +159,17 @@
               proc)
              (proc)))]))
 
-(define (profile-write [p (current-profile)]
-                       [out (current-output-port)])
-  (define roots
-    (profile-find-roots p))
+(define (profile-xexpr p)
+  (define db-statements-seq 0)
+  (define db-statements-index ;; string? -> seq
+    (make-hash))
+  (define (get-db-statement-indexes stmts)
+    (for/list ([stmt (in-list stmts)])
+      (hash-ref!
+       db-statements-index stmt
+       (lambda ()
+         (begin0 db-statements-seq
+           (set! db-statements-seq (add1 db-statements-seq)))))))
 
   (define (format-duration duration)
     (~a (~r duration #:precision '(= 2)) "ms"))
@@ -181,25 +190,67 @@
         (:code (timing-description t)))
        (:span.uprofiler-timing-duration
         (format-duration (timing-duration t))))
+      (unless (null? (timing-db-statements t))
+        (haml
+         (:a.uprofiler-timing-db-statements
+          ([:href
+            (format "javascript:$uprofiler.statements(~a)"
+                    (string-join
+                     (map number->string
+                          (get-db-statement-indexes
+                           (timing-db-statements t)))
+                     ","))])
+          (let ([n (length (timing-db-statements t))])
+            (if (= n 1)
+                "1 statement"
+                (format "~a statements" n))))))
       ,@(map render-timing (profile-find-children p t)))))
 
-  (unless (null? roots)
-    (define content
-      (haml
-       (.uprofiler-content
-        (:input.uprofiler-toggle#uprofiler-toggle
-         ([:type "checkbox"]))
-        (:label.uprofiler-label
-         ([:for "uprofiler-toggle"])
-         (format-duration (apply + (map timing-duration roots))))
-        (.uprofiler-timings
-         (.uprofiler-timings-inner
-          ,@(map render-timing roots))
-         (:label.uprofiler-close
-          ([:for "uprofiler-toggle"])
-          "Close")))))
+  ;; Render the roots before the final xexpr to populate the db
+  ;; statement index.
+  (define roots
+    (profile-find-roots p))
+  (define rendered-roots
+    (map render-timing roots))
 
-    (write-xml/content (xexpr->xml content) out)))
+  (haml
+   (.uprofiler-content
+    (:script
+     #<<SCRIPT
+window.$uprofiler = {
+  statements: (...ids) => {
+    ids.forEach(id => {
+      const el = document.querySelector(`[data-uprofiler-db-statement-id='${id}']`);
+      console.log(el.innerText);
+    });
+  }
+};
+SCRIPT
+     )
+    ,@(for/list ([(stmt idx) (in-hash db-statements-index)])
+        (haml
+         (:output
+          ([:data-uprofiler-db-statement-id (~a idx)]
+           [:hidden "hidden"])
+          stmt)))
+    (:input.uprofiler-toggle#uprofiler-toggle
+     ([:type "checkbox"]))
+    (:label.uprofiler-label
+     ([:for "uprofiler-toggle"])
+     (format-duration (apply + (map timing-duration roots))))
+    (.uprofiler-timings
+     (.uprofiler-timings-inner ,@rendered-roots)
+     (:label.uprofiler-close
+      ([:for "uprofiler-toggle"])
+      "Close")))))
+
+(define (profile-write [p (current-profile)]
+                       [out (current-output-port)])
+  (define content
+    (profile-xexpr p))
+  (when content
+    (parameterize ([current-unescaped-tags html-unescaped-tags])
+      (write-xexpr content out))))
 
 
 ;; Middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
