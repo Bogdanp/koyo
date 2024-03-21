@@ -7,6 +7,7 @@
          racket/port
          racket/string
          racket/system
+         "private/platform.rkt"
          "private/tool.rkt")
 
 (provide
@@ -56,6 +57,9 @@
                      #:server-timeout [server-timeout 30])
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
+  (maximize-fd-limit!
+   (lambda (msg . args)
+     (log-runner-warning (apply format msg args))))
 
   (define root-path (simplify-path (build-path dynamic-module-path 'up 'up)))
   (define command-args
@@ -68,7 +72,7 @@
       (make-pipe))
     (define-values (stderr-in stderr-out)
       (make-pipe))
-    (match-define (list _in _out pid err control)
+    (match-define (list _in _out pid _err control)
       (parameterize ([subprocess-group-enabled #t])
         (apply process*/ports
                (current-output-port)
