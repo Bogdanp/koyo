@@ -52,3 +52,37 @@ structures.
       (string->url "https://127.0.0.1/foo/bar;(\"k\" . \"123\")/baz")))
   ]
 }
+
+@defproc[(url-path* [u url?]) string?]{
+  Joins the scrubbed path params in @racket[u] and returns the
+  resulting string.
+
+  @examples[
+    (require koyo/http
+             net/url)
+
+    (url-path* (string->url "https://example.com"))
+    (url-path* (string->url "https://example.com/"))
+    (url-path* (string->url "https://example.com/a/b/c"))
+  ]
+
+  @history[#:added "0.21"]
+}
+
+@defproc[(url-has-path? [u url?] [p string?]) boolean?]{
+  Returns @racket[#t] when the scrubbed path of @racket[u] matches
+  @racket[p].
+
+  @examples[
+    (require koyo/http
+             net/url)
+
+    (url-has-path? (string->url "https://example.com") "")
+    (url-has-path? (string->url "https://example.com") "/")
+    (url-has-path? (string->url "https://example.com/a") "/a")
+    (url-has-path? (string->url "https://example.com/a/b/c") "/a/b/c")
+    (url-has-path? (string->url "https://example.com/a/b/c") "a/b/c")
+  ]
+
+  @history[#:added "0.21"]
+}

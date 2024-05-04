@@ -3,6 +3,7 @@
 (require net/url
          racket/contract/base
          racket/format
+         racket/match
          racket/string
          web-server/http)
 
@@ -10,11 +11,32 @@
 
 (provide
  (contract-out
-  [url-scrub (-> url? url?)]))
+  [url-scrub (-> url? url?)]
+  [url-path* (-> url? string?)]
+  [url-has-path? (-> url? string? boolean?)]))
 
 (define (url-scrub u)
   (struct-copy url u [path (for/list ([pp (in-list (url-path u))])
                              (path/param (path/param-path pp) null))]))
+
+(define (url-path* u)
+  (string-join
+   #:before-first "/"
+   (map path/param-path (url-path u))
+   "/"))
+
+(define (url-has-path? u p)
+  (define segments
+    (string-split p "/"))
+  (define path-params
+    (match (url-path u)
+      [(list (path/param "" _)) null]
+      [params params]))
+  (and (= (length path-params)
+          (length segments))
+       (for/and ([param (in-list path-params)]
+                 [segment (in-list segments)])
+         (string=? (path/param-path param) segment))))
 
 
 ;; Requests ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
