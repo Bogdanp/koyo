@@ -59,13 +59,19 @@
      (struct-copy database db [connection-pool pool]))
 
    (define (component-stop db) ;; noqa
+     (send (database-connection-pool db) clear-idle)
      (struct-copy database db [connection-pool #f]))])
 
 (define ((make-database-factory connector
                                 #:log-statements? [log-statements? #f]
                                 #:max-connections [max-connections 16]
                                 #:max-idle-connections [max-idle-connections 2]))
-  (database #f connector max-connections max-idle-connections log-statements?))
+  (database
+   #;connection-pool #f
+   #;connector connector
+   #;max-connections max-connections
+   #;max-idle-connections max-idle-connections
+   #;log-statements log-statements?))
 
 (define current-database-connection
   (make-parameter #f))
@@ -107,7 +113,8 @@
           (proc conn))))))
 
 (define (database-borrow-connection db)
-  (connection-pool-lease (database-connection-pool db)))
+  (connection-pool-lease
+   (database-connection-pool db)))
 
 (define (database-release-connection _db conn)
   (disconnect conn))
