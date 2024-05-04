@@ -145,3 +145,35 @@ of @racket[xexpr?]s:
     longer supported.
   }
 ]
+
+@section[#:tag "haml-templates"]{Templates}
+@defmodule[koyo/haml-template]
+
+@deftech{HAML templates} let you define templatized versions of the
+@racket[haml] form.
+
+@deftogether[(
+  @defidform[slot]
+  @defform[
+    #:literals (slot)
+    (define-haml-template id element)]
+)]{
+
+  Defines a @tech{HAML template} named @racket[id] that expands to
+  @racket[(haml element)] on use. The @racket[element] syntax is the
+  same as for @racket[haml], but extended with a @racket[(slot)] form
+  that indicates where the contents of the template should go.
+
+  @examples[
+    #:eval sandbox
+    #:label #f
+    (define-haml-template container
+      (.container
+       (slot)))
+    (container
+     (:strong "child 1")
+     (:strong "child 2"))
+  ]
+
+  @history[#:added "0.22"]
+}

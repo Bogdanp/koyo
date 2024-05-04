@@ -9,8 +9,7 @@
 (provide
  haml-tests)
 
-(define (translate s . args)
-  s)
+(define (translate s . _args) s)
 
 (define haml-tests
   (test-suite

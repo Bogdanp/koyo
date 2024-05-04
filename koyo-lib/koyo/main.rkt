@@ -19,6 +19,7 @@
  "error.rkt"
  "flash.rkt"
  "haml.rkt"
+ "haml-template.rkt"
  "hasher.rkt"
  "http.rkt"
  "job.rkt"
