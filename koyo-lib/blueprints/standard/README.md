@@ -36,6 +36,6 @@ application is started.
 
 [Postgres]: https://www.postgresql.org/
 [Racket]: https://racket-lang.org/
+[Node.js]: https://nodejs.org/en/
 [argon2]: https://www.argon2.com/
 [chief]: https://github.com/Bogdanp/racket-chief
-[node]: https://nodejs.org/en/
