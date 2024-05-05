@@ -152,12 +152,10 @@ of @racket[xexpr?]s:
 @deftech{HAML templates} let you define templatized versions of the
 @racket[haml] form.
 
-@deftogether[(
-  @defidform[slot]
-  @defform[
-    #:literals (slot)
-    (define-haml-template id element)]
-)]{
+@defform[
+  #:literals (slot)
+  (define-haml-template id element)
+]{
 
   Defines a @tech{HAML template} named @racket[id] that expands to
   @racket[(haml element)] on use. The @racket[element] syntax is the
@@ -176,4 +174,10 @@ of @racket[xexpr?]s:
   ]
 
   @history[#:added "0.22"]
+}
+
+@defform[(slot)]{
+  Within a @tech{HAML template}, determines where the content of the
+  template will go. Raises a syntax error when used outside of a
+  @racket[define-haml-template] form.
 }
