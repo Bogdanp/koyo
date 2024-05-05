@@ -1,8 +1,9 @@
 {
   "name": "app-name-here",
+  "type": "module",
   "engines": {
-    "node": ">=16",
-    "npm": ">=7"
+    "node": ">=18",
+    "npm": ">=9"
   },
   "devDependencies": {
     "esbuild": "^0.20.0",
@@ -12,6 +13,7 @@
   },
   "scripts": {
     "build": "NODE_ENV=production node build.mjs",
+    "lint": "eslint resources/js",
     "watch": "node build.mjs"
   },
   "dependencies": {
