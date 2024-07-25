@@ -4,16 +4,22 @@
          "private/tool.rkt")
 
 (provide
+ stubbed-components
  start-console
  start-console-here)
 
 (define preload-modules
   '(racket component db koyo))
 
-(define preamble
-  '(begin
+(define stubbed-components
+  (make-parameter '(server)))
+
+(define (preamble)
+  `(begin
      (define dev-system
-       (system-replace prod-system 'server values))
+       (for/fold ([s prod-system])
+                 ([c (in-list (quote ,(stubbed-components)))])
+         (system-replace s c values)))
 
      (current-system dev-system)
 
@@ -33,7 +39,7 @@
   (for ([mod (in-list preload-modules)])
     (namespace-require mod))
   (namespace-require dynamic-module-path)
-  (eval preamble)
+  (eval (preamble))
   (read-eval-print-loop))
 
 (define (start-console-here)
@@ -43,7 +49,7 @@
   (for ([mod (in-list preload-modules)])
     (namespace-require mod))
   (namespace-require dynamic-module-path)
-  (eval preamble))
+  (eval (preamble)))
 
 ;; Sets up expeditor w/ a Racket lexer if the modules are available at
 ;; runtime, otherwise falls back to readline (if available).  This
