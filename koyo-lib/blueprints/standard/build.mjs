@@ -1,5 +1,6 @@
 import process from "node:process";
 import * as esbuild from "esbuild";
+import { copy } from "esbuild-plugin-copy";
 import { sassPlugin } from "esbuild-sass-plugin";
 
 const production = process.env.NODE_ENV === "production";
@@ -11,7 +12,15 @@ const ctx = await esbuild.context({
   bundle: true,
   minify: production,
   sourcemap: production,
-  plugins: [sassPlugin()],
+  plugins: [
+    sassPlugin(),
+    copy({
+      assets: {
+        from: "./resources/img/*",
+        to: "./img",
+      },
+    }),
+  ],
 });
 
 if (production) {

@@ -1,0 +1,10 @@
+{
+  "include": ["resources/js/**/*"],
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "module": "commonjs",
+    "resolveJsonModule": true,
+    "target": "es2020",
+    "useDefineForClassFields": false
+  }
+}

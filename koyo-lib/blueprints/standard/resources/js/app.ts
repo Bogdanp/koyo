@@ -1,2 +1,2 @@
-import up from "./unpoly";
+import "./unpoly";
 import "../css/screen.scss";
