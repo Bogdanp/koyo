@@ -105,11 +105,14 @@
       (cond
         [(user-manager-lookup/username um username)
          => (lambda (u)
-              (query-exec conn (delete (~> (from password-reset #:as pr)
-                                           (where (= pr.user-id ,(user-id u))))))
-              (values u (~> (make-password-reset #:user-id (user-id u)
-                                                 #:ip-address ip-address
-                                                 #:user-agent user-agent)
+              (~> (from password-reset #:as pr)
+                  (where (= pr.user-id ,(user-id u)))
+                  (delete)
+                  (query-exec conn _))
+              (values u (~> (make-password-reset
+                             #:user-id (user-id u)
+                             #:ip-address ip-address
+                             #:user-agent user-agent)
                             (insert-one! conn _)
                             (password-reset-token))))]
 
@@ -119,14 +122,16 @@
 (define (user-manager-lookup/id um id)
   (with-timing 'user-manager (format "(user-manager-lookup/id ~v)" id)
     (with-database-connection [conn (user-manager-db um)]
-      (lookup conn (~> (from user #:as u)
-                       (where (= u.id ,id)))))))
+      (~> (from user #:as u)
+          (where (= u.id ,id))
+          (lookup conn _)))))
 
 (define (user-manager-lookup/username um username)
   (with-timing 'user-manager (format "(user-manager-lookup/username ~v)" username)
     (with-database-connection [conn (user-manager-db um)]
-      (lookup conn (~> (from user #:as u)
-                       (where (= u.username ,(string-downcase username))))))))
+      (~> (from user #:as u)
+          (where (= u.username ,(string-downcase username)))
+          (lookup conn _)))))
 
 (define (user-manager-login um username password)
   (with-timing 'user-manager "user-manager-login"
@@ -137,10 +142,11 @@
   (with-timing 'user-manager "user-manager-verify!"
     (void
      (with-database-transaction [conn (user-manager-db um)]
-       (query-exec conn (~> (from user #:as u)
-                            (update [verified? #t])
-                            (where (and (= u.id ,id)
-                                        (= u.verification-code ,verification-code)))))))))
+       (~> (from user #:as u)
+           (update [verified? #t])
+           (where (and (= u.id ,id)
+                       (= u.verification-code ,verification-code)))
+           (query-exec conn _))))))
 
 (define (user-manager-reset-password! um
                                       #:user-id id
@@ -163,12 +169,14 @@
         [else #f]))))
 
 (define (lookup-password-reset conn id token)
-  (lookup conn (~> (from password-reset #:as pr)
-                   (where (and (= pr.user-id ,id)
-                               (= pr.token ,token)
-                               (> pr.expires-at (now)))))))
+  (~> (from password-reset #:as pr)
+      (where (and (= pr.user-id ,id)
+                  (= pr.token ,token)
+                  (> pr.expires-at (now))))
+      (lookup conn _)))
 
 (define (clear-password-reset! conn id)
-  (query-exec conn (~> (from password-reset #:as pr)
-                       (where (= pr.user-id ,id))
-                       (delete))))
+  (~> (from password-reset #:as pr)
+      (where (= pr.user-id ,id))
+      (delete)
+      (query-exec conn _)))
