@@ -64,13 +64,13 @@
   transition: all 0.1s;
 
   label {
+    display: grid;
+    grid-template-columns: auto auto auto 1fr;
+
     &::before {
       content: '▶ ';
       margin-right: 4px;
     }
-
-    display: grid;
-    grid-template-columns: auto auto auto 1fr;
 
     .uprofiler-timing-duration {
       justify-self: end;
