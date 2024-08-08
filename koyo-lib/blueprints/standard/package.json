@@ -18,6 +18,6 @@
     "watch": "node build.mjs"
   },
   "dependencies": {
-    "unpoly": "^3.7.3"
+    "unpoly": "^3.8.0"
   }
 }
