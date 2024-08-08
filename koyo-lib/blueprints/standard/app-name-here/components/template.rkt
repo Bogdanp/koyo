@@ -92,4 +92,5 @@
        (parameterize ([current-output-port out])
          (displayln "<!doctype html>")
          (write-xml/content (xexpr->xml page))
-         (profile-write profile))))))
+         (when config:profile
+           (profile-write profile)))))))
