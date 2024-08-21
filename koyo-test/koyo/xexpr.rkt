@@ -136,7 +136,17 @@
 
       (check-equal?
        (xexpr-select tree "footer .findme")
-       '((h1 ([class "findme"])))))
+       '((h1 ([class "findme"]))))
+
+      (test-case "handles nested elements correctly"
+        (define tree
+          '(itunes:category
+            ([text "Business"])
+            (itunes:category ([text "Investing"]))))
+
+        (check-equal?
+         (xexpr-select tree * itunes:category)
+         `((itunes:category ([text "Investing"]))))))
 
     (test-suite
      "xexpr-select-text"

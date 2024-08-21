@@ -24,6 +24,7 @@
         string?)])
  xexpr-attr-ref
  xexpr-attr-ref*
+ xexpr-children
  xexpr-select
  xexpr-select-first
  xexpr-select-first*
@@ -54,6 +55,12 @@
 
 (define-xexpr-attr-ref xexpr-attr-ref for*/first #f)
 (define-xexpr-attr-ref xexpr-attr-ref* for*/list null)
+
+(define (xexpr-children e)
+  (match e
+    [(or (list _ (? xexpr-attr-list?) es ...)
+         (list _ es ...)) es] ;; noqa
+    [_ null]))
 
 (define (xexpr-attr-list? lst)
   (or (null? lst)
@@ -102,40 +109,26 @@
 
    [(_ _) #f]))
 
-(define (xexpr-selector-select selector xexpr)
-  (define (match? e)
-    (xexpr-select-matches? selector e))
-  (let loop ([selected null]
-             [remaining (list xexpr)])
-    (if (null? remaining)
-        (reverse selected)
-        (for/fold ([selected selected]
-                   [remaining null]
-                   #:result (let ([remaining (reverse remaining)])
-                              (loop selected (apply append remaining))))
-                  ([xexpr (in-list remaining)])
-          (match xexpr
-            [(? match?)
-             (values (cons xexpr selected) remaining)]
-
-            [(or (list _ (? xexpr-attr-list?) es ...)
-                 (list _ es ...)) ;; noqa
-             (values selected (cons es remaining))]
-
-            [_
-             (values selected remaining)])))))
+(define (xexpr-selector-select selector e)
+  (let loop ([e e])
+    (if (xexpr-select-matches? selector e)
+        (list e)
+        (apply append (map loop (xexpr-children e))))))
 
 (define ((make-xexpr-selector selectors) xexpr) ;; noqa
   (let loop ([selectors selectors]
-             [selected (list xexpr)])
+             [xexpr xexpr])
     (match selectors
-      [(list) selected]
-      [(cons selector selectors)
-       (loop selectors
-             (apply
-              append
-              (for/list ([xexpr (in-list selected)])
-                (xexpr-selector-select selector xexpr))))])))
+      [(list) null]
+      [(list selector)
+       (xexpr-selector-select selector xexpr)]
+      [(list selector selectors ...) ;; noqa
+       (apply
+        append
+        (let ([matches (xexpr-selector-select selector xexpr)])
+          (for*/list ([m (in-list matches)]
+                      [e (in-list (xexpr-children m))])
+            (loop selectors e))))])))
 
 (begin-for-syntax
   (define-syntax-class selector
