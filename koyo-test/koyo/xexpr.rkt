@@ -149,7 +149,21 @@
 
        (check-equal?
         (xexpr-select-text tree h1)
-        '("first" "second")))))))
+        '("first" "second"))))
+
+    (test-suite
+     "xexpr-attr-ref"
+
+     (let ([e `(itunes:category ([text "Business"]))])
+       (check-false (xexpr-attr-ref e 'foo))
+       (check-equal? (xexpr-attr-ref e 'text) "Business")))
+
+    (test-suite
+     "xexpr-attr-ref*"
+
+     (let ([e `(div ([class "a"] [class "b"]))])
+       (check-equal? (xexpr-attr-ref* e 'foo) null)
+       (check-equal? (xexpr-attr-ref* e 'class) '("a" "b")))))))
 
 (module+ test
   (require rackunit/text-ui)

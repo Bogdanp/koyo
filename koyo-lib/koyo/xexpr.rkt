@@ -1,11 +1,9 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     racket/function
                      syntax/parse/pre)
          (prefix-in h: html)
          racket/contract/base
-         racket/function
          racket/match
          racket/port
          racket/set
@@ -19,15 +17,16 @@
         [(-> string? string?)]
         (listof xexpr?))]
   [html->xexpr/first
-   (-> string? xexpr?)])
-
- (contract-out
+   (-> string? xexpr?)]
   [xexpr->text
    (->* [xexpr?]
         [string?]
         string?)])
+ xexpr-attr-ref
+ xexpr-attr-ref*
  xexpr-select
  xexpr-select-first
+ xexpr-select-first*
  xexpr-select-text
  xexpr-unless
  xexpr-when)
@@ -43,85 +42,100 @@
 (define html->xexpr/first
   (compose1 car html->xexpr))
 
+(define-syntax-rule (define-xexpr-attr-ref id for/form not-found-expr)
+  (define (id xexpr attr-id)
+    (match xexpr
+      [(list _ (? xexpr-attr-list? attrs) _ (... ...)) ;; noqa
+       (for/form ([pair (in-list attrs)]
+                  [attr (in-value (car pair))]
+                  #:when (eq? attr attr-id))
+         (cadr pair))]
+      [_ not-found-expr])))
+
+(define-xexpr-attr-ref xexpr-attr-ref for*/first #f)
+(define-xexpr-attr-ref xexpr-attr-ref* for*/list null)
+
+(define (xexpr-attr-list? lst)
+  (or (null? lst)
+      (and (pair? lst)
+           (for/and ([p (in-list lst)])
+             (and (pair? p)
+                  ((length p) . = . 2)
+                  (symbol? (car p))
+                  (string? (cadr p)))))))
+
 (define (xexpr->text e [sep " "])
   (match e
+    [(? string?) e]
     [(? symbol?) (format "&~a;" e)]
     [(? number?) (format "&#~a;" e)]
 
-    [(and s (? string?)) s]
-
-    [(list _ (list (list (? symbol?) (? string?)) ...) e ...)
+    [(list _ (? xexpr-attr-list?) e ...) ;; noqa
      (string-join (map xexpr->text e) sep)]
 
-    [(list _ e ...)
+    [(list _ e ...) ;; noqa
      (string-join (map xexpr->text e) sep)]))
 
 (define (attribute-pairs->hash xs)
   (for/hash ([pair (in-list xs)])
-    (values (car pair) (list->set (string-split (cadr pair) " ")))))
+    (match-define (list attribute value) pair)
+    (values attribute (list->set (string-split value " ")))))
 
 (define (attributes-subset? xs ys)
   (define xs:hash (attribute-pairs->hash xs))
   (define ys:hash (attribute-pairs->hash ys))
-
-  (for/fold ([res #t])
-            ([(name value) (in-hash ys:hash)])
-    (and res (cond
-               [(hash-ref xs:hash name #f) => (curry subset? value)]
-               [else #f]))))
-
-(define attribute-list?
-  (non-empty-listof (list/c any/c any/c)))
+  (for/and ([(name value) (in-hash ys:hash)])
+    (cond
+      [(hash-ref xs:hash name #f)
+       => (λ (attrs) (subset? value attrs))]
+      [else #f])))
 
 (define xexpr-select-matches?
   (match-lambda**
    [((list '* selector-attrs)
      (list _ element-attrs e ...))
-    (attributes-subset? (if (attribute-list? element-attrs) element-attrs null) selector-attrs)]
+    (attributes-subset? (if (xexpr-attr-list? element-attrs) element-attrs null) selector-attrs)]
 
    [((list tag selector-attrs)
      (list tag element-attrs e ...))
-    (attributes-subset? (if (attribute-list? element-attrs) element-attrs null) selector-attrs)]
+    (attributes-subset? (if (xexpr-attr-list? element-attrs) element-attrs null) selector-attrs)]
 
    [(_ _) #f]))
 
 (define (xexpr-selector-select selector xexpr)
-  (define matches?
-    (curry xexpr-select-matches? selector))
-
+  (define (match? e)
+    (xexpr-select-matches? selector e))
   (let loop ([selected null]
              [remaining (list xexpr)])
-    (cond
-      [(null? remaining)
-       (reverse selected)]
+    (if (null? remaining)
+        (reverse selected)
+        (for/fold ([selected selected]
+                   [remaining null]
+                   #:result (let ([remaining (reverse remaining)])
+                              (loop selected (apply append remaining))))
+                  ([xexpr (in-list remaining)])
+          (match xexpr
+            [(? match?)
+             (values (cons xexpr selected) remaining)]
 
-      [else
-       (define-values (selected* remaining*)
-         (for/fold ([selected selected]
-                    [remaining null])
-                   ([xexpr remaining])
-           (match xexpr
-             [(? matches?)
-              (values (cons xexpr selected) remaining)]
+            [(or (list _ (? xexpr-attr-list?) es ...)
+                 (list _ es ...)) ;; noqa
+             (values selected (cons es remaining))]
 
-             [(or (list _ (list (cons _ _) ...) es ...)
-                  (list _ es ...))
-              (values selected (append remaining es))]
+            [_
+             (values selected remaining)])))))
 
-             [_
-              (values selected remaining)])))
-
-       (loop selected* remaining*)])))
-
-(define ((make-xexpr-selector selectors) xexpr)
+(define ((make-xexpr-selector selectors) xexpr) ;; noqa
   (let loop ([selectors selectors]
              [selected (list xexpr)])
     (match selectors
       [(list) selected]
       [(cons selector selectors)
        (loop selectors
-             (apply append (for/list ([xexpr selected])
-                             (xexpr-selector-select selector xexpr))))])))
+             (apply
+              append
+              (for/list ([xexpr (in-list selected)])
+                (xexpr-selector-select selector xexpr))))])))
 
 (begin-for-syntax
   (define-syntax-class selector
@@ -144,10 +158,17 @@
     [(_ e:expr s ...+)
      #'(car (xexpr-select e s ...))]))
 
+(define-syntax (xexpr-select-first* stx)
+  (syntax-parse stx
+    [(_ e:expr s ...+)
+     #'(let ([tmp (xexpr-select e s ...)])
+         (if (null? tmp) #f (car tmp)))]))
+
 (define-syntax (xexpr-select-text stx)
   (syntax-parse stx
     [(_ e:expr s ...+)
-     #'(map (curryr xexpr->text "") (xexpr-select e s ...))]))
+     #'(map (λ (e) (xexpr->text e ""))
+            (xexpr-select e s ...))]))
 
 (define-syntax (xexpr-unless stx)
   (syntax-parse stx
@@ -211,7 +232,7 @@
 (define (append-attribute s attr)
   (struct-copy dyn:selector s [attributes (append (dyn:selector-attributes s) (list attr))]))
 
-(define (parse-selectors s)
+(define (parse-selectors s) ;; noqa
   (define selectors
     (with-input-from-string s
       (lambda ()
@@ -232,11 +253,10 @@
 
   (for/list ([selector (in-list selectors)])
     (define attributes
-      (for*/fold ([attributes (hash)])
-                 ([pair      (in-list (dyn:selector-attributes selector))]
-                  [attribute (in-value (car pair))]
-                  [value     (in-value (cdr pair))])
-        (hash-update attributes attribute (curry cons value) null)))
+      (for/fold ([attributes (hash)])
+                ([pair (in-list (dyn:selector-attributes selector))])
+        (match-define (cons attribute value) pair)
+        (hash-update attributes attribute (λ (vs) (cons value vs)) null)))
 
     `(,(or (dyn:selector-tag selector) '*)
       (,@(for/list ([(name value) (in-hash attributes)])
