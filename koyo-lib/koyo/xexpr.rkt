@@ -81,7 +81,11 @@
      (string-join (map xexpr->text e) sep)]
 
     [(list _ e ...) ;; noqa
-     (string-join (map xexpr->text e) sep)]))
+     (string-join (map xexpr->text e) sep)]
+
+    [(cdata _ _ s)
+     ;; <![CDATA[...]]>
+     (substring s 9 ((string-length s) . - . 3))]))
 
 (define (attribute-pairs->hash xs)
   (for/hash ([pair (in-list xs)])
