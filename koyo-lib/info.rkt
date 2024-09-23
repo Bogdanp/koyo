@@ -5,7 +5,7 @@
 (define collection 'multi)
 
 (define deps
-  '("base"
+  '(["base" #:version "8.1.0.4"]
     "compatibility-lib"
     ["component-lib" #:version "1.0"]
     "crontab-lib"
