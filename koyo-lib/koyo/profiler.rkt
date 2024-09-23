@@ -122,29 +122,29 @@
                        #:description description
                        #:profile [the-profile (current-profile)]
                        proc)
-  (define p  #f)
-  (define id #f)
-  (define st #f)
-  (define get-collected-statements
-    (make-db-statement-collector
-     (let ([timing-thread (current-thread)])
-       (lambda (query-thread _fsym _stmt)
-         (eq? query-thread timing-thread)))))
+  (define parent-id #f)
+  (define current-id #f)
+  (define start-time #f)
+  (define get-statements #f)
   (dynamic-wind
     (lambda ()
-      (set! p  (current-timing-id))
-      (set! id (profile-generate-id! the-profile))
-      (set! st (current-inexact-milliseconds))
-      (current-timing-id id))
+      (set! parent-id (current-timing-id))
+      (set! current-id (profile-generate-id! the-profile))
+      (set! start-time (current-inexact-monotonic-milliseconds))
+      (set! get-statements
+            (make-db-statement-collector
+             (let ([timing-thread (current-thread)])
+               (lambda (query-thread _fsym _stmt)
+                 (eq? query-thread timing-thread))))))
     (lambda ()
-      (parameterize ([current-profile-label label])
+      (parameterize ([current-profile-label label]
+                     [current-timing-id current-id])
         (proc)))
     (lambda ()
-      (define duration (- (current-inexact-milliseconds) st))
-      (define statements (get-collected-statements))
-      (define current-timing (timing id p label description duration statements))
-      (profile-add-timing! the-profile current-timing)
-      (current-timing-id p))))
+      (define duration (- (current-inexact-monotonic-milliseconds) start-time))
+      (define statements (get-statements))
+      (define current-timing (timing current-id parent-id label description duration statements))
+      (profile-add-timing! the-profile current-timing))))
 
 (define-syntax (with-timing stx)
   (syntax-parse stx
