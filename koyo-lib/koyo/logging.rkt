@@ -1,11 +1,11 @@
 #lang racket/base
 
-(require mzlib/os
-         racket/contract/base
+(require racket/contract/base
          racket/format
          racket/list
          racket/logging
          racket/match
+         racket/os
          racket/port
          "private/term.rkt")
 

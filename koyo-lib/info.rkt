@@ -5,8 +5,8 @@
 (define collection 'multi)
 
 (define deps
-  '(["base" #:version "8.1.0.4"]
-    "compatibility-lib"
+  '("actor-lib"
+    ["base" #:version "8.1.0.4"]
     ["component-lib" #:version "1.0"]
     "crontab-lib"
     ["crypto-lib" #:version "1.6"]
@@ -15,9 +15,11 @@
     "gregor-lib"
     "html-lib"
     "mime-type-lib"
+    "monocle-lib"
     "net-lib"
     "raco-invoke"
     "srfi-lite-lib"
+    "threading-lib"
     "unix-socket-lib"
     "web-server-lib"))
 (define build-deps

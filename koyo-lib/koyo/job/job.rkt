@@ -52,14 +52,17 @@
        [else
         (define broker (current-broker))
         (unless broker
-          (raise-user-error (job-id job) "(current-broker) is not set"))
-        (broker-enqueue! broker
-                         (job-queue job)
-                         (job-id job)
-                         (job-priority job)
-                         (or (current-job-scheduled-at)
-                             (now/moment))
-                         (list kws kw-args args))]))))
+          (raise-user-error
+           #;who-sym (job-id job)
+           #;format-str "(current-broker) is not set"))
+        (broker-enqueue!
+         broker
+         (job-queue job)
+         (job-id job)
+         (job-priority job)
+         (or (current-job-scheduled-at)
+             (now/moment))
+         (list kws kw-args args))]))))
 
 (define (make-job #:id id
                   #:queue queue
