@@ -5,6 +5,7 @@
          racket/match
          racket/string
          "broker.rkt"
+         "job-metadata.rkt"
          "reactor.rkt")
 
 ;; worker ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -16,7 +17,7 @@
    (->* []
         [#:queue non-empty-string?
          #:pool-size exact-positive-integer?
-         #:middleware (-> procedure? procedure?)]
+         #:middleware (-> job-metadata? procedure? procedure?)]
         (-> broker? worker?))]))
 
 (struct worker (broker queue pool-size middleware reactor)
@@ -34,5 +35,5 @@
 (define ((make-worker-factory
           #:queue [queue "default"]
           #:pool-size [pool-size 8]
-          #:middleware [middleware values]) broker)
+          #:middleware [middleware (λ (_meta proc) proc)]) broker)
   (worker broker queue pool-size middleware #f))

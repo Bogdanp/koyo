@@ -8,6 +8,7 @@
          racket/promise
          threading
          "broker.rkt"
+         "job-metadata.rkt"
          "job.rkt"
          "listener.rkt"
          "logger.rkt"
@@ -76,7 +77,7 @@
 ;; invariant: idle is positive
 (define (state-add-job st j)
   (match-define (state _ broker idle promises _ custodian middleware _) st)
-  (match-define (vector id queue name arguments _) j)
+  (match-define (vector id queue name arguments attempts) j)
   (define promise
     (parameterize ([current-broker broker]
                    [current-custodian custodian])
@@ -102,12 +103,11 @@
                             (log-status j "job failed~n  error: ~a" (exn-message e))
                             (with-handlers ([exn:fail? log-update-error])
                               (broker-mark-failed! broker id)))])
-           (define proc
-             (job-proc
-              (lookup (format "~a.~a" queue name))))
+           (define meta (job-metadata id queue name attempts))
+           (define proc (job-proc (lookup (format "~a.~a" queue name))))
            (apply
             keyword-apply
-            (middleware proc)
+            (middleware meta proc)
             (deserialize arguments))
            (log-status j "job suceeded")
            (with-handlers ([exn:fail? log-update-error])

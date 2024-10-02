@@ -2,6 +2,7 @@
 
 (require "job/admin.rkt"
          "job/broker.rkt"
+         "job/job-metadata.rkt"
          "job/job.rkt"
          "job/worker.rkt")
 
@@ -21,4 +22,6 @@
  broker-admin-handler
 
  make-worker-factory
- worker?)
+ worker?
+
+ (struct-out job-metadata))

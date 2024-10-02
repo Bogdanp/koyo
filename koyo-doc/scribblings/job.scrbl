@@ -157,7 +157,7 @@ other connections are leased and put back into the pool as needed.
 
 @defproc[((make-worker-factory [#:queue queue string? "default"]
                                [#:pool-size pool-size exact-positive-integer? 8]
-                               [#:middleware middleware (-> procedure? procedure?) values]) [broker broker?]) worker?]{
+                               [#:middleware middleware (-> job-metadata? procedure?) (lambda (_meta proc) proc)]) [broker broker?]) worker?]{
 
   Generates a function that, when supplied a @tech{job broker},
   produces a @tech{job worker} that dequeues and executes jobs
@@ -172,4 +172,15 @@ other connections are leased and put back into the pool as needed.
   @history[
     #:changed "0.24" @elem{Added the @racket[#:middleware] argument.}
   ]
+}
+
+@defstruct[job-metadata ([id exact-nonnegative-integer?]
+                         [queue string?]
+                         [name string?]
+                         [attempts exact-nonnegative-integer?])]{
+
+  Information about a job that's about to be run. This struct may be
+  extended in the future to contain additional information.
+
+  @history[#:added "0.24"]
 }
