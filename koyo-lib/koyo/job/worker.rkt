@@ -15,15 +15,17 @@
   [make-worker-factory
    (->* []
         [#:queue non-empty-string?
-         #:pool-size exact-positive-integer?]
+         #:pool-size exact-positive-integer?
+         #:middleware (-> procedure? procedure?)]
         (-> broker? worker?))]))
 
-(struct worker (broker queue pool-size reactor)
+(struct worker (broker queue pool-size middleware reactor)
   #:transparent
   #:methods gen:component
   [(define (component-start w)
-     (match-define (worker broker queue pool-size _) w)
-     (struct-copy worker w [reactor (reactor broker queue pool-size)]))
+     (match-define (worker broker queue pool-size middleware _) w)
+     (define the-reactor (reactor broker queue pool-size middleware))
+     (struct-copy worker w [reactor the-reactor]))
 
    (define (component-stop w)
      (stop-reactor (worker-reactor w))
@@ -31,5 +33,6 @@
 
 (define ((make-worker-factory
           #:queue [queue "default"]
-          #:pool-size [pool-size 8]) broker)
-  (worker broker queue pool-size #f))
+          #:pool-size [pool-size 8]
+          #:middleware [middleware values]) broker)
+  (worker broker queue pool-size middleware #f))

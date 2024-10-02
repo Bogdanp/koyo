@@ -156,9 +156,20 @@ other connections are leased and put back into the pool as needed.
 }
 
 @defproc[((make-worker-factory [#:queue queue string? "default"]
-                               [#:pool-size pool-size exact-positive-integer? 8]) [broker broker?]) worker?]{
+                               [#:pool-size pool-size exact-positive-integer? 8]
+                               [#:middleware middleware (-> procedure? procedure?) values]) [broker broker?]) worker?]{
 
   Generates a function that, when supplied a @tech{job broker},
   produces a @tech{job worker} that dequeues and executes jobs
   published on the queue identified by @racket[queue].
+
+  The @racket[#:pool-size] argument controls the maximum number of
+  concurrent jobs for the worker.
+
+  The @racket[#:middleware] argument wraps every job procedure before
+  it is applied to its arguments.
+
+  @history[
+    #:changed "0.24" @elem{Added the @racket[#:middleware] argument.}
+  ]
 }

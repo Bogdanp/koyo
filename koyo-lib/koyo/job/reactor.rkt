@@ -18,12 +18,12 @@
  reactor
  stop-reactor)
 
-(struct state (id idle promises listener custodian stopped?))
+(struct state (id broker idle promises listener custodian middleware stopped?))
 (define-struct-lenses state)
 
-(define-actor (reactor broker queue pool-size)
+(define-actor (reactor broker queue pool-size middleware)
   #:stopped? state-stopped?
-  #:state (make-state broker queue pool-size)
+  #:state (make-state broker queue pool-size middleware)
   #:event (lambda (st)
             (with-handlers ([exn:fail:listener?
                              (lambda (e)
@@ -42,7 +42,7 @@
                 (lambda (jobs)
                   (for/fold ([st st])
                             ([j (in-list jobs)])
-                    (state-add-job st broker j))))
+                    (state-add-job st j))))
                (for/list ([promise (in-list (state-promises st))])
                  (wrap-evt
                   promise
@@ -57,7 +57,7 @@
     (broker-unregister-worker! broker (state-id st))
     (values next-st (void))))
 
-(define (make-state broker queue pool-size)
+(define (make-state broker queue pool-size middleware)
   (define id
     (broker-register-worker!
      broker
@@ -65,15 +65,17 @@
      (gethostname)))
   (state
    #;id id
+   #;broker broker
    #;idle pool-size
    #;promises null
    #;listener (make-listener broker id queue)
    #;custodian (make-custodian)
+   #;middleware middleware
    #;stopped? #f))
 
 ;; invariant: idle is positive
-(define (state-add-job st broker j)
-  (match-define (state _ idle promises _ custodian _) st)
+(define (state-add-job st j)
+  (match-define (state _ broker idle promises _ custodian middleware _) st)
   (match-define (vector id queue name arguments _) j)
   (define promise
     (parameterize ([current-broker broker]
@@ -100,8 +102,13 @@
                             (log-status j "job failed~n  error: ~a" (exn-message e))
                             (with-handlers ([exn:fail? log-update-error])
                               (broker-mark-failed! broker id)))])
-           (define proc (job-proc (lookup (format "~a.~a" queue name))))
-           (apply keyword-apply proc (deserialize arguments))
+           (define proc
+             (job-proc
+              (lookup (format "~a.~a" queue name))))
+           (apply
+            keyword-apply
+            (middleware proc)
+            (deserialize arguments))
            (log-status j "job suceeded")
            (with-handlers ([exn:fail? log-update-error])
              (broker-mark-done! broker id)))))))
