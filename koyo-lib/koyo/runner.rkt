@@ -195,7 +195,7 @@
                        (eprintf "koyo/runner: ~a~n" (exn-message e))
                        (delete-zos! root-path)
                        (exit 0))])
-      (jobs:clear!)
+      (jobs:allow-conflicts? #t)
       (dynamic-rerequire mod)
       (values
        ((dynamic-require mod 'start))

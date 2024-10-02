@@ -74,7 +74,7 @@
        (parameterize ([current-broker broker])
          (check-not-false (add 1 2)))
 
-       (match-define (list (vector id queue job arguments attempts))
+       (match-define (list (vector id _queue _job arguments _attempts))
          (broker-dequeue! broker 0 "default"))
 
        (check-equal?
@@ -97,7 +97,7 @@
          (with-database-connection [conn database]
            (query-value conn "select scheduled_at from koyo_jobs where id = $1" id))))
 
-       ;; Going to and from PG microseconds get lost so this has the
+       ;; Going to and from PG, microseconds get lost so this has the
        ;; effect of truncating t0 in the exact same way that t1 is.
        ;; Janky but effective.
        (define t0*

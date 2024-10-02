@@ -69,6 +69,14 @@
   (begin0 the-job
     (register! (format "~a.~a" queue id) the-job)))
 
+(define-syntax (do-retry stx)
+  (syntax-parse stx
+    [(_ duration-ms:expr)
+     #'(retry! "retry!" duration-ms)]
+
+    [(_ reason:string duration-ms:expr)
+     #'(raise (exn:job:retry reason (current-continuation-marks) duration-ms))]))
+
 (define-syntax (define-job stx)
   (syntax-parse stx
     [(_ (~or (id:id arg ...)
@@ -77,20 +85,15 @@
               (~optional (~seq #:priority priority:number) #:name "#:priority parameter")) ...
         e:expr ...+)
      #'(define id
-         (syntax-parameterize ([retry! (lambda (stx)
-                                         (syntax-parse stx
-                                           [(_ duration-ms:expr)
-                                            #'(retry! "retry!" duration-ms)]
-
-                                           [(_ reason:string duration-ms:expr)
-                                            #'(raise (exn:job:retry reason (current-continuation-marks) duration-ms))]))])
-           (make-job #:id 'id
-                     #:queue (~? queue "default")
-                     #:priority (~? priority 50)
-                     #:proc (procedure-rename
-                             (lambda (~? (arg ... . rest-id) (arg ...))
-                               e ...)
-                             'id))))]))
+         (syntax-parameterize ([retry! (make-rename-transformer #'do-retry)])
+           (make-job
+            #:id 'id
+            #:queue (~? queue "default")
+            #:priority (~? priority 50)
+            #:proc (procedure-rename
+                    (lambda (~? (arg ... . rest-id) (arg ...))
+                      e ...)
+                    'id))))]))
 
 
 ;; scheduling ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
