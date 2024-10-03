@@ -1,16 +1,18 @@
 #lang info
 
 (define license 'BSD-3-Clause)
-(define version "0.24")
+(define version "0.25")
 (define collection 'multi)
 
 (define deps
   '("actor-lib"
     ["base" #:version "8.1.0.4"]
+    ["buid-lib" #:version "1.2"]
     ["component-lib" #:version "1.0"]
     "crontab-lib"
     ["crypto-lib" #:version "1.6"]
     "db-lib"
+    "define-query-lib"
     "errortrace-lib"
     "gregor-lib"
     "html-lib"

@@ -1,19 +1,55 @@
 #lang racket/base
 
-(require component
+(require buid
+         component
          koyo/session
+         koyo/session/postgres
          racket/file
          racket/string
-         rackunit)
+         rackunit
+         "common.rkt")
 
 (provide session-tests)
 
-(define session-manager
-  ((make-session-manager-factory
-    #:cookie-name "session-id"
-    #:shelf-life 86400
-    #:secret-key #"supercalifragilisticexpialidocious"
-    #:store (make-memory-session-store))))
+(define (make-session-manager-suite [store (make-memory-session-store)])
+  (define session-manager
+    ((make-session-manager-factory
+      #:cookie-name "session-id"
+      #:shelf-life 86400
+      #:secret-key #"supercalifragilisticexpialidocious"
+      #:store store)))
+  (test-suite
+   "session-manager"
+   #:before
+   (lambda ()
+     (component-start session-manager))
+
+   #:after
+   (lambda ()
+     (component-stop session-manager))
+
+   (parameterize ([current-session-id (buid)])
+     (session-manager-set! session-manager 'uid "1")
+
+     (test-case "can ref keys"
+       (check-equal? "1" (session-manager-ref session-manager 'uid)))
+
+     (test-case "can ref missing keys w/ error"
+       (check-exn
+        exn:fail:user?
+        (lambda ()
+          (session-manager-ref session-manager 'missing))))
+
+     (test-case "can ref missing keys w/ default"
+       (check-false (session-manager-ref session-manager 'missing #f)))
+
+     (test-case "can't ref other people's keys"
+       (parameterize ([current-session-id (buid)])
+         (check-false (session-manager-ref session-manager 'uid #f))))
+
+     (test-case "can't ref removed keys"
+       (session-manager-remove! session-manager 'uid)
+       (check-false (session-manager-ref session-manager 'uid #f))))))
 
 (define session-tests
   (test-suite
@@ -65,40 +101,14 @@
        (check-false (session-store-ref ss "session-1" 'a #f))
        (session-store-set! ss "session-1" 'a 1))))
 
-   ;; TODO: Test wrap-session.
-   (test-suite
-    "session-manager"
-    #:before
-    (lambda ()
-      (component-start session-manager))
-
-    #:after
-    (lambda ()
-      (component-stop session-manager))
-
-    (parameterize ([current-session-id "a"])
-      (session-manager-set! session-manager 'uid "1")
-
-      (test-case "can ref keys"
-        (check-equal? "1" (session-manager-ref session-manager 'uid)))
-
-      (test-case "can ref missing keys w/ error"
-        (check-exn
-         exn:fail:user?
-         (lambda ()
-           (session-manager-ref session-manager 'missing))))
-
-      (test-case "can ref missing keys w/ default"
-        (check-false (session-manager-ref session-manager 'missing #f)))
-
-      (test-case "can't ref other people's keys"
-        (parameterize ([current-session-id "b"])
-          (check-false (session-manager-ref session-manager 'uid #f))))
-
-      (test-case "can't ref removed keys"
-        (session-manager-remove! session-manager 'uid)
-        (check-false (session-manager-ref session-manager 'uid #f)))))))
+   (make-session-manager-suite)))
 
 (module+ test
   (require rackunit/text-ui)
-  (run-tests session-tests))
+  (run-tests session-tests)
+  (when (equal? (getenv "KOYO_DATABASE_TESTS") "x")
+    (run-tests
+     (make-session-manager-suite
+      (make-postgres-session-store
+       (component-start
+        (make-test-database)))))))

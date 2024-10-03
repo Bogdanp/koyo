@@ -130,6 +130,25 @@ browser session.
   A session store that keeps all session data in memory, persisting
   and loading it to/from disk on shutdown and startup.
 
-  @racket[ttl] controls how many seconds to wait before removing stale
-  sessions.
+  The @racket[#:ttl] argument controls how many seconds to wait before
+  removing stale sessions.
+}
+
+@subsection{PostgreSQL Session Store}
+@defmodule[koyo/session/postgres]
+
+This module provides a @tech{session store} backed by PostgreSQL tables.
+
+@deftogether[
+  (@defproc[(postgres-session-store? [v any/c]) boolean?]
+   @defproc[(make-postgres-session-store [database database?]
+                                         [#:ttl exact-positive-integer? (* 7 86400)]) session-store?])]{
+
+  A session store that persists session data the given PostgreSQL
+  @racket[database].
+
+  The @racket[#:ttl] argument determines how long sessions are kept
+  around for.
+
+  @history[#:added "0.25"]
 }
