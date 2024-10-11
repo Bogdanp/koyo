@@ -3,9 +3,12 @@
 (require (for-syntax racket/base
                      syntax/parse/pre)
          (prefix-in h: html)
+         json
          racket/contract/base
          racket/match
          racket/port
+         racket/promise
+         racket/runtime-path
          racket/set
          racket/string
          xml)
@@ -31,6 +34,19 @@
  xexpr-select-text
  xexpr-unless
  xexpr-when)
+
+;; https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references
+(define-runtime-path html-entities.json
+  "xexpr/html-entities.json")
+
+(define html-entities
+  (delay/sync
+   (call-with-input-file html-entities.json
+     (lambda (in)
+       (for/hasheq ([(entity data) (in-hash (read-json in))])
+         (define str (symbol->string entity))
+         (define sym (string->symbol (substring str 1 (sub1 (string-length str)))))
+         (values sym (hash-ref data 'characters)))))))
 
 (define (default-surround s)
   (string-append "<div>" s "</div>"))
@@ -76,7 +92,10 @@
     [(? string?) e]
 
     [(? symbol?)
-     (format "&~a;" e)]
+     (hash-ref
+      #;ht (force html-entities)
+      #;key e
+      #;fail (λ () (format "&~a;" e)))]
 
     [(? number?)
      (if (or (and (>= e 0)
