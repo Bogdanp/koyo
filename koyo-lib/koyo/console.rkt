@@ -19,7 +19,11 @@
      (define dev-system
        (for/fold ([s prod-system])
                  ([c (in-list (quote ,(stubbed-components)))])
-         (system-replace s c values)))
+         (match c
+           [(cons id replacement)
+            (system-replace s id replacement)]
+           [id
+            (system-replace s id (lambda _args #f))])))
 
      (current-system dev-system)
 
@@ -28,13 +32,13 @@
 
      (start)))
 
-(define (start-console dynamic-module-path)
+(define (start-console dynamic-module-path [namespace (make-base-empty-namespace)])
   (displayln "Compiling application...")
   (make! dynamic-module-path)
   (displayln "Starting REPL...")
   (port-count-lines! (current-input-port))
   (port-count-lines! (current-output-port))
-  (current-namespace (make-base-empty-namespace))
+  (current-namespace namespace)
   (try-setup-expeditor!)
   (for ([mod (in-list preload-modules)])
     (namespace-require mod))
