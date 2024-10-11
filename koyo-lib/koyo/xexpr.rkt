@@ -74,8 +74,17 @@
 (define (xexpr->text e [sep " "])
   (match e
     [(? string?) e]
-    [(? symbol?) (format "&~a;" e)]
-    [(? number?) (format "&#~a;" e)]
+
+    [(? symbol?)
+     (format "&~a;" e)]
+
+    [(? number?)
+     (if (or (and (>= e 0)
+                  (<= e #xD7FF))
+             (and (>= e #xE000)
+                  (<= e #x10FFFF)))
+         (string (integer->char e))
+         (string #\uFFFD))]
 
     [(list _ (? xexpr-attr-list?) e ...) ;; noqa
      (string-join (map xexpr->text e) sep)]

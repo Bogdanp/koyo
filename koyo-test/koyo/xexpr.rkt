@@ -40,7 +40,7 @@
                                     "And some content!")))
                     "A good title. And some content!")
       (check-equal? (xexpr->text '(p "Xexprs" 'mdash "good?")) "Xexprs &mdash; good?")
-      (check-equal? (xexpr->text '(p "Xexprs" 8212 "good?")) "Xexprs &#8212; good?")))
+      (check-equal? (xexpr->text '(p "Xexprs" 8212 "good?")) "Xexprs — good?")))
 
    (test-suite
     "xexpr-select"
