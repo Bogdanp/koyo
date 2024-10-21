@@ -113,6 +113,30 @@ working with database connections.
 
 }
 
+@defthing[id/c contract?]{
+  An alias for @racket[exact-positive-integer?].
+}
+
+@defthing[maybe-id/c contract?]{
+  An alias for @racket[(or/c #f id/c)].
+}
+
+@defproc[(in-rows [conn connection?]
+                  [stmt statement?]
+                  [arg any/c] ...) sequence?]{
+
+  Like @racket[in-query], but every column is pre-processed to convert
+  null values to @racket[#f], arrays to lists, dates to Gregor dates,
+  and timestamp to Gregor moments.
+}
+
+@defproc[(in-row [conn connection?]
+                 [stmt statement?]
+                 [arg any/c] ...) sequence?]{
+
+  Like @racket[in-row], but stops iterating after the first result.
+}
+
 @defform[(if-null test-expr fallback-expr)]{
   Returns @racket[fallback-expr] if @racket[test-expr] is either
   @racket[(json-null)] or @racket[sql-null].
