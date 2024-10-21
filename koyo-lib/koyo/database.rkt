@@ -9,6 +9,7 @@
                   statement-binding-pst)
          db/util/postgresql
          gregor
+         json
          racket/class
          racket/contract/base
          racket/match
@@ -189,6 +190,9 @@
  id/c
  maybe-id/c
 
+ if-null
+ null-if
+
  exn:fail:sql:constraint-violation?
 
  (contract-out
@@ -263,3 +267,13 @@
                  (->seconds m)
                  (->nanoseconds m)
                  (->utc-offset m)))
+
+(define-syntax-rule (if-null v d)
+  (let ([tmp v])
+    (cond
+      [(sql-null? tmp) d]
+      [(equal? tmp (json-null)) d]
+      [else tmp])))
+
+(define (null-if v e)
+  (if (equal? v e) sql-null v))

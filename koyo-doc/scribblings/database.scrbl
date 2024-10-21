@@ -2,6 +2,7 @@
 
 @(require (for-label db
                      koyo
+                     json
                      racket/base
                      racket/contract
                      web-server/http)
@@ -110,6 +111,22 @@ working with database connections.
         (query-value c "select 42")))
   ]
 
+}
+
+@defform[(if-null test-expr fallback-expr)]{
+  Returns @racket[fallback-expr] if @racket[test-expr] is either
+  @racket[(json-null)] or @racket[sql-null].
+
+  @history[#:added "0.27"]
+}
+
+@defproc[(null-if [v V]
+                  [e any/c]) (or/c sql-null V)]{
+
+  Returns @racket[sql-null] if @racket[v] is @racket[equal?] to
+  @racket[e]. Otherwise, returns @racket[v].
+
+  @history[#:added "0.27"]
 }
 
 @include-section["database-url.scrbl"]
