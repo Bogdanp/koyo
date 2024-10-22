@@ -16,7 +16,8 @@
          "console.rkt"
          "generator.rkt"
          "logging.rkt"
-         "runner.rkt")
+         "runner.rkt"
+         (submod "runner.rkt" private))
 
 (define-logger koyo)
 
@@ -40,12 +41,9 @@
      (lambda (p)
        (equal? (file-name-from-path p)
                (string->path "dynamic.rkt")))))
-
-  (match files
-    [(list f0 f ...) f0]
-
-    [(list)
-     (exit-with-errors! "error: could not find a dynamic.rkt module in the current directory")]))
+  (if (pair? files)
+      (car files)
+      (exit-with-errors! "error: could not find a dynamic.rkt module in the current directory")))
 
 (define (infer-project-name dmp)
   (path->string
@@ -189,7 +187,9 @@
        [(not (regexp-match-exact? #rx"[-_a-zA-Z0-9]*" name))
         (exit-with-errors! @~a{error: '@name' cannot be used as project name (invalid collection name)})]
        [(or (directory-exists? name) (file-exists? name))
-        (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory})])
+        (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory})]
+       [else
+        (void)])
 
      name))
 
@@ -242,54 +242,87 @@
   (define recompile? #t)
   (define errortrace? #f)
   (define server-timeout 30)
+  (define watch-patterns null)
+  (define watch-excludes null)
+  (define watch-verbose? #f)
   (define dynamic-module-path
     (command-line
      #:program (current-program-name)
+     #:multi
+     [("--watch-pattern")
+      PATTERN-RE "a regular expression to include files in the watched set"
+      (set! watch-patterns (cons (regexp PATTERN-RE) watch-patterns))]
+     [("--watch-exclude")
+      PATTERN-RE "a regular expression to exclude files & folders from the watched set"
+      (set! watch-excludes (cons (regexp PATTERN-RE) watch-excludes))]
      #:once-each
-     [("--errortrace") "run the application with errortrace"
-                       (set! errortrace? #t)]
-     [("--disable-recompile") "don't recompile changed files on reload"
-                              (set! recompile? #f)]
-     [("--server-timeout") t "server startup timeout in seconds"
-                           (set! server-timeout (or (string->number t) server-timeout))]
+     [("--errortrace")
+      "run the application with errortrace"
+      (set! errortrace? #t)]
+     [("--disable-recompile")
+      "don't recompile changed files on reload"
+      (set! recompile? #f)]
+     [("--server-timeout")
+      t "server startup timeout in seconds"
+      (set! server-timeout (or (string->number t) server-timeout))]
+     [("--log-watched-files")
+      "log which files get watched according to --watch-pattern and --watch-exclude"
+      (set! watch-verbose? #t)]
      #:args ([dynamic-module-path #f])
      (if dynamic-module-path
          (string->path dynamic-module-path)
          (infer-dynamic-module-path))))
 
+  (define track-file?-proc
+    (if (and (null? watch-patterns)
+             (null? watch-excludes))
+        track-file?
+        (lambda (p)
+          (define track?
+            (and
+             (ormap (λ (re) (regexp-match? re p)) watch-patterns)
+             (not (ormap (λ (re) (regexp-match? re p)) watch-excludes))))
+          (begin0 track?
+            (when (and track? watch-verbose?)
+              (let ([t (if (directory-exists? p) "directory" "file")])
+                (log-watcher-debug "tracking ~a ~a" t p)))))))
+
   (run-forever
    #:recompile? recompile?
    #:errortrace? errortrace?
    #:server-timeout server-timeout
+   #:track-file?-proc track-file?-proc
    (path->complete-path dynamic-module-path)))
 
 (define ((handle-unknown command))
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
 
-;; TODO: Make it possible to control the verbosity?
-(define stop-logger
-  (start-logger #:levels '((koyo    . debug)
-                           (runner  . debug)
-                           (watcher . debug))))
+(module+ main
+  ;; TODO: Make it possible to control the verbosity?
+  (define stop-logger
+    (start-logger
+     #:levels
+     '((koyo    . debug)
+       (runner  . debug)
+       (watcher . debug))))
 
-(define all-commands
-  (hasheq 'console  handle-console
-          'dist     handle-dist
-          'generate handle-generate
-          'graph    handle-graph
-          'help     handle-help
-          'new      handle-new
-          'serve    handle-serve))
+  (define all-commands
+    (hasheq 'console  handle-console
+            'dist     handle-dist
+            'generate handle-generate
+            'graph    handle-graph
+            'help     handle-help
+            'new      handle-new
+            'serve    handle-serve))
 
-(define-values (command handler args)
-  (match (current-command-line-arguments)
-    [(vector command args ...)
-     (values command (hash-ref all-commands (string->symbol command) (handle-unknown command)) args)]
+  (define-values (command handler args)
+    (match (current-command-line-arguments)
+      [(vector command args ...) ;; noqa
+       (values command (hash-ref all-commands (string->symbol command) (handle-unknown command)) args)]
+      [_
+       (values "help" handle-help null)]))
 
-    [_
-     (values "help" handle-help null)]))
-
-(parameterize ([current-command-line-arguments (list->vector args)]
-               [current-program-name (~a (current-program-name) " " command)])
-  (handler)
-  (stop-logger))
+  (parameterize ([current-command-line-arguments (list->vector args)]
+                 [current-program-name (~a (current-program-name) " " command)])
+    (handler)
+    (stop-logger)))

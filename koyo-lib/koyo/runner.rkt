@@ -16,7 +16,8 @@
    (->* [path-string?]
         [#:recompile? boolean?
          #:errortrace? boolean?
-         #:server-timeout (and/c real? positive?)]
+         #:server-timeout (and/c real? positive?)
+         #:track-file?-proc (-> (or/c path? path-string?) boolean?)]
         void?)]))
 
 (define-logger runner)
@@ -35,26 +36,37 @@
         [(#".html" #".sql")        #t]
         [else                      #f])))
 
-(define (collect-tracked-files path)
-  (map simplify-path (find-files track-file? path #:skip-filtered-directory? #t)))
+(module+ private
+  (provide log-watcher-debug track-file?))
 
-(define (code-change-evt root-path)
-  (apply
-   choice-evt
-   (for/list ([p (in-list (collect-tracked-files root-path))] #:when (file-exists? p))
-     (define chg (filesystem-change-evt p))
-     (nack-guard-evt
-      (lambda (nack)
-        (thread
-         (lambda ()
-           (sync nack)
-           (filesystem-change-evt-cancel chg)))
-        (handle-evt chg (λ (_) p)))))))
+(define (code-change-evt root-path track?)
+  (let ([root-path (simplify-path root-path)])
+    (apply
+     choice-evt
+     (for/list ([p (in-list
+                    (find-files
+                     #:skip-filtered-directory? #t
+                     (lambda (p)
+                       (or
+                        (equal? p root-path)
+                        (track? p)))
+                     root-path))]
+                #:when (file-exists? p))
+       (define chg
+         (filesystem-change-evt p))
+       (nack-guard-evt
+        (lambda (nack)
+          (thread
+           (lambda ()
+             (sync nack)
+             (filesystem-change-evt-cancel chg)))
+          (handle-evt chg (λ (_) p))))))))
 
 (define (run-forever dynamic-module-path
                      #:recompile? [recompile? #t]
                      #:errortrace? [errortrace? #t]
-                     #:server-timeout [server-timeout 30])
+                     #:server-timeout [server-timeout 30]
+                     #:track-file?-proc [track-file? track-file?]) ;; noqa
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
   (maximize-fd-limit!
@@ -152,10 +164,10 @@
             (lambda (status)
               (when (eq? status 'done-error)
                 (log-runner-warning "application process failed; waiting for changes before reloading")
-                (sync (code-change-evt root-path)))
+                (sync (code-change-evt root-path track-file?)))
               (process-loop)))
            (handle-evt
-            (code-change-evt root-path)
+            (code-change-evt root-path track-file?)
             (lambda (changed-path)
               (reload changed-path)
               (unless (symbol? (sync/timeout 0 stopped-evt))
@@ -178,7 +190,7 @@
   (define-values (root-path dynamic-module-path)
     (command-line
      #:program "raco koyo serve"
-     #:args (root-path dynamic-module-path)
+     #:args [root-path dynamic-module-path]
      (values root-path dynamic-module-path)))
 
   (define (display-exn e)
