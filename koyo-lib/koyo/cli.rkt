@@ -250,7 +250,7 @@
      #:program (current-program-name)
      #:multi
      [("--watch-pattern")
-      PATTERN-RE "a regular expression to include files in the watched set"
+      PATTERN-RE "a regular expression to include files & folders in the watched set"
       (set! watch-patterns (cons (regexp PATTERN-RE) watch-patterns))]
      [("--watch-exclude")
       PATTERN-RE "a regular expression to exclude files & folders from the watched set"
