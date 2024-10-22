@@ -17,13 +17,13 @@
         [#:recompile? boolean?
          #:errortrace? boolean?
          #:server-timeout (and/c real? positive?)
-         #:track-file?-proc (-> (or/c path? path-string?) boolean?)]
+         #:watch-file?-proc (-> (or/c path? path-string?) boolean?)]
         void?)]))
 
 (define-logger runner)
 (define-logger watcher)
 
-(define (track-file? p)
+(define (watch-file? p)
   (if (directory-exists? p)
       (match/values (split-path p)
         [(_ (app path->string (regexp "^\\.")) _) #f]
@@ -37,9 +37,9 @@
         [else                      #f])))
 
 (module+ private
-  (provide log-watcher-debug track-file?))
+  (provide log-watcher-debug watch-file?))
 
-(define (code-change-evt root-path track?)
+(define (code-change-evt root-path watch?)
   (let ([root-path (simplify-path root-path)])
     (apply
      choice-evt
@@ -49,7 +49,7 @@
                      (lambda (p)
                        (or
                         (equal? p root-path)
-                        (track? p)))
+                        (watch? p)))
                      root-path))]
                 #:when (file-exists? p))
        (define chg
@@ -66,7 +66,7 @@
                      #:recompile? [recompile? #t]
                      #:errortrace? [errortrace? #t]
                      #:server-timeout [server-timeout 30]
-                     #:track-file?-proc [track-file? track-file?]) ;; noqa
+                     #:watch-file?-proc [watch-file? watch-file?]) ;; noqa
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port) 'line)
   (maximize-fd-limit!
@@ -164,10 +164,10 @@
             (lambda (status)
               (when (eq? status 'done-error)
                 (log-runner-warning "application process failed; waiting for changes before reloading")
-                (sync (code-change-evt root-path track-file?)))
+                (sync (code-change-evt root-path watch-file?)))
               (process-loop)))
            (handle-evt
-            (code-change-evt root-path track-file?)
+            (code-change-evt root-path watch-file?)
             (lambda (changed-path)
               (reload changed-path)
               (unless (symbol? (sync/timeout 0 stopped-evt))

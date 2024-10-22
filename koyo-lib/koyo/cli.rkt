@@ -273,25 +273,25 @@
          (string->path dynamic-module-path)
          (infer-dynamic-module-path))))
 
-  (define track-file?-proc
+  (define watch-file?-proc
     (if (and (null? watch-patterns)
              (null? watch-excludes))
-        track-file?
+        watch-file?
         (lambda (p)
-          (define track?
+          (define watch?
             (and
              (ormap (λ (re) (regexp-match? re p)) watch-patterns)
              (not (ormap (λ (re) (regexp-match? re p)) watch-excludes))))
-          (begin0 track?
-            (when (and track? watch-verbose?)
+          (begin0 watch?
+            (when (and watch? watch-verbose?)
               (let ([t (if (directory-exists? p) "directory" "file")])
-                (log-watcher-debug "tracking ~a ~a" t p)))))))
+                (log-watcher-debug "watching ~a ~a" t p)))))))
 
   (run-forever
    #:recompile? recompile?
    #:errortrace? errortrace?
    #:server-timeout server-timeout
-   #:track-file?-proc track-file?-proc
+   #:watch-file?-proc watch-file?-proc
    (path->complete-path dynamic-module-path)))
 
 (define ((handle-unknown command))
