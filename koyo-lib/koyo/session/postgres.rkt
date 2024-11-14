@@ -57,7 +57,7 @@
      (match-define (postgres-session-store db _) ss)
      (with-database-transaction [_ db]
        (define value (session-store-ref ss session-id key default))
-       (session-store-set! ss session-id (updater value))))
+       (session-store-set! ss session-id key (updater value))))
 
    (define (session-store-remove! ss session-id key)
      (match-define (postgres-session-store db _) ss)

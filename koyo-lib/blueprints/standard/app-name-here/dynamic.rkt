@@ -113,7 +113,6 @@
   (config:reload-locales!)
   (schema-registry-allow-conflicts? #t))
 
-
 (module+ main
   (define stop (start))
   (with-handlers ([exn:break? void])
