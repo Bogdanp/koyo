@@ -40,8 +40,9 @@
 
     (test-case "converts headers expressed as pairs to header values"
       (define req
-        (make-test-request #:headers (list (make-header #"host" #"localhost")
-                                           '("x-forwarded-for" . "127.0.0.1"))))
+        (make-test-request
+         #:headers (list (make-header #"host" #"localhost")
+                         '("x-forwarded-for" . "127.0.0.1"))))
 
       (check-equal? (request-headers/raw req)
                     (list (make-header #"host" #"localhost")

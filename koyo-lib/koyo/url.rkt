@@ -29,27 +29,23 @@
 (define current-application-url-port
   (make-parameter 8000))
 
-(define (make-application-url #:query [query null]
-                              #:fragment [fragment #f]
-                              . path-elements)
-  (define path
-    (for/list ([elt (in-list path-elements)])
-      (path/param elt null)))
-  (define port
-    (match (current-application-url-port)
-      [80   #f]
-      [443  #f]
-      [port port]))
-
+(define (make-application-url
+         #:query [query null]
+         #:fragment [fragment #f]
+         . path-elements)
   (url->string
-   (url (current-application-url-scheme)
-        #f
-        (current-application-url-host)
-        port
-        #t
-        path
-        query
-        fragment)))
+   (url
+    #;scheme (current-application-url-scheme)
+    #;user #f
+    #;host (current-application-url-host)
+    #;port (match (current-application-url-port)
+             [(or 80 443) #f]
+             [port port])
+    #;path-absolute? #t
+    #;path (for/list ([elt (in-list path-elements)])
+             (path/param elt null))
+    #;query query
+    #;fragment fragment)))
 
 
 ;; Internal URLs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -58,6 +54,8 @@
  (contract-out
   [current-reverse-uri-fn
    (parameter/c (-> symbol? any/c ... string?))]
+  [current-reverse-uri-path-adjuster
+   (parameter/c (-> string? string?))]
   [reverse-uri
    (->* [symbol?]
         [#:query (listof (cons/c symbol? (or/c #f string?)))]
@@ -65,11 +63,16 @@
         string?)]))
 
 (define current-reverse-uri-fn
-  (make-parameter (lambda (_name . _args)
-                    (error "current-reverse-uri-fn not installed"))))
+  (make-parameter
+   (lambda (_name . _args)
+     (error "current-reverse-uri-fn not installed"))))
+
+(define current-reverse-uri-path-adjuster
+  (make-parameter values))
 
 (define (reverse-uri where #:query [query null] . args)
   (define uri (apply (current-reverse-uri-fn) where args))
-  (cond
-    [(null? query) uri]
-    [else (format "~a?~a" uri (alist->form-urlencoded query))]))
+  ((current-reverse-uri-path-adjuster)
+   (cond
+     [(null? query) uri]
+     [else (format "~a?~a" uri (alist->form-urlencoded query))])))

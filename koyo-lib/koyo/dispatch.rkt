@@ -2,12 +2,19 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
+         net/url
+         racket/contract/base
          racket/function
+         racket/string
          web-server/dispatch
-         web-server/dispatchers/dispatch)
+         web-server/dispatchers/dispatch
+         "http.rkt"
+         "url.rkt")
 
 (provide
- dispatch-rules+roles)
+ dispatch-rules+roles
+ (contract-out
+  [dispatch/mount (-> string? dispatcher/c dispatcher/c)]))
 
 (define (default-else-proc _req)
   (next-dispatcher))
@@ -63,3 +70,19 @@
              {~? {~@ #:name name}}
              proc] ...
         [else default-else-proc]))]))
+
+(define (dispatch/mount root dispatcher)
+  (let ([root (if (string-suffix? root "/")
+                  (substring root 0 (sub1 (string-length root)))
+                  root)])
+    (define root-uri (string->url root))
+    (lambda (conn req)
+      (define rerooted-req
+        (request-reroot req root-uri))
+      (if rerooted-req
+          (parameterize ([current-reverse-uri-path-adjuster
+                          (let ([old (current-reverse-uri-path-adjuster)])
+                            (lambda (path)
+                              (old (string-append root path))))])
+            (dispatcher conn rerooted-req))
+          (next-dispatcher)))))

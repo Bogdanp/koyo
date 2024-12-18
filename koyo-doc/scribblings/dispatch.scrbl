@@ -4,6 +4,7 @@
                      racket/base
                      racket/contract
                      web-server/dispatch
+                     web-server/dispatchers/dispatch
                      web-server/http)
           "koyo.rkt")
 
@@ -12,7 +13,7 @@
 @defmodule[koyo/dispatch]
 
 This module provides syntax for building a role-aware dispatch
-function.
+function and dispatcher combinators.
 
 @defform[
   #:literals (else)
@@ -53,4 +54,20 @@ function.
   This helps avoid deep dependency chains between routes.  The name
   for a route is either the value passed to @racket[maybe-name] or the
   name of its dispatch function.
+}
+
+@defproc[(dispatch/mount [root string?]
+                         [dispatcher dispatcher/c]) dispatcher/c]{
+
+  Returns a new dispatcher that reroots incoming requests using
+  @racket[request-reroot] with the given @racket[root] before passing
+  the result to @racket[dispatcher]. Calls @racket[next-dispatcher] when
+  a request cannot be rerooted.
+
+  The rerooted dispatcher is parameterized to cooperate with the
+  @racket[reverse-uri] procedure, meaning that generating a reverse URL
+  from within a request handler called by the dispatcher results in a
+  URL with the @racket[root] prepended to it.
+
+  @history[#:added "0.28"]
 }

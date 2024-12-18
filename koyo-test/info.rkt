@@ -10,6 +10,7 @@
     "component-lib"
     "db-lib"
     "gregor-lib"
+    "http-easy-lib"
     "koyo-lib"
     "libargon2"
     "rackunit-lib"

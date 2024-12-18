@@ -43,11 +43,26 @@
 
 (provide
  (contract-out
+  [request-reroot (-> request? url? (or/c #f request?))]
   [request-path (-> request? string?)]
   [bindings-ref (bindings-ref/c string?)]
   [bindings-ref-bytes (bindings-ref/c bytes?)]
   [bindings-ref-number (bindings-ref/c number?)]
   [bindings-ref-symbol (bindings-ref/c symbol?)]))
+
+(define (request-reroot req root)
+  (let loop ([root (url-path root)]
+             [path (url-path (request-uri req))])
+    (match* (root path)
+      [((list) path)
+       (let* ([path (if (null? path) (list (path/param "" null)) path)]
+              [url (struct-copy url (request-uri req) [path path])])
+         (struct-copy request req [uri url]))]
+      [(_ (list)) #f]
+      [((list path-segment root ...)
+        (list path-segment path ...))
+       (loop root path)]
+      [(_ _) #f])))
 
 (define (request-path req)
   (~a "/" (string-join (map path/param-path (url-path (request-uri req))) "/")))

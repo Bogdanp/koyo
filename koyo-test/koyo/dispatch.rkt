@@ -2,21 +2,26 @@
 
 (require koyo/dispatch
          koyo/testing
-         racket/function
+         koyo/url
+         (prefix-in http: net/http-easy)
          rackunit
          web-server/dispatch
-         web-server/dispatchers/dispatch)
+         web-server/dispatchers/dispatch
+         (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
+         web-server/http
+         web-server/servlet-dispatch
+         "common.rkt")
 
 (provide
  dispatch-tests)
 
-(define (home-page req)
+(define (home-page _req)
   'home)
 
-(define ((order-page orders) req id)
+(define ((order-page _orders) _req _id)
   'order)
 
-(define ((admin:edit-order-page orders) req id)
+(define ((admin:edit-order-page _orders) _req _id)
   'edit-order)
 
 (define dispatch-tests
@@ -63,7 +68,7 @@
       (check-equal? (reverse-uri 'order-page 1) "/orders/1")
       (check-equal? (reverse-uri 'edit-order-page 1) "/admin/orders/1"))
 
-    (test-case "calls `next-dispatcher` if no rule matches"
+    (test-case "calls next-dispatcher if no rule matches"
       (define-values (dispatch _reverse-uri _req-roles)
         (dispatch-rules+roles
          [("")
@@ -83,8 +88,70 @@
       (check-exn
        exn:dispatcher?
        (lambda ()
-         (dispatch (make-test-request #:path "/invalid"))))))))
+         (dispatch (make-test-request #:path "/invalid"))))))
 
+   (test-suite
+    "dispatch/mount"
+
+    (test-case "mounting + reverse-uri"
+      (define jobs null)
+      (define-values (dispatch/inner reverse-uri/inner _req-roles/inner)
+        (dispatch-rules+roles
+         [("")
+          #:name 'jobs
+          (lambda (_req)
+            (response/jsexpr
+             (for/list ([(job idx) (in-indexed (in-list jobs))])
+               (hasheq 'job job 'link (reverse-uri 'get-job idx)))))]
+         [("")
+          #:method "post"
+          #:name 'add-job
+          (lambda (_req)
+            (set! jobs (cons "a job" jobs))
+            (response/empty))]
+         [((integer-arg))
+          #:name 'get-job
+          (lambda (_req idx)
+            (response/jsexpr (list-ref jobs idx)))]))
+      (define-values (dispatch _reverse-uri/outer _req-roles)
+        (dispatch-rules+roles
+         [("")
+          #:name 'home
+          (lambda (_req)
+            (response/xexpr '(h1 "Home")))]))
+      (call-with-web-server
+       (sequencer:make
+        (dispatch/servlet dispatch)
+        (dispatch/mount
+         "/api/v1/jobs"
+         (dispatch/servlet
+          (lambda (req)
+            (parameterize ([current-reverse-uri-fn reverse-uri/inner])
+              (dispatch/inner req))))))
+       (lambda (port)
+         (define (make-endpoint [path ""])
+           (format "http://127.0.0.1:~a/~a" port path))
+         (check-equal?
+          (http:response-xexpr
+           (http:get (make-endpoint)))
+          `(h1 () "Home"))
+         (check-equal?
+          (http:response-json
+           (http:get (make-endpoint "api/v1/jobs")))
+          '())
+         (check-equal?
+          (http:response-status-code
+           (http:post (make-endpoint "api/v1/jobs")))
+          204)
+         (check-equal?
+          (http:response-json
+           (http:get (make-endpoint "api/v1/jobs")))
+          (list
+           (hasheq 'job "a job" 'link "/api/v1/jobs/0")))
+         (check-equal?
+          (http:response-json
+           (http:get (make-endpoint "api/v1/jobs/0")))
+          "a job")))))))
 
 (module+ test
   (require rackunit/text-ui)

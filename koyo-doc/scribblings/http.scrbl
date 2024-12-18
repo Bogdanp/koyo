@@ -19,6 +19,32 @@ structures.
   Returns the absolute request path for @racket[req], scrubbed of path params.
 }
 
+@defproc[(request-reroot [req request?]
+                         [root url?]) (or/c #f request?)]{
+
+  Returns a copy of @racket[req] with its @racket[request-uri] changed
+  to drop the given @racket[root] prefix. Returns @racket[#f] when
+  @racket[req]'s URI is not prefixed by @racket[root].
+
+  @examples[
+    (require koyo/http
+             koyo/testing
+             net/url
+             web-server/http)
+
+    (url->string
+     (request-uri
+      (request-reroot
+       (make-test-request #:path "/a/b/c")
+       (string->url "/a/b"))))
+    (request-reroot
+     (make-test-request #:path "/d")
+     (string->url "/a/b"))
+  ]
+
+  @history[#:added "0.28"]
+}
+
 @deftogether[
   (@defproc[(bindings-ref [bindings (listof binding?)]
                           [name symbol?]

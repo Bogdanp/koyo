@@ -2,6 +2,7 @@
 
 (require koyo/http
          koyo/testing
+         net/url
          rackunit
          web-server/http)
 
@@ -11,6 +12,33 @@
 (define http-tests
   (test-suite
    "http"
+
+   (test-suite
+    "request-reroot"
+
+    (test-case "null root"
+      (check-equal?
+       (url->string
+        (request-uri
+         (request-reroot
+          (make-test-request #:path "/a/b/c")
+          (string->url ""))))
+       "http://127.0.0.1:80/a/b/c"))
+
+    (test-case "rebased root"
+      (check-equal?
+       (url->string
+        (request-uri
+         (request-reroot
+          (make-test-request #:path "/a/b/c")
+          (string->url "/a/b"))))
+       "http://127.0.0.1:80/c"))
+
+    (test-case "no match"
+      (check-false
+       (request-reroot
+        (make-test-request #:path "/d")
+        (string->url "/a/b")))))
 
    (test-suite
     "request-path"
