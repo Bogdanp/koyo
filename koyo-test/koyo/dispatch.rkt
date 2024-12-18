@@ -27,7 +27,7 @@
     "dispatch-rules+roles"
 
     (test-case "generates a function from requests to lists of roles"
-      (define-values (dispatch _ request-roles)
+      (define-values (_dispatch _reverse-uri req-roles)
         (dispatch-rules+roles
          [("")
           home-page]
@@ -40,14 +40,14 @@
           #:roles (admin)
           (admin:edit-order-page 'order-manager)]))
 
-      (check-equal? (request-roles (make-test-request)) '())
-      (check-equal? (request-roles (make-test-request #:path "/invalid")) '())
-      (check-equal? (request-roles (make-test-request #:path "/orders/1")) '(user))
-      (check-equal? (request-roles (make-test-request #:path "/orders/1" #:method "POST")) '())
-      (check-equal? (request-roles (make-test-request #:path "/admin/orders/1")) '(admin)))
+      (check-equal? (req-roles (make-test-request)) '())
+      (check-equal? (req-roles (make-test-request #:path "/invalid")) '())
+      (check-equal? (req-roles (make-test-request #:path "/orders/1")) '(user))
+      (check-equal? (req-roles (make-test-request #:path "/orders/1" #:method "POST")) '())
+      (check-equal? (req-roles (make-test-request #:path "/admin/orders/1")) '(admin)))
 
     (test-case "generates a reverse-uri function based upon symbols"
-      (define-values (dispatch reverse-uri _)
+      (define-values (_dispatch reverse-uri _req-roles)
         (dispatch-rules+roles
          [("")
           home-page]
@@ -64,7 +64,7 @@
       (check-equal? (reverse-uri 'edit-order-page 1) "/admin/orders/1"))
 
     (test-case "calls `next-dispatcher` if no rule matches"
-      (define-values (dispatch _ __)
+      (define-values (dispatch _reverse-uri _req-roles)
         (dispatch-rules+roles
          [("")
           home-page]
