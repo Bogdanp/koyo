@@ -2,7 +2,6 @@
 
 (require (for-syntax racket/base)
          gregor
-         net/uri-codec
          racket/contract/base
          racket/format
          racket/list
@@ -14,8 +13,10 @@
          web-server/dispatchers/dispatch
          web-server/servlet
          "../continuation.rkt"
+         "../dispatch.rkt"
          "../haml.rkt"
          "../http.rkt"
+         "../url.rkt"
          "broker.rkt")
 
 
@@ -33,39 +34,39 @@
 (struct broker-admin (handler)
   #:transparent)
 
+;; DEPRECATED
 (define ((make-broker-admin-factory [path "/_koyo/jobs"]) broker)
-  (broker-admin (make-handler path broker)))
+  (broker-admin
+   (let ([root (string->url path)]
+         [handler (make-handler broker)])
+     (lambda (req)
+       (parameterize ([current-reverse-uri-path-adjuster
+                       (let ([old (current-reverse-uri-path-adjuster)])
+                         (lambda (reverse-uri)
+                           (old (string-append path reverse-uri))))])
+         (handler (request-reroot req root)))))))
 
-(define (make-handler path-prefix broker)
-  (define prefix (string-split path-prefix "/"))
-  (define prefix:len (length prefix))
-  (lambda (req)
-    (define path (map path/param-path (url-path (request-uri req))))
-    (define subpath (drop path prefix:len))
+(define (make-handler broker)
+  (define-values (dispatch reverse-uri _req-roles)
+    (dispatch-rules+roles
+     [("") dashboard-page]
+     [("jobs" (integer-arg)) job-page]))
+  (define ((wrap-params hdl) req)
     (parameterize ([current-broker broker]
-                   [current-path (string-join path "/")]
-                   [current-path-prefix path-prefix])
-      (match subpath
-        [`()
-         (dashboard-page req)]
-
-        [`("jobs" ,(app string->number id))
-         (job-page req id)]
-
-        [_
-         (next-dispatcher)]))))
+                   [current-continuation-wrapper
+                    (let ([old (current-continuation-wrapper)])
+                      (lambda (hdl)
+                        (lambda (req)
+                          ((old (wrap-params hdl)) req))))]
+                   [current-reverse-uri-fn reverse-uri])
+      (hdl req)))
+  (wrap-params dispatch))
 
 
 ;; pages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-runtime-path assets
   (build-path "assets"))
-
-(define current-path-prefix
-  (make-parameter #f))
-
-(define current-path
-  (make-parameter #f))
 
 (define SCRIPT
   (call-with-input-file (build-path assets "app.js")
@@ -91,7 +92,7 @@
       (unless (null? the-jobs)
         (haml
          (.island__footer
-          (button "Next Page" (make-uri #:params `((cursor . ,(number->string (job-meta-id (last the-jobs)))))))))))
+          (button "Next Page" (reverse-uri 'dashboard-page #:query `((cursor . ,(number->string (job-meta-id (last the-jobs)))))))))))
      (:br)))))
 
 (define (job-page _req id)
@@ -110,32 +111,16 @@
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (make-uri #:params [params null]
-                  . parts)
-  (define the-uri
-    (~a (current-path-prefix) "/" (string-join (map ~a parts) "/")))
-  (define trimmed-uri
-    (string-trim the-uri "/"
-                 #:left? #f
-                 #:right? #t))
-  (if (null? params)
-      trimmed-uri
-      (~a trimmed-uri "?" (alist->form-urlencoded params))))
-
 (define (page . content)
-  (define (nav-item label path)
-    (define path*
-      (make-uri path))
-
+  (define (nav-item label target)
     (define classes
-      (class-list "nav__item"
-                  (and (string=? path* (current-path))
-                       "nav__item--active")))
+      (class-list
+       "nav__item"))
 
     (haml
      (:li
       ([:class classes])
-      (:a ([:href path*]) label))))
+      (:a ([:href target]) label))))
 
   (response/xexpr
    (haml
@@ -149,7 +134,7 @@
      (:body
       (:ul.nav
        (.container
-        (nav-item "Dashboard" "")))
+        (nav-item "Dashboard" (reverse-uri 'dashboard-page))))
       (.content
        ,@content))))))
 
@@ -201,9 +186,13 @@
                       "Retry"
                       (embed/url
                        (lambda (_req)
-                         (broker-mark-for-retry! (current-broker) (job-meta-id j) (now/moment))
+                         (broker-mark-for-retry!
+                          (current-broker)
+                          (job-meta-id j)
+                          (now/moment))
                          (redirect/get/forget)
-                         (redirect-to (make-uri "jobs" (job-meta-id j))))))
+                         (eprintf "current: ~s~n" (current-reverse-uri-fn))
+                         (redirect-to (reverse-uri 'job-page (job-meta-id j))))))
                      " "
                      (button
                       #:confirmation-required? #t
@@ -213,7 +202,7 @@
                        (lambda (_req)
                          (broker-delete! (current-broker) (job-meta-id j))
                          (redirect/get/forget)
-                         (redirect-to (make-uri )))))))))))
+                         (redirect-to (reverse-uri 'dashboard-page)))))))))))
 
 (define (button label action
                 #:style [style #f]
@@ -244,7 +233,7 @@
 
   (haml
    (:a
-    ([:href (make-uri "jobs" (job-meta-id j))])
+    ([:href (reverse-uri 'job-page (job-meta-id j))])
     (:pre expr-str))))
 
 (define (pp-status s)
