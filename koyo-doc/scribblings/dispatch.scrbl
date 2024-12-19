@@ -5,7 +5,8 @@
                      racket/contract
                      web-server/dispatch
                      web-server/dispatchers/dispatch
-                     web-server/http)
+                     web-server/http
+                     web-server/servlet-dispatch)
           "koyo.rkt")
 
 @title[#:tag "dispatch"]{Dispatch}
@@ -13,13 +14,19 @@
 @defmodule[koyo/dispatch]
 
 This module provides syntax for building a role-aware dispatch
-function and dispatcher combinators.
+procedure and dispatcher combinators.
 
 @defform[
   #:literals (else)
-  (dispatch-rules+roles dispatch-clause ... maybe-else-clause)
+  (dispatch-rules+roles
+   dispatch-clause ...
+   maybe-else-clause)
   #:grammar
-  [(dispatch-clause [dispatch-pattern maybe-method maybe-roles maybe-name dispatch-fun])
+  [(dispatch-clause [dispatch-pattern
+                     maybe-method
+                     maybe-roles
+                     maybe-name
+                     dispatch-proc])
    (dispatch-pattern (code:line ())
                      (string . dispatch-pattern)
                      (bidi-match-expander ... . dispatch-pattern)
@@ -27,33 +34,31 @@ function and dispatcher combinators.
    (maybe-method (code:line)
                  (code:line #:method method))
    (maybe-roles (code:line)
-                (code:line #:roles (role ...)))
+                (code:line #:roles (role-id ...)))
    (maybe-name (code:line)
-               (code:line #:name name))
+               (code:line #:name name-expr))
    (maybe-else-clause (code:line)
-                      [else else-fun])
-   (method pat)
-   (role id)
-   (name symbol?)]
+                      [else else-proc])
+   (method match-pattern)]
    #:contracts
-   [(else-fun (-> request? response?))
-    (dispatch-fun (-> request? any/c ... response?))]]{
+   [(name-expr symbol?)
+    (else-proc (-> request? response?))
+    (dispatch-proc (-> request? any/c ... response?))]]{
 
-  Like @racket[dispatch-rules] but each @racket[dispatch-clause] takes
-  an optional list of roles and an optional name.
+  A variant of @racket[dispatch-rules] where each
+  @racket[dispatch-clause] takes an optional list of roles and an
+  optional name.
 
-  Returns three values: the first being a dispatcher function like in
-  @racket[dispatch-rules], the second a function that can generate
-  reverse URIs and the third a function that, given a
-  @racket[request], can return the required set of roles for the
-  matching @racket[dispatch-fun].
+  Returns three values: a dispatcher procedure as in
+  @racket[dispatch-rules], a procedure that can generate reverse URIs
+  and a procedure that, given a @racket[request], can return the
+  required set of roles for the matching @racket[dispatch-proc].
 
-  Reverse URI generation is different from @racket[dispatch-rules] in
-  that the first argument is a symbol representing the name of the
-  route rather than the specific @racket[dispatch-fun] that was used.
-  This helps avoid deep dependency chains between routes.  The name
-  for a route is either the value passed to @racket[maybe-name] or the
-  name of its dispatch function.
+  Reverse URI generation differs from @racket[dispatch-rules] in that
+  the first argument must be a symbol representing the name of the route
+  rather than a @racket[dispatch-proc]. This helps avoid deep dependency
+  chains between routes. The name for a route is either the value passed
+  to @racket[maybe-name] or the name of its dispatch procedure.
 }
 
 @defproc[(dispatch/mount [root string?]
@@ -68,6 +73,11 @@ function and dispatcher combinators.
   @racket[reverse-uri] procedure, meaning that generating a reverse URL
   from within a request handler called by the dispatcher results in a
   URL with the @racket[root] prepended to it.
+
+  Combine @racket[dispatch-rules+roles], @racket[dispatch/servlet] and
+  @racket[dispatch/mount] to embed modular sub-applications into larger
+  applications where the former have no knowledge of the URL structure
+  of the larger application.
 
   @history[#:added "0.28"]
 }

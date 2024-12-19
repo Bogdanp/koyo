@@ -2,8 +2,6 @@
 
 (require (for-syntax racket/base)
          gregor
-         koyo/continuation
-         koyo/http
          net/uri-codec
          racket/contract/base
          racket/format
@@ -15,7 +13,9 @@
          racket/string
          web-server/dispatchers/dispatch
          web-server/servlet
+         "../continuation.rkt"
          "../haml.rkt"
+         "../http.rkt"
          "broker.rkt")
 
 

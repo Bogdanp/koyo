@@ -17,7 +17,7 @@
  retry!)
 
 (struct exn:job exn () #:transparent)
-(struct exn:job:retry exn:job (delay-ms) #:transparent)
+(struct exn:job:retry exn:job (delay-ms) #:transparent) ;; noqa
 
 (define-syntax-parameter retry!
   (lambda (stx)
@@ -64,7 +64,7 @@
              (now/moment))
          (list kws kw-args args))]))))
 
-(define (make-job #:id id
+(define (make-job #:id id ;; noqa
                   #:queue queue
                   #:priority priority
                   #:proc proc)
@@ -72,7 +72,7 @@
   (begin0 the-job
     (register! (format "~a.~a" queue id) the-job)))
 
-(define-syntax (do-retry stx)
+(define-syntax (do-retry stx) ;; noqa
   (syntax-parse stx
     [(_ duration-ms:expr)
      #'(retry! "retry!" duration-ms)]
@@ -82,10 +82,10 @@
 
 (define-syntax (define-job stx)
   (syntax-parse stx
-    [(_ (~or (id:id arg ...)
-             (id:id arg ... . rest-id:id))
-        (~alt (~optional (~seq #:queue queue:str) #:name "#:queue parameter")
-              (~optional (~seq #:priority priority:number) #:name "#:priority parameter")) ...
+    [(_ {~or (id:id arg ...)
+             (id:id arg ... . rest-id:id)}
+        {~alt {~optional {~seq #:queue queue:str} #:name "#:queue parameter"}
+              {~optional {~seq #:priority priority:number} #:name "#:priority parameter"}} ...
         e:expr ...+)
      #'(define id
          (syntax-parameterize ([retry! (make-rename-transformer #'do-retry)])
