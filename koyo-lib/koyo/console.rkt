@@ -56,9 +56,9 @@
   (eval (preamble)))
 
 ;; Sets up expeditor w/ a Racket lexer if the modules are available at
-;; runtime, otherwise falls back to readline (if available).  This
-;; whole dance is mean to avoid explicit dependencies on either
-;; library since they're not crucial to the operation of koyo.
+;; runtime, otherwise falls back to readline (if available). This whole
+;; dance is meant to avoid explicit dependencies on either library since
+;; they're not crucial to the operation of koyo.
 (define (try-setup-expeditor!)
   (let/ec esc
     (define (fail) (esc (dynamic-require 'readline #f void)))
