@@ -21,6 +21,7 @@
     "net-lib"
     "raco-invoke"
     "srfi-lite-lib"
+    "struct-define"
     "threading-lib"
     "unix-socket-lib"
     "web-server-lib"))

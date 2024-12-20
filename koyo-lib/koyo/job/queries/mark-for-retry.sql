@@ -4,8 +4,7 @@ WITH
       koyo_jobs
     SET
       status = 'ready',
-      scheduled_at = $2,
-      attempts = attempts + 1
+      scheduled_at = $2
     WHERE
       id = $1
     RETURNING

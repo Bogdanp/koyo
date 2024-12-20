@@ -1,26 +1,38 @@
 #lang at-exp racket/base
 
 (require (for-syntax racket/base)
+         (only-in db sql-null)
          gregor
          racket/contract/base
-         racket/format
-         racket/list
          racket/match
          racket/port
          racket/pretty
          racket/runtime-path
          racket/string
+         struct-define
          web-server/dispatchers/dispatch
          web-server/servlet
-         "../continuation.rkt"
+         web-server/servlet-dispatch
          "../dispatch.rkt"
+         "../guard.rkt"
          "../haml.rkt"
          "../http.rkt"
+         "../mime.rkt"
          "../url.rkt"
          "broker.rkt")
 
 
-;; component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; dispatcher ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ (contract-out
+  [make-broker-admin (-> broker? dispatcher/c)]))
+
+(define (make-broker-admin broker)
+  (dispatch/servlet (make-handler broker)))
+
+
+;; component (DEPRECATED) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  broker-admin?
@@ -34,7 +46,6 @@
 (struct broker-admin (handler)
   #:transparent)
 
-;; DEPRECATED
 (define ((make-broker-admin-factory [path "/_koyo/jobs"]) broker)
   (broker-admin
    (let ([root (string->url path)]
@@ -46,234 +57,201 @@
                            (old (string-append path reverse-uri))))])
          (handler (request-reroot req root)))))))
 
+
+;; handler & pages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define (make-handler broker)
   (define-values (dispatch reverse-uri _req-roles)
     (dispatch-rules+roles
-     [("") dashboard-page]
-     [("jobs" (integer-arg)) job-page]))
-  (define ((wrap-params hdl) req)
+     [("")
+      dashboard-page]
+     [("api" "v1" "jobs")
+      (jobs-page broker)]
+     [("api" "v1" "jobs" (integer-arg))
+      (job-page broker)]
+     [("api" "v1" "jobs" (integer-arg) "retry")
+      #:method "post"
+      (retry-job-page broker)]
+     [("api" "v1" "jobs" (integer-arg))
+      #:method "delete"
+      (delete-job-page broker)]
+     [("api" "v1" "queues")
+      (queues-page broker)]
+     [("api" "v1" "workers")
+      (workers-page broker)]
+     [("static" (string-arg))
+      #:name 'static-page
+      static-page]
+     [else
+      dashboard-page]))
+  (lambda (req)
     (parameterize ([current-broker broker]
-                   [current-continuation-wrapper
-                    (let ([old (current-continuation-wrapper)])
-                      (lambda (hdl)
-                        (lambda (req)
-                          ((old (wrap-params hdl)) req))))]
                    [current-reverse-uri-fn reverse-uri])
-      (hdl req)))
-  (wrap-params dispatch))
+      (dispatch req))))
 
-
-;; pages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (dashboard-page _req)
+  (response/xexpr
+   #:preamble #"<!doctype html>"
+   (haml
+    (:html
+     ([:lang "en-US"])
+     (:head
+      (:title "Koyo Jobs")
+      (:meta
+       ([:charset "utf-8"]))
+      (:meta
+       ([:content "width=device-width, initial-scale=1"]
+        [:name "viewport"]))
+      (:link
+       ([:href (reverse-uri 'static-page "app.css")]
+        [:rel "stylesheet"]
+        [:type "text/css"]))
+      (:script
+       ([:defer "defer"]
+        [:src (reverse-uri 'static-page "app.js")])))
+     (:body
+      (:div#app
+       ([:data-root
+         (string-trim
+          #:left? #f
+          #;str (reverse-uri 'dashboard-page)
+          #;sep "/")])))))))
 
 (define-runtime-path assets
   (build-path "assets"))
 
-(define SCRIPT
-  (call-with-input-file (build-path assets "app.js")
-    port->string))
+(define get-asset
+  (let ([memo (make-hash)])
+    (lambda (filename)
+      (hash-ref!
+       #;ht memo
+       #;key filename
+       #;fail-proc
+       (lambda ()
+         (call-with-input-file (build-path assets filename)
+           port->bytes))))))
 
-(define STYLE
-  (call-with-input-file (build-path assets "screen.css")
-    port->string))
+(define (static-page _req filename)
+  (let ([filename (path-add-extension filename #".gz" #".")])
+    (with-guard (λ () (response/empty))
+      (guard (member filename (directory-list assets)))
+      (define data
+        (get-asset filename))
+      (response/full
+       #;code 200
+       #;message #"OK"
+       #;seconds (current-seconds)
+       #;mime (path->mime-type filename)
+       #;headers (list
+                  (make-header #"content-encoding" #"gzip")
+                  (make-header #"content-length" (string->bytes/utf-8 (number->string (bytes-length data)))))
+       #;body (list data)))))
 
-(define (dashboard-page req)
-  (define the-cursor
-    (bindings-ref-number (request-bindings/raw req) 'cursor))
-  (define the-jobs
-    (broker-jobs (current-broker)
-                 (or the-cursor -1)))
-  (page
-   (haml
-    (.container
-     (.island
-      (:h1.island__title "Jobs")
-      (.island__content
-       (job-list the-jobs))
-      (unless (null? the-jobs)
-        (haml
-         (.island__footer
-          (button "Next Page" (reverse-uri 'dashboard-page #:query `((cursor . ,(number->string (job-meta-id (last the-jobs)))))))))))
-     (:br)))))
+(define ((jobs-page broker) req)
+  (define binds (request-bindings/raw req))
+  (define queue (or (bindings-ref binds 'queue) sql-null))
+  (define cursor (or (bindings-ref-number binds 'cursor) -1))
+  (define statuses
+    (let ([status (bindings-ref binds 'status)])
+      (or (and status (string-split status ",")) sql-null)))
+  (response/jsexpr
+   (->jsexpr
+    (broker-jobs broker queue cursor statuses))))
 
-(define (job-page _req id)
-  (define j (broker-job (current-broker) id))
-  (unless j (next-dispatcher))
-  (send/suspend/dispatch/protect
-   (lambda (embed/url)
-     (page
-      (haml
-       (.container
-        (.island
-         (:h1.island__title @~a{Job @(job-meta-id j)})
-         (.island__content
-          (job-table j embed/url)))))))))
+(define ((job-page broker) _req id)
+  (with-guard (λ () (response/jsexpr
+                     #:code 404
+                     (hasheq 'error "job not found")))
+    (response/jsexpr
+     (->jsexpr
+      (guard (broker-job broker id))))))
 
+(define ((retry-job-page broker) _req id)
+  (broker-mark-for-retry! broker id (now/moment))
+  (response/empty))
 
-;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define ((delete-job-page broker) _req id)
+  (broker-delete! broker id)
+  (response/empty))
 
-(define (page . content)
-  (define (nav-item label target)
-    (define classes
-      (class-list
-       "nav__item"))
+(define ((queues-page broker) _req)
+  (response/jsexpr
+   (->jsexpr
+    (broker-queues broker))))
 
-    (haml
-     (:li
-      ([:class classes])
-      (:a ([:href target]) label))))
+(define ((workers-page broker) _req)
+  (response/jsexpr
+   (->jsexpr
+    (broker-workers broker))))
 
-  (response/xexpr
-   (haml
-    (:html
-     (:head
-      (:title "Jobs")
-      (:style
-       ([:type "text/css"])
-       STYLE)
-      (:script SCRIPT))
-     (:body
-      (:ul.nav
-       (.container
-        (nav-item "Dashboard" (reverse-uri 'dashboard-page))))
-      (.content
-       ,@content))))))
-
-(define (job-list jobs)
-  (haml
-   (:table.jobs-table
-    (:thead
-     (:tr
-      (:th "ID")
-      (:th "Job")
-      (:th "Status")
-      (:th "Queue")
-      (:th "Created")))
-    (:tbody
-     ,@(map job-list-item jobs)))))
-
-(define (job-list-item j)
-  (haml
-   (:tr
-    (:td (:pre (~a "#" (job-meta-id j))))
-    (:td (pp-job j))
-    (:td (pp-status (job-meta-status j)))
-    (:td (:span.status (job-meta-queue j)))
-    (:td (pp-moment (job-meta-created-at j))))))
-
-(define (job-table j embed/url)
-  (define (row label content)
-    (haml
-     (:tr
-      (:th label)
-      (:td content))))
-
-  (haml
-   (:table.job-table
-    (row "Queue" (job-meta-queue j))
-    (row "Job" (pp-job j))
-    (row "Status" (pp-status (job-meta-status j)))
-    (row "Attempts" (number->string (job-meta-attempts j)))
-    (row "Created" (pp-moment (job-meta-created-at j)))
-    (row "Scheduled" (pp-moment (job-meta-scheduled-at j)))
-    (row "Started" (cond
-                     [(job-meta-started-at j) => pp-moment]
-                     [else 'mdash]))
-    (row "Actions" (haml
-                    (:div
-                     (button
-                      #:confirmation-required? #t
-                      #:style 'primary
-                      "Retry"
-                      (embed/url
-                       (lambda (_req)
-                         (broker-mark-for-retry!
-                          (current-broker)
-                          (job-meta-id j)
-                          (now/moment))
-                         (redirect/get/forget)
-                         (eprintf "current: ~s~n" (current-reverse-uri-fn))
-                         (redirect-to (reverse-uri 'job-page (job-meta-id j))))))
-                     " "
-                     (button
-                      #:confirmation-required? #t
-                      #:style 'danger
-                      "Delete"
-                      (embed/url
-                       (lambda (_req)
-                         (broker-delete! (current-broker) (job-meta-id j))
-                         (redirect/get/forget)
-                         (redirect-to (reverse-uri 'dashboard-page)))))))))))
-
-(define (button label action
-                #:style [style #f]
-                #:confirmation-required? [confirmation-required? #f])
-  (haml
-   (:a
-    ([:class (class-list "button" (and style (~a "button--" style)))]
-     [:href action]
-     [:onclick (if confirmation-required?
-                   "return confirm('Are you sure?')"
-                   "")])
-    label)))
-
-(define (pp-job j)
-  (match-define (list kws kw-args args)
-    (job-meta-arguments j))
-  (define expr-str
-    (call-with-output-string
-     (lambda (out)
-       (parameterize ([current-output-port out]
-                      [pretty-print-columns 40])
-         (pretty-write `(,(string->symbol (job-meta-job j))
-                         ,@(flatten
-                            (for/list ([kw (in-list kws)]
-                                       [kw-arg (in-list kw-args)])
-                              (list kw kw-arg)))
-                         ,@args))))))
-
-  (haml
-   (:a
-    ([:href (reverse-uri 'job-page (job-meta-id j))])
-    (:pre expr-str))))
-
-(define (pp-status s)
-  (haml
-   (:span
-    ([:class (class-list "status" (~a "status--" s))])
-    s)))
-
-(define (pp-moment m)
-  (define now/posix  (->posix (now/moment)))
-  (define when/posix (->posix m))
-  (define delta
-    (inexact->exact
-     (truncate
-      (exact->inexact
-       (abs (- now/posix when/posix))))))
-
-  (define second 1)
-  (define minute (* 60 second))
-  (define hour   (* 60 minute))
-  (define day    (* 24 hour))
-  (define week   (* 7  day))
-
-  (define period
-    (cond
-      [(>  delta (* 2 week))   @~a{@(quotient delta week) weeks}]
-      [(>= delta      week)    @~a{1 week}]
-      [(>  delta (* 2 day))    @~a{@(quotient delta day) days}]
-      [(>= delta      day)     @~a{1 day}]
-      [(>  delta (* 2 hour))   @~a{@(quotient delta hour) hours}]
-      [(>= delta      hour)    @~a{1 hour}]
-      [(>= delta (* 2 minute)) @~a{@(quotient delta minute) minutes}]
-      [(>= delta      minute)  @~a{1 minute}]
-      [(=  delta      second)  @~a{1 second}]
-      [else                    @~a{@delta seconds}]))
-
+(define (->jsexpr v)
   (cond
-    [(= now/posix when/posix) @~a{now}]
-    [(> now/posix when/posix) @~a{@period ago}]
-    [else                     @~a{in @period}]))
+    [(worker-meta? v)
+     (worker-meta->jsexpr v)]
+    [(queue-meta? v)
+     (queue-meta->jsexpr v)]
+    [(job-meta? v)
+     (job-meta->jsexpr v)]
+    [(moment? v)
+     (moment->iso8601 v)]
+    [(symbol? v)
+     (symbol->string v)]
+    [(hash? v)
+     (for/hasheq ([(k v) (in-hash v)])
+       (values k (->jsexpr v)))]
+    [(list? v)
+     (for/list ([v (in-list v)])
+       (->jsexpr v))]
+    [(vector? v)
+     (for/list ([v (in-vector v)])
+       (->jsexpr v))]
+    [else v]))
 
-(define (class-list . classes)
-  (string-join (filter values classes) " "))
+(define (worker-meta->jsexpr v)
+  (struct-define worker-meta v)
+  (hasheq
+   'id id
+   'pid pid
+   'hostname hostname
+   'heartbeat (->jsexpr heartbeat)
+   'up-since (->jsexpr up-since)))
+
+(define (queue-meta->jsexpr v)
+  (struct-define queue-meta v)
+  (hasheq
+   'id id
+   'total-ready total-ready
+   'total-running total-running
+   'total-done total-done
+   'total-failed total-failed))
+
+(define (job-meta->jsexpr v)
+  (struct-define job-meta v)
+  (hasheq
+   'id id
+   'queue queue
+   'name job
+   'arguments (~arguments arguments)
+   'status (->jsexpr status)
+   'priority priority
+   'attempts attempts
+   'created-at (->jsexpr created-at)
+   'scheduled-at (->jsexpr scheduled-at)
+   'started-at (->jsexpr started-at)
+   'worker-id worker-id))
+
+(define (~arguments arguments)
+  (match-define (list kws kw-args args)
+    arguments)
+  (append
+   (for/list ([kw (in-list kws)]
+              [kw-arg (in-list kw-args)])
+     (define arg-str (pretty-format kw-arg))
+     (~trimmed (format "~s ~a" kw arg-str)))
+   (for/list ([arg (in-list args)])
+     (~trimmed (pretty-format arg)))))
+
+(define (~trimmed s)
+  (if (> (string-length s) 79)
+      (string-append (substring s 0 79) "…")
+      s))

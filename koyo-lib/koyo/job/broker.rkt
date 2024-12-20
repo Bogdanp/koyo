@@ -99,10 +99,30 @@
 ;; for the admin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ (struct-out worker-meta)
+ broker-workers
+
+ (struct-out queue-meta)
+ broker-queues
+
  (struct-out job-meta)
  broker-job
  broker-jobs
  broker-delete!)
+
+(struct worker-meta (id pid hostname heartbeat up-since)
+  #:transparent)
+
+(define (broker-workers b)
+  (with-database-connection [conn (broker-database b)]
+    (sequence->list (sequence-map worker-meta (in-rows conn list-workers-stmt)))))
+
+(struct queue-meta (id total-ready total-running total-done total-failed)
+  #:transparent)
+
+(define (broker-queues b)
+  (with-database-connection [conn (broker-database b)]
+    (sequence->list (sequence-map queue-meta (in-rows conn list-queues-stmt)))))
 
 (struct job-meta (id queue job arguments status priority attempts created-at scheduled-at started-at worker-id)
   #:transparent)
@@ -112,9 +132,9 @@
     (for/first ([job (in-jobs conn lookup-job-stmt id)])
       job)))
 
-(define (broker-jobs b [cursor -1])
+(define (broker-jobs b [queue sql-null] [cursor -1] [statuses sql-null])
   (with-database-connection [conn (broker-database b)]
-    (for/list ([job (in-jobs conn latest-jobs-stmt cursor)])
+    (for/list ([job (in-jobs conn latest-jobs-stmt queue cursor statuses)])
       job)))
 
 (define (broker-delete! b id)

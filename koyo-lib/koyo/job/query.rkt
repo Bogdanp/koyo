@@ -39,6 +39,8 @@
 
 ;; admin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-stmt list-workers)
+(define-stmt list-queues)
 (define-stmt lookup-job)
 (define-stmt latest-jobs)
 (define-stmt delete)
