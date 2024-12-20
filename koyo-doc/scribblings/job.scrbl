@@ -5,7 +5,8 @@
                      (only-in gregor +minutes moment? now/moment)
                      koyo
                      racket/base
-                     racket/contract)
+                     racket/contract
+                     web-server/dispatchers/dispatch)
           racket/runtime-path
           racket/sandbox
           "koyo.rkt")
@@ -183,4 +184,16 @@ other connections are leased and put back into the pool as needed.
   extended in the future to contain additional information.
 
   @history[#:added "0.24"]
+}
+
+
+@subsection{Broker Admin UI}
+
+@defproc[(make-broker-admin [broker broker?]) dispatcher/c]{
+  Returns a dispatcher that you can embed in your app in order to
+  administer jobs. Use @racket[dispatch/mount] to mount it under a
+  specific path within your application.
+
+  See @racketmodname[web-server/dispatchers/dispatch-wrap] for a
+  dispatcher combinator that you can use to implement access controls.
 }
