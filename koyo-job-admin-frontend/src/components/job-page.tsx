@@ -36,15 +36,15 @@ const ATTRIBUTES: MetadataAttribute[] = [
   { label: "Attempts", cell: (j) => j.attempts },
   {
     label: "Created At",
-    cell: (j) => <RelativeDate addSuffix date={j["created-at"]} />,
+    cell: (j) => <RelativeDate addSuffix date={j["created-at"]} extended />,
   },
   {
     label: "Scheduled At",
-    cell: (j) => <RelativeDate addSuffix date={j["scheduled-at"]} />,
+    cell: (j) => <RelativeDate addSuffix date={j["scheduled-at"]} extended />,
   },
   {
     label: "Started At",
-    cell: (j) => <RelativeDate addSuffix date={j["started-at"]} />,
+    cell: (j) => <RelativeDate addSuffix date={j["started-at"]} extended />,
   },
 ];
 
@@ -107,6 +107,7 @@ export const JobPage = () => {
                   {ATTRIBUTES.map((attr) => (
                     <Table.Row key={attr.label}>
                       <Table.Cell
+                        alignItems="top"
                         color="fg.muted"
                         fontSize="xs"
                         fontVariantNumeric="tabular-nums"

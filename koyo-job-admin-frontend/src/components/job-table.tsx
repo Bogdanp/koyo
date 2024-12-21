@@ -19,8 +19,8 @@ export const JobTable = (props: JobTableProps) => {
           <Table.ColumnHeader>Job</Table.ColumnHeader>
           <Table.ColumnHeader>Queue</Table.ColumnHeader>
           <Table.ColumnHeader>Status</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">Priority</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">Attempts</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end">Priority</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end">Attempts</Table.ColumnHeader>
           <Table.ColumnHeader>Due</Table.ColumnHeader>
         </Table.Row>
       </Table.Header>
@@ -36,10 +36,10 @@ export const JobTable = (props: JobTableProps) => {
             <Table.Cell>
               <StatusBadge status={job.status} />
             </Table.Cell>
-            <Table.Cell textAlign="right" fontVariantNumeric="tabular-nums">
+            <Table.Cell textAlign="end" fontVariantNumeric="tabular-nums">
               {job.priority}
             </Table.Cell>
-            <Table.Cell textAlign="right" fontVariantNumeric="tabular-nums">
+            <Table.Cell textAlign="end" fontVariantNumeric="tabular-nums">
               {job.attempts}
             </Table.Cell>
             <Table.Cell>

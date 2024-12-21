@@ -4,16 +4,22 @@ import * as React from "react";
 
 export interface RelativeDateProps extends TextProps {
   addSuffix?: boolean;
+  extended?: boolean;
   date: string;
 }
 
 export const RelativeDate = (props: RelativeDateProps) => {
-  const { date, addSuffix, ...root } = props;
+  const { addSuffix, date, extended, ...root } = props;
   return (
-    <Text asChild {...root}>
-      <span title={date}>
+    <>
+      <Text fontVariantNumeric="tabular-nums" title={date} {...root}>
         {formatDistance(date, new Date(), { addSuffix })}
-      </span>
-    </Text>
+      </Text>
+      {extended && (
+        <Text color="fg.muted" fontSize="xs" fontVariantNumeric="tabular-nums">
+          {date}
+        </Text>
+      )}
+    </>
   );
 };
