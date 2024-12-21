@@ -13,6 +13,7 @@
          racket/system
          raco/command-name
          raco/invoke
+         "blueprint.rkt"
          "console.rkt"
          "generator.rkt"
          "logging.rkt"
@@ -20,12 +21,6 @@
          (submod "runner.rkt" private))
 
 (define-logger koyo)
-
-(define-runtime-path blueprints-path
-  (build-path 'up "blueprints"))
-
-(define blueprint-names
-  (map path->string (directory-list blueprints-path)))
 
 (define current-program-name
   (make-parameter (short-program+command-name)))
@@ -189,51 +184,7 @@
         (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory})]
        [else
         name])))
-
-  (define root
-    (path->complete-path project-name))
-
-  (define project-name/uppercase
-    (string-replace (string-upcase project-name) "-" "_"))
-
-  (define project-name/lowercase
-    (string-replace (string-downcase project-name) "-" "_"))
-
-  (copy-directory/files
-   (build-path blueprints-path blueprint)
-   root)
-
-  (rename-file-or-directory
-   (build-path root "app-name-here")
-   (build-path root project-name))
-
-  (define project-tests-path (build-path root "app-name-here-tests"))
-  (when (directory-exists? project-tests-path)
-    (rename-file-or-directory
-     (build-path project-tests-path "app-name-here")
-     (build-path project-tests-path project-name))
-    (rename-file-or-directory
-     project-tests-path
-     (build-path root (~a project-name "-tests"))))
-
-  (for ([path (find-files (compose not directory-exists?) root)])
-    (define contents (file->string path))
-    (define replaced-contents
-      (regexp-replace*
-       #px"AppNameHere|APP_NAME_HERE|app-name-here|app_name_here"
-       contents
-       (match-lambda
-         ["AppNameHere"   project-name]
-         ["APP_NAME_HERE" project-name/uppercase]
-         ["app-name-here" project-name]
-         ["app_name_here" project-name/lowercase])))
-
-    (when (not (string=? contents replaced-contents))
-      (call-with-output-file path
-        #:mode 'text
-        #:exists 'truncate/replace
-        (lambda (out)
-          (write-string replaced-contents out))))))
+  (install-blueprint project-name blueprint))
 
 (define (handle-serve)
   (define recompile? #t)
