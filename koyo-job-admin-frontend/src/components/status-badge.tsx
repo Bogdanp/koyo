@@ -11,6 +11,8 @@ export const StatusBadge = (props: StatusBadgeProps) => {
   const { status } = props;
   const palette = React.useMemo(() => {
     switch (status) {
+      case JobStatus.ready:
+        return "blue.subtle";
       case JobStatus.running:
         return "blue";
       case JobStatus.done:
@@ -22,7 +24,7 @@ export const StatusBadge = (props: StatusBadgeProps) => {
     }
   }, [status]);
   return (
-    <Badge colorPalette={palette} variant="solid">
+    <Badge colorPalette={palette} variant="surface">
       {status}
     </Badge>
   );

@@ -1,9 +1,9 @@
-import { Link, Table, Text } from "@chakra-ui/react";
-import { formatDistance } from "date-fns";
+import { Link, Table } from "@chakra-ui/react";
 import * as React from "react";
 import { Link as RouterLink } from "react-router";
 
 import { Job } from "../api";
+import { RelativeDate } from "./relative-date";
 import { StatusBadge } from "./status-badge";
 
 export interface JobTableProps {
@@ -43,11 +43,11 @@ export const JobTable = (props: JobTableProps) => {
               {job.attempts}
             </Table.Cell>
             <Table.Cell>
-              <Text color="fg.muted">
-                {formatDistance(job["scheduled-at"], new Date(), {
-                  addSuffix: true,
-                })}
-              </Text>
+              <RelativeDate
+                addSuffix
+                color="fg.muted"
+                date={job["scheduled-at"]}
+              />
             </Table.Cell>
           </Table.Row>
         ))}

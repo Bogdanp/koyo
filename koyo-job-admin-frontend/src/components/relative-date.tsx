@@ -1,14 +1,19 @@
+import { Text, type TextProps } from "@chakra-ui/react";
 import { formatDistance } from "date-fns";
 import * as React from "react";
 
-export interface RelativeDateProps {
+export interface RelativeDateProps extends TextProps {
+  addSuffix?: boolean;
   date: string;
 }
 
 export const RelativeDate = (props: RelativeDateProps) => {
+  const { date, addSuffix, ...root } = props;
   return (
-    <span title={props.date}>
-      {formatDistance(props.date, new Date(), { addSuffix: true })}
-    </span>
+    <Text asChild {...root}>
+      <span title={date}>
+        {formatDistance(date, new Date(), { addSuffix })}
+      </span>
+    </Text>
   );
 };

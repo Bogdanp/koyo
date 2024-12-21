@@ -1,8 +1,8 @@
 import { Card, HStack, Separator, Spacer, Text } from "@chakra-ui/react";
-import { formatDistance } from "date-fns";
 import * as React from "react";
 
 import { Worker } from "../api";
+import { RelativeDate } from "./relative-date";
 
 export interface WorkerListProps {
   workers: Worker[];
@@ -30,9 +30,7 @@ export const WorkerList = (props: WorkerListProps) => {
             <HStack key={w.id}>
               <WorkerName worker={w} />
               <Spacer />
-              <Text fontSize="xs" color="fg.muted">
-                {formatDistance(w.heartbeat, new Date())}
-              </Text>
+              <RelativeDate color="fg.muted" date={w.heartbeat} fontSize="xs" />
             </HStack>
           ))
         )}
