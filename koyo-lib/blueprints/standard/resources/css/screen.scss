@@ -1,5 +1,5 @@
-@import './_colors.scss';
-@import './_uprofiler.scss';
+@use './_colors.scss' as *;
+@use './_uprofiler.scss' as *;
 
 * {
   box-sizing: border-box;
