@@ -28,8 +28,8 @@
  (contract-out
   [make-broker-admin (-> broker? dispatcher/c)]))
 
-(define (make-broker-admin broker)
-  (dispatch/servlet (make-handler broker)))
+(define (make-broker-admin broker [stack values])
+  (dispatch/servlet (stack (make-handler broker))))
 
 
 ;; component (DEPRECATED) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

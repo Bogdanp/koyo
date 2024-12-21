@@ -6,7 +6,9 @@
                      koyo
                      racket/base
                      racket/contract
-                     web-server/dispatchers/dispatch)
+                     web-server/dispatchers/dispatch
+                     web-server/http
+                     web-server/servlet-dispatch)
           racket/runtime-path
           racket/sandbox
           "koyo.rkt")
@@ -158,7 +160,9 @@ other connections are leased and put back into the pool as needed.
 
 @defproc[((make-worker-factory [#:queue queue string? "default"]
                                [#:pool-size pool-size exact-positive-integer? 8]
-                               [#:middleware middleware (-> job-metadata? procedure?) (lambda (_meta proc) proc)]) [broker broker?]) worker?]{
+                               [#:middleware middleware
+                                             (-> job-metadata? procedure? procedure?)
+                                             (lambda (_meta proc) proc)]) [broker broker?]) worker?]{
 
   Generates a function that, when supplied a @tech{job broker},
   produces a @tech{job worker} that dequeues and executes jobs
@@ -189,11 +193,13 @@ other connections are leased and put back into the pool as needed.
 
 @subsection{Broker Admin UI}
 
-@defproc[(make-broker-admin [broker broker?]) dispatcher/c]{
+@defproc[(make-broker-admin [broker broker?]
+                            [middleware (-> procedure? (-> request? response?)) values]) dispatcher/c]{
   Returns a dispatcher that you can embed in your app in order to
-  administer jobs. Use @racket[dispatch/mount] to mount it under a
-  specific path within your application.
+  administer jobs. The @racket[middleware] argument is used to wrap
+  the servlet before it is passed to @racket[dispatch/servlet]. Use
+  @racket[dispatch/mount] to mount it under a specific path within your
+  application.
 
-  See @racketmodname[web-server/dispatchers/dispatch-wrap] for a
-  dispatcher combinator that you can use to implement access controls.
+  @history[#:added "0.24"]
 }
