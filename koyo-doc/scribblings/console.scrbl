@@ -13,6 +13,8 @@
 @defparam[stubbed-components components (listof symbol?) #:value '(server)]{
   The ids of components that @racket[start-console] replaces with stubs
   when starting a system.
+
+  @history[#:added "0.28"]
 }
 
 @defproc[(start-console [dynamic-module-path path?]
@@ -34,6 +36,8 @@
       (koyo:stubbed-components '(server pubsub))
       (koyo:start-console dynamic.rkt ns))
   ]
+
+  @history[#:added "0.28"]
 }
 
 @defproc[(start-console-here) void?]{
