@@ -298,7 +298,6 @@
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
 
 (module+ main
-  ;; TODO: Make it possible to control the verbosity?
   (define stop-logger
     (start-logger
      #:levels
