@@ -195,12 +195,13 @@ other connections are leased and put back into the pool as needed.
 
 @subsection{Broker Admin UI}
 
-@defproc[(make-broker-admin [broker broker?]
-                            [middleware (-> procedure? (-> request? response?)) values]) dispatcher/c]{
+@defthing[#:kind "contract" broker-admin/c (-> request? response?)]{
+  The contract for broker admin values.
+}
 
-  Returns a dispatcher that you can embed in your app in order to
-  administer jobs. The @racket[middleware] argument is used to wrap
-  the servlet before it is passed to @racket[dispatch/servlet]. Use
+@defproc[(make-broker-admin [broker broker?]) broker-admin/c]{
+  Returns a request handler that you can embed in your app in
+  order to administer jobs. Combine @racket[dispatch/servlet] and
   @racket[dispatch/mount] to mount it under a specific path within your
   application.
 

@@ -17,7 +17,9 @@
  make-broker
  broker?
 
+ broker-admin/c
  make-broker-admin
+
  make-broker-admin-factory
  broker-admin?
  broker-admin-handler

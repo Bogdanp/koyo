@@ -10,9 +10,7 @@
          racket/runtime-path
          racket/string
          struct-define
-         web-server/dispatchers/dispatch
          web-server/servlet
-         web-server/servlet-dispatch
          "../dispatch.rkt"
          "../guard.rkt"
          "../haml.rkt"
@@ -25,11 +23,15 @@
 ;; dispatcher ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ broker-admin/c
  (contract-out
-  [make-broker-admin (-> broker? dispatcher/c)]))
+  [make-broker-admin (-> broker? (-> request? response?))]))
 
-(define (make-broker-admin broker [stack values])
-  (dispatch/servlet (stack (make-handler broker))))
+(define broker-admin/c
+  (-> request? response?))
+
+(define (make-broker-admin broker)
+  (make-handler broker))
 
 
 ;; component (DEPRECATED) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
