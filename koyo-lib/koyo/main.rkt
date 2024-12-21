@@ -18,6 +18,7 @@
  "dispatch.rkt"
  "error.rkt"
  "flash.rkt"
+ "guard.rkt"
  "haml.rkt"
  "haml-template.rkt"
  "hasher.rkt"

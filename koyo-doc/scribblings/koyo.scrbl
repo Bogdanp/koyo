@@ -48,6 +48,7 @@ needs in a complete package.
 @include-section["dispatch.scrbl"]
 @include-section["error.scrbl"]
 @include-section["flash.scrbl"]
+@include-section["guard.scrbl"]
 @include-section["haml.scrbl"]
 @include-section["http.scrbl"]
 @include-section["job.scrbl"]
