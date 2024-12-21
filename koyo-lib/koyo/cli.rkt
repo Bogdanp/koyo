@@ -80,16 +80,16 @@
     (command-line
      #:program (current-program-name)
      #:once-each
-     [("-t" "--target") TARGET-PATH
-                        "where to put the distribution"
-                        (set! target-path TARGET-PATH)]
+     [("-t" "--target")
+      TARGET-PATH "where to put the distribution"
+      (set! target-path TARGET-PATH)]
      #:multi
-     [("++lang") LANG
-                 "additional #langs to include in the executable"
-                 (set! included-langs (cons LANG included-langs))]
-     [("++lib") LIB
-                "additional libs to include in the executable"
-                (set! included-libs (cons LIB included-libs))]
+     [("++lang")
+      LANG "additional #langs to include in the executable"
+      (set! included-langs (cons LANG included-langs))]
+     [("++lib")
+      LIB "additional libs to include in the executable"
+      (set! included-libs (cons LIB included-libs))]
      #:args ([dynamic-module-path #f])
      (or dynamic-module-path (infer-dynamic-module-path))))
 
@@ -137,9 +137,8 @@
     (command-line
      #:once-each
      [("--dynamic-module-path" "-p")
-      path
-      "the path to dynamic.rkt, inferred by default"
-      (set! dynamic-module-path path)]
+      PATH "the path to dynamic.rkt, inferred by default"
+      (set! dynamic-module-path PATH)]
      #:args (what)
      what))
 
@@ -175,11 +174,11 @@
     (command-line
      #:program (current-program-name)
      #:once-each
-     [("-b" "--blueprint") name
-                           "the blueprint to use"
-                           (if (member name blueprint-names)
-                               (set! blueprint name)
-                               (exit-with-errors! @~a{error: no blueprint named '@name'}))]
+     [("-b" "--blueprint")
+      NAME "the blueprint to use"
+      (if (member NAME blueprint-names)
+          (set! blueprint NAME)
+          (exit-with-errors! @~a{error: no blueprint named '@NAME'}))]
      #:args (name)
      (cond
        [(string=? name ".")
@@ -189,9 +188,7 @@
        [(or (directory-exists? name) (file-exists? name))
         (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory})]
        [else
-        (void)])
-
-     name))
+        name])))
 
   (define root
     (path->complete-path project-name))
