@@ -55,3 +55,19 @@ jobs:
         KOYO_DOCS_SSH_PORT: ${{ secrets.KOYO_DOCS_SSH_PORT }}
       if: >-
         startsWith(github.ref, 'refs/heads/master')
+
+  build_job_admin_frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: 'koyo-job-admin-frontend/package-lock.json'
+    - run: |
+        npm install
+        npm run lint
+        npm run build
+      working-directory: 'koyo-job-admin-frontend'
