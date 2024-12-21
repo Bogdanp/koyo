@@ -21,6 +21,8 @@ request handlers and other procedures.
   guard procedure. When the second form is used, the result of the
   @racket[with-guard] form is @racket[else-expr]. Use outside the body
   of a @racket[with-guard] form is a syntax error.
+
+  @history[#:added "0.24"]
 }
 
 @defform[(with-guard guard-proc-expr
@@ -42,4 +44,6 @@ request handlers and other procedures.
       (guard #f #:else 42)
       (displayln "unreachable"))
   ]
+
+  @history[#:added "0.24"]
 }
