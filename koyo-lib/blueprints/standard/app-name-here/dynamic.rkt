@@ -13,6 +13,7 @@
          koyo/mail/postmark
          koyo/server
          koyo/session
+         koyo/session/postgres
          racket/runtime-path
          "components/app.rkt"
          "components/auth.rkt"
@@ -30,7 +31,8 @@
 
 (define mail-adapter
   (if config:postmark-token
-      (make-postmark-mail-adapter (postmark config:postmark-token))
+      (make-postmark-mail-adapter
+       (postmark config:postmark-token))
       (make-stub-mail-adapter)))
 
 (define-system prod
@@ -66,13 +68,14 @@
                   #:host config:http-host
                   #:port config:http-port)
                  app-dispatcher)]
-  [sessions (make-session-manager-factory
-             #:cookie-name config:session-cookie-name
-             #:cookie-secure? #f
-             #:cookie-same-site 'lax
-             #:shelf-life config:session-shelf-life
-             #:secret-key config:session-secret-key
-             #:store (make-memory-session-store #:file-path "/tmp/app-name-here-session.rktd"))]
+  [sessions (db) (lambda (db)
+                   (make-session-manager-factory
+                    #:cookie-name config:session-cookie-name
+                    #:cookie-secure? #f
+                    #:cookie-same-site 'lax
+                    #:shelf-life config:session-shelf-life
+                    #:secret-key config:session-secret-key
+                    #:store (make-postgres-session-store db)))]
   [users (db hasher) make-user-manager]
   [worker (broker) (make-worker-factory)])
 
@@ -87,14 +90,13 @@
 (define (start)
   (define stop-logger
     (start-logger
-     #:levels `((app                  . ,config:log-level)
-                (mail-adapter         . ,config:log-level)
-                (memory-session-store . ,config:log-level)
-                (north-adapter        . ,config:log-level)
-                (server               . ,config:log-level)
-                (session              . ,config:log-level)
-                (system               . ,config:log-level)
-                (worker               . info))))
+     #:levels `((app           . ,config:log-level)
+                (mail-adapter  . ,config:log-level)
+                (north-adapter . ,config:log-level)
+                (server        . ,config:log-level)
+                (session       . ,config:log-level)
+                (system        . ,config:log-level)
+                (worker        . info))))
 
   (current-system prod-system)
   (with-handlers ([(λ (_) #t)
