@@ -1,4 +1,4 @@
-on: [push, pull_request]
+on: [push]
 name: CI/CD
 jobs:
   build:
@@ -20,7 +20,7 @@ jobs:
       uses: actions/checkout@master
 
     - name: Install Racket
-      uses: Bogdanp/setup-racket@v1.6
+      uses: Bogdanp/setup-racket@v1.11
       with:
         variant: CS
         version: stable
