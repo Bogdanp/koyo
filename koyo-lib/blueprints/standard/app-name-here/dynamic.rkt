@@ -83,9 +83,13 @@
 ;; Interface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ before-reload
  prod-system
- start
- before-reload)
+ start)
+
+(define (before-reload)
+  (config:reload-locales!)
+  (schema-registry-allow-conflicts? #t))
 
 (define (start)
   (define stop-logger
@@ -111,12 +115,22 @@
     (current-system #f)
     (stop-logger)))
 
-(define (before-reload)
-  (config:reload-locales!)
-  (schema-registry-allow-conflicts? #t))
-
-(module+ main
+(define (run-server)
   (define stop (start))
   (with-handlers ([exn:break? void])
     (sync/enable-break never-evt))
   (stop))
+
+(module+ main
+  (require racket/cmdline
+           racket/lazy-require
+           racket/match)
+
+  (lazy-require
+   ["console.rkt" (start-console)])
+
+  (command-line
+   #:args args
+   (match args
+     ['("console") (start-console)]
+     ['() (run-server)])))

@@ -5,9 +5,9 @@
 ### Requirements
 
 * You need [Racket] since this is a Racket application.
-* You need [Node.js] version 18 or higher to build the assets.
-* You need access to a couple local [Postgres] databases.  One named
-  `app_name_here` and the other `app_name_here_tests`.  The latter is
+* You need [Node.js] version 20 or higher to build the assets.
+* You need access to a couple local [Postgres] databases. One named
+  `app_name_here` and the other `app_name_here_tests`. The latter is
   exercised by unit tests.
 
 ### First-time Setup
@@ -19,19 +19,22 @@
 
 ### Development environment
 
-Copy `.env.default` to `.env`.  [chief] will automatically load the
-variables defined in this file into the environment of the
-subprocesses defined in the `Procfile` whenever it is run.
+Copy `.env.default` to `.env`. [chief] will automatically load the
+variables defined in this file into the environment of the subprocesses
+defined in the `Procfile` whenever it is run.
 
 The app expects to be run behind an SSL terminated connection (for
 example, behind an nginx instance using a self-signed cert), even for
-local development .  You can disable this requirement by setting
-`current-continuation-key-cookie-secure?` parameter to `#f` before the
-application is started.
+local development. You can disable this requirement by setting the
+`APP_NAME_HERE_DEBUG` environment variable to `x`.
 
 ## Running the app locally
 
     raco chief start
+
+## Running the console
+
+    racket app-name-here/dynamic.rkt console
 
 
 [Postgres]: https://www.postgresql.org/
