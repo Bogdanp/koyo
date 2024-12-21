@@ -174,7 +174,7 @@
       (if (member NAME blueprint-names)
           (set! blueprint NAME)
           (exit-with-errors! @~a{error: no blueprint named '@NAME'}))]
-     #:args (name)
+     #:args [name]
      (cond
        [(string=? name ".")
         (exit-with-errors! @~a{error: "." cannot be used as project name})]
@@ -184,7 +184,30 @@
         (exit-with-errors! @~a{error: a file called '@name' already exists in the current directory})]
        [else
         name])))
-  (install-blueprint project-name blueprint))
+  (define root (path->complete-path project-name))
+  (install-blueprint root project-name blueprint))
+
+(define (handle-update)
+  (define blueprint "standard")
+  (define project-name #f)
+  (define root-path
+    (command-line
+     #:program (current-program-name)
+     #:once-each
+     [("-b" "--blueprint")
+      BLUEPRINT "the blueprint to use"
+      (if (member BLUEPRINT blueprint-names)
+          (set! blueprint BLUEPRINT)
+          (exit-with-errors! @~a{error: no blueprint named '@BLUEPRINT'}))]
+     [("-n" "--name")
+      NAME "the project name"
+      (set! project-name NAME)]
+     #:args [path]
+     (normalize-path (path->complete-path path))))
+  (unless project-name
+    (set! project-name (path->string (file-name-from-path root-path))))
+  (with-handlers ([exn:break? void])
+    (update-blueprint root-path project-name blueprint)))
 
 (define (handle-serve)
   (define recompile? #t)
@@ -260,7 +283,8 @@
             'graph    handle-graph
             'help     handle-help
             'new      handle-new
-            'serve    handle-serve))
+            'serve    handle-serve
+            'update   handle-update))
 
   (define-values (command handler args)
     (match (current-command-line-arguments)
