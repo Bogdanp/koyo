@@ -175,7 +175,7 @@ other connections are leased and put back into the pool as needed.
   it is applied to its arguments.
 
   @history[
-    #:changed "0.24" @elem{Added the @racket[#:middleware] argument.}
+    #:changed "0.28" @elem{Added the @racket[#:middleware] argument.}
   ]
 }
 
@@ -187,7 +187,7 @@ other connections are leased and put back into the pool as needed.
   Information about a job that's about to be run. This struct may be
   extended in the future to contain additional information.
 
-  @history[#:added "0.24"]
+  @history[#:added "0.28"]
 }
 
 
@@ -201,5 +201,5 @@ other connections are leased and put back into the pool as needed.
   @racket[dispatch/mount] to mount it under a specific path within your
   application.
 
-  @history[#:added "0.24"]
+  @history[#:added "0.28"]
 }

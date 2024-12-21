@@ -8,7 +8,6 @@
           "koyo.rkt")
 
 @title[#:tag "json"]{JSON}
-
 @defmodule[koyo/json]
 
 This module provides utilities for working with @racket[jsexpr?]
@@ -22,4 +21,8 @@ values.
   a JSON value.  The @racket[#:code] and @racket[#:headers] parameters
   are passed to @racket[response/output] unmodified.  The MIME type of
   the response is always @racket[#"application/json; charset=utf-8"].
+
+  This procedure is @emph{deprecated}, prefer @racket[response/jsexpr] instead.
+
+  @history[#:changed "0.28"]{Added deprecation notice.}
 }
