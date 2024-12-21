@@ -18,9 +18,10 @@
 @defmodule[koyo/job]
 
 This module provides functionality for declaring and executing
-asynchronous jobs.  The job queuing functionality is implemented on
-top of PostgreSQL so you don't need an external message queue.  Jobs
-are guaranteed to be executed at least once after being enqueued.
+asynchronous jobs. The job queuing functionality is implemented on top
+of PostgreSQL so you don't need an external message queue. Jobs are
+guaranteed to be executed at least once after being enqueued, assuming
+there are workers available to execute them.
 
 @(begin
    (define-syntax-rule (interaction e ...) (examples #:label #f e ...))
@@ -42,8 +43,9 @@ are guaranteed to be executed at least once after being enqueued.
  [broker (db) make-broker]
  [db (make-database-factory
       (lambda ()
-        (postgresql-connect #:user "example"
-                            #:database "example")))]
+        (postgresql-connect
+         #:user "example"
+         #:database "example")))]
  [worker (broker) (make-worker-factory)])
 
 (code:line)
@@ -195,6 +197,7 @@ other connections are leased and put back into the pool as needed.
 
 @defproc[(make-broker-admin [broker broker?]
                             [middleware (-> procedure? (-> request? response?)) values]) dispatcher/c]{
+
   Returns a dispatcher that you can embed in your app in order to
   administer jobs. The @racket[middleware] argument is used to wrap
   the servlet before it is passed to @racket[dispatch/servlet]. Use

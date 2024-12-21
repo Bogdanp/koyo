@@ -12,24 +12,25 @@ import * as React from "react";
 import { Link as RouterLink, useLocation } from "react-router";
 
 import { JobStatus, Queue } from "../api";
+import { StatusBadge } from "./status-badge";
 
-export interface JobStatesProps {
+export interface JobStatusesProps {
   queues: Queue[];
 }
 
-export const JobStates = (props: JobStatesProps) => {
+export const JobStatuses = (props: JobStatusesProps) => {
   const { queues } = props;
   const location = useLocation();
   const searchParams = React.useMemo(
     () => new URLSearchParams(location.search),
     [location],
   );
-  const selectedStates: JobStatus[] = React.useMemo(() => {
-    return (searchParams.get("state") || "")
+  const selectedStatuses: JobStatus[] = React.useMemo(() => {
+    return (searchParams.get("status") || "")
       .split(",")
       .filter((s) => s !== "") as JobStatus[];
   }, [searchParams]);
-  const countsByState = React.useMemo(() => {
+  const countsByStatus = React.useMemo(() => {
     const counts: Record<JobStatus, number> = {
       [JobStatus.ready]: 0,
       [JobStatus.running]: 0,
@@ -44,29 +45,29 @@ export const JobStates = (props: JobStatesProps) => {
     }
     return counts;
   }, [queues]);
-  const linkForState = React.useCallback(
-    (state: JobStatus): string => {
+  const linkForStatus = React.useCallback(
+    (status: JobStatus): string => {
       const params = new URLSearchParams(searchParams);
-      let states = [...selectedStates];
-      if (states.includes(state)) {
-        states = states.filter((s) => s !== state);
+      let statuses = [...selectedStatuses];
+      if (statuses.includes(status)) {
+        statuses = statuses.filter((s) => s !== status);
       } else {
-        states.push(state);
+        statuses.push(status);
       }
-      if (states.length === 0) {
-        params.delete("state");
+      if (statuses.length === 0) {
+        params.delete("status");
       } else {
-        params.set("state", states.join(","));
+        params.set("status", statuses.join(","));
       }
       return `/?${params}`;
     },
-    [searchParams, selectedStates],
+    [searchParams, selectedStatuses],
   );
   return (
     <Card.Root>
       <Card.Header p="3">
         <HStack>
-          <Text>States</Text>
+          <Text>Statuses</Text>
           <Spacer />
           <Text color="fg.muted" fontSize="xs">
             COUNT
@@ -76,17 +77,19 @@ export const JobStates = (props: JobStatesProps) => {
       <Separator />
       <Card.Body p="2">
         <Stack gap="1">
-          {Object.values(JobStatus).map((state) => (
-            <LinkBox key={state}>
+          {Object.values(JobStatus).map((status) => (
+            <LinkBox key={status}>
               <HStack
                 _hover={{ background: "bg.muted" }}
-                background={selectedStates.includes(state) ? "bg.muted" : "bg"}
+                background={
+                  selectedStatuses.includes(status) ? "bg.muted" : "bg"
+                }
                 borderRadius="5px"
                 p="3px 5px"
               >
                 <LinkOverlay asChild>
-                  <RouterLink to={linkForState(state)}>
-                    {titleCase(state)}
+                  <RouterLink to={linkForStatus(status)}>
+                    <StatusBadge status={status} />
                   </RouterLink>
                 </LinkOverlay>
                 <Spacer />
@@ -95,7 +98,7 @@ export const JobStates = (props: JobStatesProps) => {
                   fontSize="xs"
                   fontVariantNumeric="tabular-nums"
                 >
-                  {countsByState[state]}
+                  {countsByStatus[status]}
                 </Text>
               </HStack>
             </LinkBox>
@@ -104,9 +107,4 @@ export const JobStates = (props: JobStatesProps) => {
       </Card.Body>
     </Card.Root>
   );
-};
-
-const titleCase = (s: string) => {
-  if (s === "") return s;
-  return s[0].toUpperCase() + s.substring(1);
 };
