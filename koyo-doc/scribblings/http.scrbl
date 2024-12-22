@@ -1,6 +1,7 @@
 #lang scribble/doc
 
-@(require (for-label koyo
+@(require (for-label json
+                     koyo
                      net/url
                      racket/base
                      racket/contract
@@ -14,6 +15,12 @@
 
 This module provides utilities for working with HTTP-related data
 structures.
+
+@defproc[(request-json [req request?]) jsexpr?]{
+  Returns the JSON data corresponding to @racket[req], if any.
+
+  @history[#:added "0.29"]
+}
 
 @defproc[(request-path [req request?]) string?]{
   Returns the absolute request path for @racket[req], scrubbed of path params.

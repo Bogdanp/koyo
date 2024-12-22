@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require net/url
+(require json
+         net/url
          racket/contract/base
          racket/format
          racket/match
@@ -43,12 +44,20 @@
 
 (provide
  (contract-out
-  [request-reroot (-> request? url? (or/c #f request?))]
+  [request-json (-> request? jsexpr?)]
   [request-path (-> request? string?)]
+  [request-reroot (-> request? url? (or/c #f request?))]
   [bindings-ref (bindings-ref/c string?)]
   [bindings-ref-bytes (bindings-ref/c bytes?)]
   [bindings-ref-number (bindings-ref/c number?)]
   [bindings-ref-symbol (bindings-ref/c symbol?)]))
+
+(define (request-json req)
+  (define data (request-post-data/raw req))
+  (and data (bytes->jsexpr data)))
+
+(define (request-path req)
+  (~a "/" (string-join (map path/param-path (url-path (request-uri req))) "/")))
 
 (define (request-reroot req root)
   (let loop ([root (url-path root)]
@@ -63,9 +72,6 @@
         (list path-segment path ...))
        (loop root path)]
       [(_ _) #f])))
-
-(define (request-path req)
-  (~a "/" (string-join (map path/param-path (url-path (request-uri req))) "/")))
 
 (define (bindings-ref/c res/c)
   (->* [(listof binding?) symbol?]
