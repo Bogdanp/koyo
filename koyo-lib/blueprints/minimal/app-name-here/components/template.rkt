@@ -19,7 +19,7 @@
   (define profile (current-profile))
 
   (with-timing 'template "page"
-    (define page
+    (define page-xexpr
       (haml
        (:html
         (:head
@@ -36,5 +36,5 @@
      (lambda (out)
        (parameterize ([current-output-port out])
          (displayln "<!doctype html>")
-         (write-xml/content (xexpr->xml page))
+         (write-xml/content (xexpr->xml page-xexpr))
          (profile-write profile))))))
