@@ -6,6 +6,7 @@
          racket/format
          racket/match
          racket/string
+         threading
          web-server/http)
 
 ;; URL ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,6 +45,9 @@
 
 (provide
  (contract-out
+  [request-headers-ref (-> request? bytes? (or/c #f bytes?))]
+  [request-headers-ref* (-> request? bytes? (or/c #f string?))]
+  [request-ip-address (-> request? string?)]
   [request-json (-> request? jsexpr?)]
   [request-path (-> request? string?)]
   [request-reroot (-> request? url? (or/c #f request?))]
@@ -51,6 +55,26 @@
   [bindings-ref-bytes (bindings-ref/c bytes?)]
   [bindings-ref-number (bindings-ref/c number?)]
   [bindings-ref-symbol (bindings-ref/c symbol?)]))
+
+(define (request-headers-ref req name)
+  (and~>
+   (request-headers/raw req)
+   (headers-assq* name _)
+   (header-value)))
+
+(define (request-headers-ref* req name)
+  (and~>
+   (request-headers-ref req name)
+   (bytes->string/utf-8)))
+
+(define (request-ip-address req)
+  (or
+   (and~>
+    (request-headers-ref req #"x-forwarded-for")
+    (regexp-split #rx"," _)
+    (car))
+   (request-headers-ref req #"x-real-ip")
+   (request-client-ip req)))
 
 (define (request-json req)
   (define data (request-post-data/raw req))

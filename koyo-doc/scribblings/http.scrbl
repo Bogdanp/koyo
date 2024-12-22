@@ -16,6 +16,26 @@
 This module provides utilities for working with HTTP-related data
 structures.
 
+@defproc[(request-headers-ref [req request?] [header bytes?]) (or/c #f bytes?)]{
+  Returns the value of @racket[header] in @racket[req], if available.
+
+  @history[#:added "0.29"]
+}
+
+@defproc[(request-headers-ref* [req request?] [header bytes?]) (or/c #f string?)]{
+  Like @racket[request-headers-ref], but decodes the result value.
+
+  @history[#:added "0.29"]
+}
+
+@defproc[(request-ip-address [req request?]) string?]{
+  Returns the user agent's IP address, parsing it from headers like
+  @tt{x-forwarded-for} and @tt{x-real-ip} if provided. Falls back to
+  @racket[request-client-ip].
+
+  @history[#:added "0.29"]
+}
+
 @defproc[(request-json [req request?]) jsexpr?]{
   Returns the JSON data corresponding to @racket[req], if any.
 
