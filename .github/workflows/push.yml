@@ -41,6 +41,7 @@ jobs:
     - name: Run tests for standard blueprint
       run: ci/test-blueprint.sh standard
       env:
+        DATABASE_URL: postgres://example@127.0.0.1:${{ job.services.postgres.postgres[5432] }}/example
         STANDARD_EXAMPLE_TEST_DB_HOST: 127.0.0.1
         STANDARD_EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
         STANDARD_EXAMPLE_TEST_DB_NAME: example
@@ -50,6 +51,7 @@ jobs:
     - name: Run tests for SaaS blueprint
       run: ci/test-blueprint.sh saas
       env:
+        DATABASE_URL: postgres://example@127.0.0.1:${{ job.services.postgres.postgres[5432] }}/example
         SAAS_EXAMPLE_TEST_DB_HOST: 127.0.0.1
         SAAS_EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
         SAAS_EXAMPLE_TEST_DB_NAME: example

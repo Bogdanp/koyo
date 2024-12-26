@@ -20,3 +20,6 @@ raco pkg install --batch --auto "$application/" "$application-tests/"
 
 log "Running example app tests..."
 raco test "$application-tests/"
+
+log "Rolling back migrations..."
+raco north rollback -fu "$DATABASE_URL" base
