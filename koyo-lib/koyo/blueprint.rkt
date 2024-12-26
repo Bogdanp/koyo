@@ -81,7 +81,9 @@
           (define dst-filename (file-name-from-path dst-path))
           (define dst-contents (file->string dst-path))
           (define src-contents (replace-project-name (file->string src-path)))
+          (printf "Updating ~a...~n" dst-filename)
           (unless (equal? dst-contents src-contents)
+            (printf "  = ~a differs from blueprint~n" dst-filename)
             (call-with-temporary-file
              (lambda (tmp-path)
                (call-with-output-file tmp-path

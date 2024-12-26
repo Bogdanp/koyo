@@ -1,0 +1,16 @@
+{
+  "include": ["frontend/**/*"],
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "jsx": "react",
+    "lib": ["dom", "es2020"],
+    "module": "es2020",
+    "moduleResolution": "bundler",
+    "noImplicitAny": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "target": "es2020",
+    "useDefineForClassFields": false
+  }
+}
