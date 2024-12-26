@@ -50,11 +50,11 @@ jobs:
     - name: Run tests for SaaS blueprint
       run: ci/test-blueprint.sh saas
       env:
-        STANDARD_EXAMPLE_TEST_DB_HOST: 127.0.0.1
-        STANDARD_EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
-        STANDARD_EXAMPLE_TEST_DB_NAME: example
-        STANDARD_EXAMPLE_TEST_DB_USERNAME: example
-        STANDARD_EXAMPLE_TEST_DB_PASSWORD: example
+        SAAS_EXAMPLE_TEST_DB_HOST: 127.0.0.1
+        SAAS_EXAMPLE_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
+        SAAS_EXAMPLE_TEST_DB_NAME: example
+        SAAS_EXAMPLE_TEST_DB_USERNAME: example
+        SAAS_EXAMPLE_TEST_DB_PASSWORD: example
 
     - name: Deploy docs
       run: ci/docs.sh
