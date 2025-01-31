@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require racket/contract/base
-         racket/function
          racket/string
          web-server/http
          "contract.rkt"
@@ -35,15 +34,10 @@
 (define (make-allow-origin-header)
   (define origin
     (string->bytes/utf-8
-     (cond
-       [(current-cors-origin)
-        => identity]
-
-       [else
-        (format "~a://~a"
-                (current-application-url-scheme)
-                (current-application-url-host))])))
-
+     (or (current-cors-origin)
+         (format "~a://~a"
+                 (current-application-url-scheme)
+                 (current-application-url-host)))))
   (make-header #"Access-Control-Allow-Origin" origin))
 
 (define (make-options-headers)
@@ -70,8 +64,9 @@
        (response/full 200 #"OK" (current-seconds) #f (make-options-headers) null)]
 
       [else
-       (define resp (apply handler req args))
-       (define headers (cons (make-allow-origin-header)
-                             (response-headers resp)))
-
+       (define resp
+         (apply handler req args))
+       (define headers
+         (cons (make-allow-origin-header)
+               (response-headers resp)))
        (struct-copy response resp [headers headers])])))
