@@ -154,3 +154,4 @@ working with database connections.
 }
 
 @include-section["database-url.scrbl"]
+@include-section["database-batch.scrbl"]
