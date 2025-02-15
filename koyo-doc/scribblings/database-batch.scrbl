@@ -55,8 +55,8 @@ possible. Insert batchers are not thread safe.
       (make-insert-batcher
        #:on-conflict '(do-nothing (ticker))
        'tickers
-       '([isin "STRING"]
-         [ticker "STRING"]
+       '([isin "TEXT"]
+         [ticker "TEXT"]
          [added_at "TIMESTAMPTZ"])))
     (with-database-connection [conn db]
       (for ([(isin ticker added-at) (in-sequence datasource)])
