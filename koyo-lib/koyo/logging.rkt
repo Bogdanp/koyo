@@ -15,12 +15,14 @@
    (->* [#:levels (listof (cons/c symbol? log-level/c))]
         [#:color? boolean?
          #:parent logger?
+         #:place-id (or/c #f exact-nonnegative-integer?)
          #:output-port port?]
         (-> void?))]))
 
 (define (start-logger #:levels levels
                       #:color? [color? #t]
                       #:parent [parent (current-logger)]
+                      #:place-id [place-id #f]
                       #:output-port [out (current-error-port)])
   (define stopped (make-semaphore))
   (define receiver
@@ -29,9 +31,8 @@
             (for/list ([level (in-list levels)])
               (list (cdr level) (car level))))))
 
-  (define preformatted-pid
-    (string->bytes/utf-8
-     (~a (getpid) #:align 'right #:width 8)))
+  (define preformatted-pid (~pid (getpid)))
+  (define preformatted-place-id (and place-id (~pid place-id 4)))
 
   (define (format-level level)
     (with-output-to-bytes
@@ -68,6 +69,9 @@
          (write-bytes #"] [" out)
          (write-bytes preformatted-pid out)
          (write-bytes #"] [" out)
+         (when preformatted-place-id
+           (write-bytes preformatted-place-id out)
+           (write-bytes #"] [" out))
          (write-level level out)
          (write-bytes #"] " out)
          (write-string message out)
@@ -109,3 +113,7 @@
         (write-char #\0 out)
         (loop (quotient m 10)))))
   (write-number n out))
+
+(define (~pid pid [width 8])
+  (string->bytes/utf-8
+   (~a pid #:align 'right #:width width)))
