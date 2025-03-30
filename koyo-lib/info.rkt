@@ -9,7 +9,7 @@
     ["base" #:version "8.1.0.4"]
     ["buid-lib" #:version "1.2"]
     ["component-lib" #:version "1.0"]
-    "crontab-lib"
+    ["crontab-lib" #:version "0.1.1"]
     ["crypto-lib" #:version "1.6"]
     "db-lib"
     "define-query-lib"
