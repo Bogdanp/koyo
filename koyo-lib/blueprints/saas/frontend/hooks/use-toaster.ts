@@ -1,7 +1,9 @@
+import * as React from "react";
+
 import { toaster } from "../components/chakra/toaster";
 
 export const useToaster = () => {
-  return async <T>(proc: () => Promise<T>): Promise<T> => {
+  return React.useCallback(async <T>(proc: () => Promise<T>): Promise<T> => {
     try {
       return await proc();
     } catch (error) {
@@ -14,5 +16,5 @@ export const useToaster = () => {
       }
       throw error;
     }
-  };
+  }, []);
 };
