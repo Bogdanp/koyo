@@ -2,7 +2,7 @@ import * as React from "react";
 
 export const useTitle = (subtitle?: string) => {
   React.useEffect(() => {
-    let title = "ExampleApp";
+    let title = "AppNameHere";
     if (subtitle !== undefined) {
       title = `${subtitle} – ${title}`;
     }

@@ -51,7 +51,7 @@ export const LoginPage = () => {
   return (
     <AuthLayout
       title="Welcome Back"
-      subtitle="Start using ExampleApp in your projects."
+      subtitle="Start using AppNameHere in your projects."
     >
       <form onSubmit={onSubmit}>
         <Stack gap="6">
