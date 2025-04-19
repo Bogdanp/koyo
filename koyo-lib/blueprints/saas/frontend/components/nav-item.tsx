@@ -13,9 +13,10 @@ export const NavItem = (props: NavItemProps) => {
   const location = useLocation();
   const isActive = React.useMemo(() => {
     const trimmedTo = props.to.replace(/\/$/, "");
+    const trimmedPath = location.pathname.replace(/\/$/, "");
     return (
-      (props.end && location.pathname === trimmedTo) ||
-      (!props.end && location.pathname.startsWith(trimmedTo))
+      (props.end && trimmedPath === trimmedTo) ||
+      (!props.end && trimmedPath.startsWith(trimmedTo))
     );
   }, [location, props]);
   return (

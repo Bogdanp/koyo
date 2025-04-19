@@ -30,7 +30,7 @@ export const WorkspaceLayout = (props: WorkspaceLayoutProps) => {
   const sections = (
     <>
       <SidebarSection>
-        <NavItem to={link("/")} icon={<LuHouse />}>
+        <NavItem to={link("/")} icon={<LuHouse />} end>
           Dashboard
         </NavItem>
       </SidebarSection>
