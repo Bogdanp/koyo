@@ -203,7 +203,7 @@ const MemberRow = (props: MemberRowProps) => {
       </Table.Cell>
       <Table.Cell>
         <MenuRoot onSelect={(data) => onSelect(data.value as MemberAction)}>
-          <MenuTrigger>
+          <MenuTrigger asChild>
             <IconButton size="sm" borderRadius="full" variant="ghost">
               <LuEllipsis />
             </IconButton>
