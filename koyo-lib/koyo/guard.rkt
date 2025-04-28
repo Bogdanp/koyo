@@ -21,7 +21,7 @@
                                   (lambda (stx)
                                     (syntax-parse stx
                                       [(_ v:expr)
-                                       #'(or v (return (else-proc-tmp)))]
+                                       #'(or v (call-with-values else-proc-tmp return))]
                                       [(_ v:expr #:else result-expr:expr)
-                                       #'(or v (return result-expr))]))])
+                                       #'(or v (call-with-values (λ () result-expr) return))]))])
              body ...)))]))
