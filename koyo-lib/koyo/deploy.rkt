@@ -3,8 +3,8 @@
 (require racket/date
          racket/match
          racket/port
-         racket/string
          racket/system
+         scribble/text
          web-server/templates)
 
 (provide deploy)

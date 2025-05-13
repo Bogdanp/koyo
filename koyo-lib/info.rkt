@@ -20,6 +20,7 @@
     "monocle-lib"
     "net-lib"
     "raco-invoke"
+    "scribble-text-lib"
     "srfi-lite-lib"
     "struct-define"
     "threading-lib"
