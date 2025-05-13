@@ -28,7 +28,8 @@
          #:user [user app-name] ;; noqa
          distribution version-str hosts)
   (parameterize ([date-display-format 'iso-8601])
-    (let ([distribution (path->directory-path distribution)]
+    (let ([app-name (if (path? app-name) (path->string app-name) app-name)]
+          [distribution (path->directory-path distribution)]
           [destination (path->directory-path destination)]
           [version-str (format "~a_~a" (~version-timestamp) version-str)])
       (unless rsync (error 'deploy "rsync executable not found in PATH"))
@@ -42,14 +43,14 @@
       (define all-flags
         (append (current-ssh-flags) ssh-flags))
       (status "SSH Flags: ~a" all-flags)
+      (define (~env-var name) ;; noqa
+        (format "~a_~a" (regexp-replace* #rx"-" (string-upcase app-name) "_") name))
       (parameterize ([current-ssh-flags all-flags])
         (define versions-path (build-path destination "versions"))
         (define version-path (build-path versions-path version-str))
         (define service-name (format "~a@.service" app-name))
         (status "Templating ~a..." service-name)
         (define app@.service (include-template "deploy/00-service-at.tpl"))
-        (status "Templating environment file...")
-        (define environment.txt (include-template "deploy/01-environment.tpl"))
         (status "Performing preflight checks...")
         (for ([host (in-list hosts)])
           (status "[~a] Testing connection..." host)
@@ -75,9 +76,11 @@
           (status "[~a] == target: ~a" host target-variant)
           (status "[~a] Linking dist..." host)
           (ssh* host (include-template "deploy/10-link-distribution.sh.tpl"))
+          (status "[~a] Templating environment file..." host)
+          (define environment.txt (include-template "deploy/11-environment.tpl"))
           (status "[~a] Writing environment file..." host)
           (ssh* #:stdin (open-input-string environment.txt)
-                host (include-template "deploy/11-prepare-environment.sh.tpl"))
+                host (include-template "deploy/12-prepare-environment.sh.tpl"))
           (status "[~a] Installing ~a..." host service-name)
           (ssh* #:stdin (open-input-string app@.service)
                 host (include-template "deploy/20-install-service.sh.tpl") )
