@@ -45,6 +45,7 @@ needs in a complete package.
 @include-section["continuation.scrbl"]
 @include-section["csrf.scrbl"]
 @include-section["database.scrbl"]
+@include-section["deployment.scrbl"]
 @include-section["dispatch.scrbl"]
 @include-section["error.scrbl"]
 @include-section["flash.scrbl"]

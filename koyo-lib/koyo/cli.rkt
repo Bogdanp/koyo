@@ -1,20 +1,19 @@
 #lang at-exp racket/base
 
-(require (for-syntax racket/base)
-         component
+(require component
          racket/cmdline
          racket/file
          racket/format
          racket/list
          racket/match
          racket/path
-         racket/runtime-path
-         racket/string
+         racket/port
          racket/system
          raco/command-name
          raco/invoke
          "blueprint.rkt"
          "console.rkt"
+         "deploy.rkt"
          "generator.rkt"
          "logging.rkt"
          "runner.rkt"
@@ -53,6 +52,7 @@
    ""
    "available commands:"
    "  console   run a REPL for the current application"
+   "  deploy    deploy an application distribution to one or more servers"
    "  dist      generate a deployable distribution of the application"
    "  generate  generate various types of configuration files"
    "  graph     generate a graph of all the components in the current application"
@@ -66,6 +66,79 @@
     #:program (current-program-name)
     #:args ([dynamic-module-path #f])
     (or dynamic-module-path (infer-dynamic-module-path)))))
+
+(define (handle-deploy)
+  (define app-name (dirname (current-directory)))
+  (define destination #f)
+  (define (get-destination)
+    (or destination (build-path "/opt" app-name)))
+  (define environment null)
+  (define group "www-data")
+  (define health-check? #f)
+  (define ports
+    (make-hash
+     '(["blue"  . 8001]
+       ["green" . 8002])))
+  (define post-script #f)
+  (define pre-script #f)
+  (define ssh-flags null)
+  (define user app-name)
+  (command-line
+   #:once-each
+   [("--app-name")
+    APP_NAME [(format "the name of the app (default: ~a)" app-name)]
+    (set! app-name APP_NAME)]
+   [("--destination")
+    DESTINATION [(format "the absolute path on the target host where the app will be deployed (default: ~a)" (get-destination))]
+    (set! destination DESTINATION)]
+   [("--group")
+    GROUP "the group that will own the uploaded files (default: www-data)"
+    (set! group GROUP)]
+   [("--health-check")
+    "turn on health checking"
+    (set! health-check? #t)]
+   [("--ssh-flags" "-F")
+    SSH_FLAGS "additional flags to pass to the SSH command"
+    (set! ssh-flags SSH_FLAGS)]
+   [("--user")
+    USER [(format "the user that should own the uploaded files (default: ~a)" app-name)]
+    (set! user USER)]
+   #:multi
+   [("--environment" "-e")
+    KEY VALUE "zero or more environment values to pass to the app at runtime"
+    (set! environment (cons (cons KEY VALUE) environment))]
+   [("--port" "-p")
+    VARIANT PORT "maps PORT to VARIANT (default: \"blue 8001\", \"green 8002\")"
+    (unless (member VARIANT '("blue" "green"))
+      (exit-with-errors! @~a{error: port KEY must be either 'blue' or 'green'}))
+    (define port-num (string->number PORT))
+    (unless (and port-num
+                 (>= port-num 1)
+                 (<= port-num 65535))
+      (exit-with-errors! @~a{error: port PORT must be an integer in the range [1, 65535]}))
+    (hash-set! ports VARIANT PORT)]
+   [("--post-script")
+    PATH "a path to a bash script to run after the service is started"
+    (set! post-script (call-with-input-file PATH port->string))]
+   [("--pre-script")
+    PATH "a path to a bash script to run before the service is started"
+    (set! pre-script (call-with-input-file PATH port->string))]
+   #:args [distribution version . hosts]
+   (with-handlers ([exn:fail?
+                    (lambda (e)
+                      (exit-with-errors! @~a{error: @(exn-message e)}))])
+     (deploy
+      #:app-name app-name
+      #:destination (get-destination)
+      #:environment environment
+      #:group group
+      #:health-check? health-check?
+      #:ports ports
+      #:post-script post-script
+      #:pre-script pre-script
+      #:ssh-flags ssh-flags
+      #:user user
+      distribution version hosts))))
 
 (define (handle-dist)
   (define target-path "dist")
@@ -268,6 +341,11 @@
 (define ((handle-unknown command))
   (exit-with-errors! @~a{error: unrecognized command '@command'}))
 
+(define (dirname p)
+  (define-values (_base name _must-be-dir?)
+    (split-path p))
+  name)
+
 (module+ main
   (define stop-logger
     (start-logger
@@ -278,6 +356,7 @@
 
   (define all-commands
     (hasheq 'console  handle-console
+            'deploy   handle-deploy
             'dist     handle-dist
             'generate handle-generate
             'graph    handle-graph
