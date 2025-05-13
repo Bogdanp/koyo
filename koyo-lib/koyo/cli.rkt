@@ -99,7 +99,7 @@
     (set! health-check? #t)]
    [("--ssh-flags" "-F")
     SSH_FLAGS "additional flags to pass to the SSH command"
-    (set! ssh-flags SSH_FLAGS)]
+    (set! ssh-flags (regexp-split #rx"[ ]" SSH_FLAGS))]
    [("--user")
     USER [(format "the user that should own the uploaded files (default: ~a)" app-name)]
     (set! user USER)]
