@@ -1,3 +1,4 @@
+HOST=127.0.0.1
 PORT=@(hash-ref ports target-variant)
 PLTUSERHOME=@destination
 @(~env-var 'HTTP_HOST)=127.0.0.1
