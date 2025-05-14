@@ -190,13 +190,13 @@ to run these commands without being prompted for a password:
 <user> \
   ALL=(ALL) \
   NOPASSWD: \
-    /bin/chown -R <user>:<group> <destination> \
-    /bin/systemctl daemon-reload \
-    /bin/systemctl reload nginx \
-    /bin/systemctl start <app-name>@blue.service \
-    /bin/systemctl start <app-name>@green.service \
-    /bin/systemctl stop <app-name>@blue.service \
-    /bin/systemctl stop <app-name>@green.service \
+    /bin/chown -R <user>:<group> <destination>, \
+    /bin/systemctl daemon-reload, \
+    /bin/systemctl reload nginx, \
+    /bin/systemctl start <app-name>@blue.service, \
+    /bin/systemctl start <app-name>@green.service, \
+    /bin/systemctl stop <app-name>@blue.service, \
+    /bin/systemctl stop <app-name>@green.service, \
     /bin/tee /etc/systemd/system/<app-name>@.service
 }|
 
