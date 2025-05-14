@@ -195,7 +195,7 @@ to run these commands without being prompted for a password:
     /bin/systemctl reload nginx, \
     /bin/systemctl start <app-name>@*.service, \
     /bin/systemctl stop <app-name>@*.service, \
-    /bin/tee /etc/systemd/system/<app-name>@.service
+    /usr/bin/tee /etc/systemd/system/<app-name>@.service
 }|
 
 @section{Example Nginx Config}

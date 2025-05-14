@@ -84,7 +84,8 @@
           (status "[~a] Installing ~a..." host service-name)
           (ssh* #:stdin (open-input-string app@.service)
                 host (include-template "deploy/20-install-service.sh.tpl") )
-          (define run-script.sh (include-template "deploy/21-run-script.sh.tpl"))
+          (define run-script.sh
+            (include-template "deploy/21-run-script.sh.tpl"))
           (when pre-script
             (status "[~a] Executing pre script..." host)
             (ssh* host run-script.sh #:stdin (open-input-string pre-script)))
