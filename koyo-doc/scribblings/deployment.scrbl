@@ -13,37 +13,38 @@ koyo dist} to perform blue-green deployments. For example:
 
 @verbatim[#:indent 2]{
   $ cd link-shortener
-  $ raco koyo dist # creates a dist/ folder
-  $ raco koyo deploy dist v1.0 target-host ...
+  $ npm run build
+  $ raco koyo dist ++lang north
+  $ raco koyo deploy dist/ v1.0 target-host-1 target-host-2 ...
 }
 
 The tool works by copying the given distribution to each of the target
-hosts, installing a @tt{systemd} service, and tracking some state about
+hosts, installing a systemd service, and tracking some state about
 which variant of the service is currently running. After uploading the
 distribution, it checks which variant is running, and starts the other
 variant, then runs health checks (if enabled) on the target variant. It
-writes an nginx config file listing the @tt{host:port} that the target
-variant is listening on and reloads @tt{nginx}. Finally, it stops the
-old variant and deletes any existing versions older than 30 days.
+writes an Nginx config file listing the @tt{host:port} that the target
+variant is listening on and reloads Nginx. Finally, it stops the old
+variant and deletes any existing versions older than 30 days.
 
 The target host must
 
 @itemlist[
- @item{be running some Linux variant with @tt{systemd},}
- @item{have Nginx installed as a @tt{systemd} service, and}
+ @item{be running some Linux variant with systemd,}
+ @item{have Nginx installed as a systemd service, and}
  @item{have an Nginx virtual host pointing at the
   @filepath{backend.conf} file.}
 ]
 
 For example, given an application called ``link-shortener'', a call to
-@tt{raco koyo deploy dist v1.0 target-host} will deploy the following
+@tt{raco koyo deploy dist/ v1.0 target-host} will deploy the following
 files to @tt{target-host}:
 
 @itemlist[
  @item{@filepath{/etc/systemd/system/link-shortener@"@".service}
   --- the systemd service template that is used to run each variant
   (eg. @tt{link-shortener@"@"blue.service}).}
- @item{@filepath{/opt/link-shortener/backend.conf} --- an nginx config
+ @item{@filepath{/opt/link-shortener/backend.conf} --- an Nginx config
   listing the host & port the current version is listening on.}
  @item{@filepath{/opt/link-shortener/environment-blue} --- environment
   variables associated with the last-deployed blue variant.}
@@ -61,14 +62,14 @@ files to @tt{target-host}:
   the last-deployed variant.}
 ]
 
-By default, the application name is determined by looking at the
-name of the directory the tool is invoked in. The default deployment
-destination is a path constructed by prefixing the application name with
+The application name is determined by looking at the name of the
+directory the tool is invoked in. The default deployment destination
+is a path constructed by prefixing the application name with
 @filepath{/opt/} (eg. @filepath{/opt/link-shortener/}). The application
 name can be customized using @flag{app-name} and the destination using
 @flag{destination}.
 
-When health checking is enabled via @flag{health-check}, the app
+When health checking is enabled (@flag{health-check}), the app's
 executable is called with a @tt{-c PORT} flag and deployment aborts if
 it exits with a non-zero exit code.
 
@@ -83,14 +84,14 @@ You can specify environment variables using the @tt{-e} flag:
 
 The environment variables are written to the @filepath{environment-blue}
 and @filepath{environment-green} files on deploy, depending on the
-variant being deployed, and loaded into the app's runtime environment by
-the @tt{systemd} service. The @tt{PLTUSERHOME}, @tt{APP_NAME_HTTP_HOST}
+variant being deployed, and loaded into the app's runtime environment
+by the systemd service. The @tt{PLTUSERHOME}, @tt{APP_NAME_HTTP_HOST}
 and @tt{APP_NAME_HTTP_PORT} environment variables are set automatically
-depending on the target environment.
+based on the target environment.
 
 By default, the @tt{blue} variant listens on localhost port
 @racket[8001] and the @tt{green} variant on @racket[8002]. These ports
-can be customized using @flag{port}. For example:
+can be customized passing @flag{port}. For example:
 
 @verbatim[#:indent 2]{
  $ raco koyo deploy \
@@ -101,16 +102,64 @@ can be customized using @flag{port}. For example:
 
 @section{Pre and Post Scripts}
 
-Sometimes, it can be convenient to run arbitrary scripts before and
-after a service is deployed. The tool accepts @flag{pre-script} and
-@flag{post-script} for this purpose. The value of each of these flags
-must be the path to a script that will be copied to the target server
-and executed as a bash script with the old variant followed by the new
-variant as arguments.
+You can run arbitrary scripts before and after a service is deployed.
+The tool accepts @flag{pre-script} and @flag{post-script} for this
+purpose. The value of each of these flags must be the path to a script
+that will be copied to the target server and executed as a bash script
+with the old variant and the new variant as arguments.
 
-The pre script is executed after the service is installed, but before
-it is started. The post script is executed after the service is
-successfully started, but before old deployments are deleted.
+The pre script executes after the service is installed, after the
+environment variable file is expanded, but before the service is
+started. The post script is executed after the service is successfully
+started, but before old deployments are deleted.
+
+@section{Additional SSH Flags}
+
+The tool calls @tt{ssh} and @tt{rsync} to perform the deployment
+steps. Each call to these tools includes the flags @tt{-T -o
+StrictHostKeyChecking=accept-new}. You can add flags to this list using
+@flag{ssh-flags}.
+
+One way to simplify SSH configuration is to store an infrastructure
+map in the form of an @tt{ssh_config} file in the repo, then pass that
+file to the tool using @flag{ssh-flags}. For example:
+
+@verbatim[#:indent 2]{
+ $ raco koyo deploy \
+     --ssh-flags '-F infra/ssh_config' \
+     dist v1.0 prod-01 prod-02
+}
+
+Where @filepath{infra/ssh_config} might look something like this:
+
+@verbatim[#:indent 2]|{
+Host bastion # jump host
+  User root
+  Port 22
+  HostName X.XXX.XXX.XX
+  IdentityFile ~/.ssh/deploy-key
+  HostKeyAlias bastion
+
+Host prod-01 # app server 1
+  User root
+  Port 22
+  HostName 10.0.0.1
+  ProxyJump bastion
+  IdentityFile ~/.ssh/deploy-key
+  HostKeyAlias prod-01
+
+Host prod-02 # app server 2
+  User root
+  Port 22
+  HostName 10.0.0.2
+  ProxyJump bastion
+  IdentityFile ~/.ssh/deploy-key
+  HostKeyAlias prod-02
+}|
+
+In this configuration, the publicly-accessible @tt{bastion} is used as a
+jump box to connect to the @tt{prod-01} and @tt{prod-02} hosts through a
+private network and perform the deployment.
 
 @section{Example Nginx Config}
 
