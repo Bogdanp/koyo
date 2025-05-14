@@ -197,7 +197,7 @@ to run these commands without being prompted for a password:
     /bin/systemctl start <app-name>@green.service \
     /bin/systemctl stop <app-name>@blue.service \
     /bin/systemctl stop <app-name>@green.service \
-    /bin/tee /etc/systemd/system/<app-name>@"@"green.service
+    /bin/tee /etc/systemd/system/<app-name>@.service
 }|
 
 @section{Example Nginx Config}
