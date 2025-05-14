@@ -142,7 +142,7 @@ This module provides a @tech{session store} backed by PostgreSQL tables.
 @deftogether[
   (@defproc[(postgres-session-store? [v any/c]) boolean?]
    @defproc[(make-postgres-session-store [database database?]
-                                         [#:ttl exact-positive-integer? (* 7 86400)]) session-store?])]{
+                                         [#:ttl ttl exact-positive-integer? (* 7 86400)]) session-store?])]{
 
   A session store that persists session data the given PostgreSQL
   @racket[database].
