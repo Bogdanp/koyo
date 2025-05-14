@@ -18,6 +18,7 @@
          #:app-name app-name
          #:destination [destination (format "/opt/~a" app-name)]
          #:environment [environment null] ;; noqa
+         #:exec-name [exec-name app-name] ;; noqa
          #:group [group "www-data"] ;; noqa
          #:health-check? [health-check? #f] ;; noqa
          #:ports [ports (hash "blue" 8001 "green" 8002)] ;; noqa
@@ -34,8 +35,8 @@
           [version-str (format "~a_~a" (~version-timestamp) version-str)])
       (unless rsync (error 'deploy "rsync executable not found in PATH"))
       (unless ssh (error 'deploy "ssh executable not found in PATH"))
-      (for ([str (in-list (list app-name version-str))]
-            [label (in-list '("APP_NAME" "VERSION"))])
+      (for ([str (in-list (list app-name exec-name version-str))]
+            [label (in-list '("APP_NAME" "EXEC_NAME" "VERSION"))])
         (unless (regexp-match? #rx"^[A-Za-z0-9_-]+$" str)
           (error 'deploy "~a may only contain alphanumeric characters, dashes and underscores" label)))
       (unless (absolute-path? destination)

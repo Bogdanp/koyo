@@ -73,6 +73,7 @@
   (define (get-destination)
     (or destination (build-path "/opt" app-name)))
   (define environment null)
+  (define exec-name #f)
   (define group "www-data")
   (define health-check? #f)
   (define ports
@@ -91,6 +92,9 @@
    [("--destination")
     DESTINATION [(format "the absolute path on the target host where the app will be deployed (default: ~a)" (get-destination))]
     (set! destination DESTINATION)]
+   [("--exec-name")
+    EXEC_NAME [(format "the executable name (default: ~a)" app-name)]
+    (set! exec-name EXEC_NAME)]
    [("--group")
     GROUP "the group that will own the uploaded files (default: www-data)"
     (set! group GROUP)]
@@ -131,6 +135,7 @@
       #:app-name app-name
       #:destination (get-destination)
       #:environment environment
+      #:exec-name (or exec-name app-name)
       #:group group
       #:health-check? health-check?
       #:ports ports

@@ -6,7 +6,7 @@ Description=@app-name %i
 User=@user
 EnvironmentFile=@|destination|/environment-%i
 WorkingDirectory=@|versions-path|/current-%i/
-ExecStart=@|versions-path|/current-%i/bin/@app-name
+ExecStart=@|versions-path|/current-%i/bin/@exec-name
 Restart=on-failure
 
 [Install]
