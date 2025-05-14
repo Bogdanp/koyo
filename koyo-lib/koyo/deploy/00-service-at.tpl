@@ -3,10 +3,10 @@
 Description=@app-name %i
 
 [Service]
-User=signify
+User=@user
 EnvironmentFile=@|destination|/environment-%i
 WorkingDirectory=@|versions-path|/current-%i/
-ExecStart=@|versions-path|/current-%i/bin/signify
+ExecStart=@|versions-path|/current-%i/bin/@app-name
 Restart=on-failure
 
 [Install]
