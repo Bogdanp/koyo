@@ -85,9 +85,9 @@ You can specify environment variables using the @tt{-e} flag:
 The environment variables are written to the @filepath{environment-blue}
 and @filepath{environment-green} files on deploy, depending on the
 variant being deployed, and loaded into the app's runtime environment
-by the systemd service. The @tt{PLTUSERHOME}, @tt{APP_NAME_HTTP_HOST}
-and @tt{APP_NAME_HTTP_PORT} environment variables are set automatically
-based on the target environment.
+by the systemd service. The @tt{HOST}, @tt{PORT}, @tt{PLTUSERHOME},
+@tt{APP_NAME_HTTP_HOST} and @tt{APP_NAME_HTTP_PORT} environment
+variables are set automatically based on the target environment.
 
 By default, the @tt{blue} variant listens on localhost port
 @racket[8001] and the @tt{green} variant on @racket[8002]. These ports
