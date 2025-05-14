@@ -161,6 +161,45 @@ In this configuration, the publicly-accessible @tt{bastion} is used as a
 jump box to connect to the @tt{prod-01} and @tt{prod-02} hosts through a
 private network and perform the deployment.
 
+@section{Sudo}
+
+The tool uses @tt{sudo} to perform the following commands:
+
+@itemlist[
+ @item{@tt{sudo chown -R <user>:<group> <destination>}}
+ @item{@tt{sudo systemctl daemon-reload}}
+ @item{@tt{sudo systemctl reload nginx}}
+ @item{@tt{sudo systemctl start <app-name>@"@"blue.service}}
+ @item{@tt{sudo systemctl start <app-name>@"@"green.service}}
+ @item{@tt{sudo systemctl stop <app-name>@"@"blue.service}}
+ @item{@tt{sudo systemctl stop <app-name>@"@"green.service}}
+ @item{@tt{sudo tee /etc/systemd/system/<app-name>@"@".service}}
+]
+
+When running as a non-root user, it needs to be able to perform these
+commands without being asked for a password. You can add the following
+configuration file to @filepath{/etc/sudoers.d/} to allow the SSH user
+to run these commands without being prompted for a password:
+
+@margin-note{
+ Don't forget to replace the values in angle brackets with the
+ appropriate values for your app.
+}
+
+@verbatim[#:indent 2]|{
+<user> \
+  ALL=(ALL) \
+  NOPASSWD: \
+    /bin/chown -R <user>:<group> <destination> \
+    /bin/systemctl daemon-reload \
+    /bin/systemctl reload nginx \
+    /bin/systemctl start <app-name>@blue.service \
+    /bin/systemctl start <app-name>@green.service \
+    /bin/systemctl stop <app-name>@blue.service \
+    /bin/systemctl stop <app-name>@green.service \
+    /bin/tee /etc/systemd/system/<app-name>@"@"green.service
+}|
+
 @section{Example Nginx Config}
 
 Here is an example Nginx virtual host config that points at a
