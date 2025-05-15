@@ -18,21 +18,22 @@
   (string-append (current-option-name-prefix) "_"
                  (string-replace (string-upcase (symbol->string s)) "-" "_")))
 
+(define (get-option name default-thunk)
+  (or (getenv (make-option-name name))
+      (default-thunk)))
+
 (define-syntax (define-option stx)
   (syntax-parse stx
-    [(_ name:id
-        e:expr ...)
+    [(_ name:id e:expr ...)
      #'(define-option name #:default #f e ...)]
 
-    [(_ name:id
-        #:default default:expr
-        e:expr ...)
-     (with-syntax ([(body ...) (if (null? (syntax-e #'(e ...)))
-                                   #'(name)
-                                   #'(e ...))])
+    [(_ name:id #:default d:expr e:expr ...)
+     (with-syntax ([(body ...)
+                    (if (null? (syntax-e #'(e ...)))
+                        #'(name)
+                        #'(e ...))])
        #'(begin
            (define name
-             (let ([name (or (getenv (make-option-name 'name)) default)])
+             (let ([name (get-option 'name (λ () d))])
                body ...))
-
            (provide name)))]))

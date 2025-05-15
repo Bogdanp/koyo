@@ -8,25 +8,26 @@
 
 @defmodule[koyo/config]
 
-This module provides the @racket[define-option] macro which
-facilitates reading environment variables, transforming them and
-providing them as Racket values.
+This module provides the @racket[define-option] macro which facilitates
+reading environment variables, transforming them and providing them as
+Racket values.
 
 @defform[
   (define-option name maybe-default e ...)
   #:grammar
-  [(maybe-default (code:line)
-                  (code:line #:default default))]]{
+  [(maybe-default
+    (code:line)
+    (code:line #:default default))]]{
 
-  Defines and provides an option called @racket[name].  The name is
-  uppercased, prefixed with @racket[current-option-name-prefix] and
-  has its dashes replaced with underscores; the resulting value is
-  then passed to @racket[getenv].  If the environment variable is not
-  set, then @racket[default] is used and if @racket[default] isn't
-  provided, then the value will be @racket[#f].
+  Defines and provides an option called @racket[name]. The name is
+  uppercased, prefixed with @racket[current-option-name-prefix] and has
+  its dashes replaced with underscores; the resulting value is then
+  passed to @racket[getenv]. If the environment variable is not set,
+  then @racket[default] is used and if @racket[default] isn't provided,
+  then the value will be @racket[#f].
 
-  @racket[name] is bound inside the body of the define so options can
-  be pre-processed.  For example:
+  The option @racket[name] is bound inside the body of the define so
+  options can be pre-processed. For example:
 
   @racketblock[
     (define-option debug
@@ -36,11 +37,11 @@ providing them as Racket values.
       #:default "4"
       (string->number concurrency))
   ]
+
+  The @racket[default] expression is evaluated lazily.
 }
 
-@defparam[
-  current-option-name-prefix prefix string?
-  #:value "KOYO"]{
-
-  Defines the prefix for option names as environment variables.
+@defparam[current-option-name-prefix prefix string? #:value "KOYO"]{
+  Defines the @racket[prefix] for option names as environment
+  variables.
 }

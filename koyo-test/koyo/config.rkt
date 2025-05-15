@@ -6,7 +6,8 @@
 (provide config-tests)
 
 (current-option-name-prefix "KOYO_TESTS")
-(putenv "KOYO_TESTS_D" "set from env")
+(void (putenv "KOYO_TESTS_D" "set from env"))
+(void (putenv "KOYO_TESTS_E" "also set from env"))
 
 (define-option a)
 
@@ -14,10 +15,13 @@
   #:default "not set")
 
 (define-option c
-  #:default 42
-  (add1 c))
+  #:default "42"
+  (add1 (string->number c)))
 
 (define-option d)
+
+(define-option e
+  #:default (error 'lazy))
 
 (define config-tests
   (test-suite
@@ -36,7 +40,10 @@
       (check-equal? c 43))
 
     (test-case "options can retrieve values from the environment"
-      (check-equal? d "set from env")))))
+      (check-equal? d "set from env"))
+
+    (test-case "option defaults are evaluated lazily"
+      (check-equal? e "also set from env")))))
 
 (module+ test
   (require rackunit/text-ui)
