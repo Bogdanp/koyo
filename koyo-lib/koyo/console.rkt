@@ -9,7 +9,7 @@
  start-console-here)
 
 (define preload-modules
-  '(racket component db koyo))
+  '(racket component db koyo koyo/console/top))
 
 (define stubbed-components
   (make-parameter '(server)))

@@ -1,7 +1,7 @@
 #lang info
 
 (define license 'BSD-3-Clause)
-(define version "0.32.6")
+(define version "0.33")
 (define collection 'multi)
 
 (define deps

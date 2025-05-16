@@ -77,9 +77,11 @@ Running @exec{raco koyo console} from within the root of a koyo
 application starts an interactive REPL with that application's
 components loaded into scope.
 
-Components are accessible via @racket[system-ref]. For example, if you
-have a component named @tt{database} then you can access it from the
-console using @racket[(system-ref 'database)].
+Components are accessible via @racket[system-ref]. For example, if
+you have a component named @tt{database} then you can access it from
+the console using @racket[(system-ref 'database)]. Components are
+also accessible at the top level using ids prefixed with the @tt|{@}|
+character (eg. @racket[|@database|]).
 
 The @racket[start] and @racket[stop] procedures can be used to start
 and, respectively, stop the system from the console. The @racket[start]
@@ -88,3 +90,7 @@ session.
 
 See @racket[start-console-here] for information on loading the console
 functionality into an existing REPL session.
+
+@history[#:changed "0.33" @elem{Added a custom @racket[#%top] form to
+convert unbound variable references prefixed with @tt|{@}| to component
+lookups.}]
