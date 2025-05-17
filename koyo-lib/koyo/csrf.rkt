@@ -1,9 +1,12 @@
 #lang racket/base
 
-(require racket/contract/base
+(require net/url
+         racket/contract/base
          racket/string
+         threading
          web-server/http
          "contract.rkt"
+         "http.rkt"
          "profiler.rkt"
          "random.rkt"
          "session.rkt")
@@ -17,6 +20,7 @@
   [current-csrf-token-generator (parameter/c (-> non-empty-string?))]
   [current-csrf-token-reader (parameter/c (-> request? (or/c #f non-empty-string?)))]
   [current-csrf-token (parameter/c (or/c #f non-empty-string?))]
+  [wrap-corf middleware/c]
   [wrap-csrf (-> session-manager? middleware/c)]))
 
 (define session-key 'csrf.token)
@@ -72,3 +76,41 @@
 
         [else
          (apply handler req args)]))))
+
+(define ((wrap-corf handler) req . args)
+  (with-timing 'csrf "wrap-corf"
+    (cond
+      [(request-protected? req)
+       (if (request-same-origin? req)
+           (apply handler req args)
+           ((current-csrf-error-handler) req))]
+      [else
+       (apply handler req args)])))
+
+(define (request-same-origin? req)
+  (define sec-fetch-site (request-headers-ref req #"sec-fetch-site"))
+  (define origin (and~> (request-headers-ref* req #"origin") string->url))
+  (define host (and~> (request-headers-ref* req #"host") string->url))
+  (or
+   ;; https://w3c.github.io/webappsec-fetch-metadata/#sec-fetch-site-header
+   ;; A direct browser request (eg. the user typing in the address bar).
+   (equal? sec-fetch-site #"none")
+   ;; A browser request from the same origin.
+   (equal? sec-fetch-site #"same-origin")
+   ;; No Sec-Fetch-Site and no Origin. Not a browser request.
+   (and (not sec-fetch-site)
+        (not origin))
+   ;; The Origin header has the same origin as the Host header.
+   (and origin host (url-same-origin? origin host))))
+
+(define (url-same-origin? a b)
+  (and
+   (equal?
+    (url-scheme a)
+    (url-scheme b))
+   (equal?
+    (url-host a)
+    (url-host b))
+   (equal?
+    (url-port a)
+    (url-port b))))

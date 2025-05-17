@@ -22,8 +22,9 @@
      #:store (make-memory-session-store)))))
 
 (define wrapper
-  (compose1 (wrap-session sessions)
-            (wrap-csrf sessions)))
+  (compose1
+   (wrap-session sessions)
+   (wrap-csrf sessions)))
 
 (define csrf-tests
   (test-suite
@@ -108,7 +109,70 @@
                           (make-header #"x-csrf-token" csrf-token)))))
 
       (check-equal? (response-code response-2) 200)
-      (check-equal? (call-with-output-string (response-output response-2)) "<p>ok</p>")))))
+      (check-equal? (call-with-output-string (response-output response-2)) "<p>ok</p>")))
+
+   (test-suite
+    "wrap-corf"
+
+    (let ([handler (wrap-corf (λ (_req) (response/xexpr '(div))))])
+      (test-case "does nothing for GET requests"
+        (check-equal?
+         (response-code
+          (handler (make-test-request)))
+         200))
+
+      (test-case "passes the request if it has no Origin and no Sec-Fetch-Site"
+        (check-equal?
+         (response-code
+          (handler (make-test-request #:method "POST")))
+         200))
+
+      (test-case "passes the request if it has a none Sec-Fetch-Site"
+        (check-equal?
+         (response-code
+          (handler
+           (make-test-request
+            #:headers (list (make-header #"Sec-Fetch-Site" #"none"))
+            #:method "POST")))
+         200))
+
+      (test-case "passes the request if it has a same-origin Sec-Fetch-Site"
+        (check-equal?
+         (response-code
+          (handler
+           (make-test-request
+            #:headers (list (make-header #"Sec-Fetch-Site" #"same-origin"))
+            #:method "POST")))
+         200))
+
+      (test-case "passes the request if it has the same origin"
+        (check-equal?
+         (response-code
+          (handler
+           (make-test-request
+            #:headers (list (make-header #"Host" #"https://example.com")
+                            (make-header #"Origin" #"https://example.com"))
+            #:method "POST")))
+         200))
+
+      (test-case "fails the request if it has a cross-origin Sec-Fetch-Site"
+        (check-equal?
+         (response-code
+          (handler
+           (make-test-request
+            #:headers (list (make-header #"Sec-Fetch-Site" #"cross-origin"))
+            #:method "POST")))
+         403))
+
+      (test-case "fails the request if it has a different Origin"
+        (check-equal?
+         (response-code
+          (handler
+           (make-test-request
+            #:headers (list (make-header #"Host" #"https://example.com")
+                            (make-header #"Origin" #"https://bad.com"))
+            #:method "POST")))
+         403))))))
 
 (module+ test
   (require rackunit/text-ui)
