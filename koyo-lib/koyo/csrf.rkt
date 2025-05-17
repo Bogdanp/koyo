@@ -28,10 +28,10 @@
   (not (member (request-method req) safe-methods)))
 
 (define (request-csrf-token req)
-  (or (let ([header (headers-assq* #"x-csrf-token" (request-headers/raw req))])
-        (and header (bytes->string/utf-8 (header-value header))))
-      (let ([binding (bindings-assq #"csrf-token" (request-bindings/raw req))])
-        (and binding (bytes->string/utf-8 (binding:form-value binding))))))
+  (or (let ([h (headers-assq* #"x-csrf-token" (request-headers/raw req))])
+        (and h (bytes->string/utf-8 (header-value h))))
+      (let ([b (bindings-assq #"csrf-token" (request-bindings/raw req))])
+        (and b (bytes->string/utf-8 (binding:form-value b))))))
 
 (define (error-handler _req)
   (response/xexpr
@@ -56,17 +56,19 @@
 
 (define (((wrap-csrf sessions) handler) req . args)
   (with-timing 'csrf "wrap-csrf"
-    (session-manager-update! sessions
-                             session-key
-                             (lambda (token-from-session)
-                               (or token-from-session ((current-csrf-token-generator)))) #f)
+    (session-manager-update!
+     sessions
+     session-key
+     (lambda (token-from-session)
+       (or token-from-session ((current-csrf-token-generator))))
+     #;default #f)
     (define csrf-token (session-manager-ref sessions session-key))
     (parameterize [(current-csrf-token csrf-token)]
       (cond
         [(request-protected? req)
          (if (equal? ((current-csrf-token-reader) req) csrf-token)
              (apply handler req args)
-             (error-handler req))]
+             ((current-csrf-error-handler) req))]
 
         [else
          (apply handler req args)]))))

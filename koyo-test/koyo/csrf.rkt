@@ -15,16 +15,16 @@
 
 (define sessions
   (component-start
-   ((make-session-manager-factory #:cookie-name session-cookie-name
-                                  #:shelf-life 86400
-                                  #:secret-key #"supercalifragilisticexpialidocious"
-                                  #:store (make-memory-session-store)))))
+   ((make-session-manager-factory
+     #:cookie-name session-cookie-name
+     #:shelf-life 86400
+     #:secret-key #"supercalifragilisticexpialidocious"
+     #:store (make-memory-session-store)))))
 
 (define wrapper
   (compose1 (wrap-session sessions)
             (wrap-csrf sessions)))
 
-;; TODO: Take another look at these tests and possibly clean them up.
 (define csrf-tests
   (test-suite
    "csrf"
@@ -57,23 +57,37 @@
     "wrap-csrf"
 
     (test-case "does nothing for GET requests except generate the token"
-      ((wrapper (lambda (req)
-                  (check-not-false (current-csrf-token))
-                  (response/xexpr '(div))))
+      ((wrapper
+        (lambda (_req)
+          (check-not-false (current-csrf-token))
+          (response/xexpr '(div))))
        (make-test-request)))
 
     (test-case "fails the request if it does not contain the expected token"
       (check-equal?
        (response-code
-        ((wrapper (lambda (req)
-                    (response/xexpr '(div))))
+        ((wrapper (λ (_req) (response/xexpr '(div))))
          (make-test-request #:method "POST")))
        403))
 
+    (test-case "fails the request with a custom error handler"
+      (parameterize ([current-csrf-error-handler
+                      (lambda (_req)
+                        (response/output
+                         (lambda (out)
+                           (display "fail" out))))])
+        (define resp
+          ((wrapper (λ (_req) (response/xexpr '(div))))
+           (make-test-request #:method "POST")))
+        (define content
+          (call-with-output-string
+           (lambda (out)
+             ((response-output resp) out))))
+        (check-equal? content "fail")))
+
     (test-case "passes the request if it contains the expected token"
       (define response-1
-        ((wrapper (lambda (req)
-                    (response/xexpr (current-csrf-token))))
+        ((wrapper (λ (_req) (response/xexpr (current-csrf-token))))
          (make-test-request)))
 
       (match-define (list _ session-id)
@@ -87,11 +101,11 @@
          (call-with-output-string (response-output response-1))))
 
       (define response-2
-        ((wrapper (lambda (req)
-                    (response/xexpr '(p "ok"))))
-         (make-test-request #:method "POST"
-                            #:headers (list (make-header #"cookie" session-id-cookie)
-                                            (make-header #"x-csrf-token" csrf-token)))))
+        ((wrapper (λ (_req) (response/xexpr '(p "ok"))))
+         (make-test-request
+          #:method "POST"
+          #:headers (list (make-header #"cookie" session-id-cookie)
+                          (make-header #"x-csrf-token" csrf-token)))))
 
       (check-equal? (response-code response-2) 200)
       (check-equal? (call-with-output-string (response-output response-2)) "<p>ok</p>")))))
