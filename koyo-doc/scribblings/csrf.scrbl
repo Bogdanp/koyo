@@ -46,6 +46,10 @@ with every form submission.
   not either @tt{same-site} or @tt{none} and whose @tt{Origin} header
   differs from its @tt{Host} header is rejected by passing the request
   to the value of @racket[current-csrf-error-handler].
+
+  Browsers that don't pass either a @tt{Sec-Fetch-Site} header or an
+  @tt{Origin} header are treated the same as non-browser clients. That
+  is, validation passes.
 }
 
 @section[#:tag "csrf-token"]{Token-based Approach}
