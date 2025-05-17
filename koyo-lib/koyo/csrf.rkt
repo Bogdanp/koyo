@@ -66,7 +66,8 @@
      (lambda (token-from-session)
        (or token-from-session ((current-csrf-token-generator))))
      #;default #f)
-    (define csrf-token (session-manager-ref sessions session-key))
+    (define csrf-token
+      (session-manager-ref sessions session-key))
     (parameterize [(current-csrf-token csrf-token)]
       (cond
         [(request-protected? req)

@@ -16,11 +16,13 @@ request handlers and other procedures.
 
   Within a @racket[with-guard] form, ends execution early if
   @racket[expr] is @racket[#f]. If @racket[expr] is not @racket[#f], it
-  is returned normally. On early exit, when the first form is used, the
-  result of the @racket[with-guard] form is the application of form's
-  guard procedure. When the second form is used, the result of the
-  @racket[with-guard] form is @racket[else-expr]. Use outside the body
-  of a @racket[with-guard] form is a syntax error.
+  is returned normally. Use outside of the body of a @racket[with-guard]
+  form is a syntax error.
+
+  On early exit, when the first form is used, the result of the
+  @racket[with-guard] form is the application of the form's guard
+  procedure. When the second form is used, the result of the
+  @racket[with-guard] form is @racket[else-expr].
 
   @history[#:added "0.28"]
 }
