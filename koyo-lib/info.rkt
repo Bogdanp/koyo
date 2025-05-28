@@ -1,7 +1,7 @@
 #lang info
 
 (define license 'BSD-3-Clause)
-(define version "0.34")
+(define version "0.35")
 (define collection 'multi)
 
 (define deps
@@ -9,7 +9,7 @@
     ["base" #:version "8.1.0.4"]
     ["buid-lib" #:version "1.2"]
     ["component-lib" #:version "1.0"]
-    ["crontab-lib" #:version "0.1.1"]
+    ["crontab-lib" #:version "0.2"]
     ["crypto-lib" #:version "1.6"]
     "db-lib"
     "define-query-lib"
