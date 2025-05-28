@@ -18,6 +18,7 @@
          #:app-name app-name
          #:destination [destination (format "/opt/~a" app-name)]
          #:environment [environment null] ;; noqa
+         #:exec-flags [exec-flags null]
          #:exec-name [exec-name app-name] ;; noqa
          #:group [group "www-data"] ;; noqa
          #:health-check? [health-check? #f] ;; noqa
@@ -32,6 +33,7 @@
     (let ([app-name (if (path? app-name) (path->string app-name) app-name)]
           [distribution (path->directory-path distribution)]
           [destination (path->directory-path destination)]
+          [exec-flags (string-join exec-flags " ")] ;; noqa
           [version-str (format "~a_~a" (~version-timestamp) version-str)])
       (unless rsync (error 'deploy "rsync executable not found in PATH"))
       (unless ssh (error 'deploy "ssh executable not found in PATH"))
