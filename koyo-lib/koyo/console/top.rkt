@@ -14,4 +14,4 @@
      #:with component-id (string->symbol (substring (symbol->string (syntax-e #'id)) 1))
      #'(system-ref 'component-id)]
     [(_ . id:id)
-     #'(racket:#%top . id)]))
+     #'(#%top . id)]))
