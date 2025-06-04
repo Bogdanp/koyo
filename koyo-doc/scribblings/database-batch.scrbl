@@ -35,7 +35,8 @@ possible. Insert batchers are not thread safe.
   Creates an @tech{insert batcher} for the given @racket[table] and
   @racket[columns]. The @racket[columns] must be a list of pairs of
   column names and column types, where the types are represented as
-  strings for the target dbsystem.
+  strings for the target dbsystem. None of the columns may, themselves,
+  be arrays.
 
   The @racket[#:dialect] controls how data is inserted into the target
   database. For example, when the dialect is @racket['postgresql], the
