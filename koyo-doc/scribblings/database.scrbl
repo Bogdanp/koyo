@@ -2,9 +2,11 @@
 
 @(require (for-label db
                      koyo
+                     (only-in gregor date-provider? moment-provider?)
                      json
                      racket/base
-                     racket/contract
+                     racket/contract/base
+                     racket/date
                      web-server/http)
           "koyo.rkt")
 
@@ -151,6 +153,28 @@ working with database connections.
   @racket[e]. Otherwise, returns @racket[v].
 
   @history[#:added "0.27"]
+}
+
+@deftogether[
+ (@defproc[(->sql-date [d date-provider?]) sql-date?]
+  @defproc[(->sql-timestamp [t time-provider?]) sql-timestamp?]
+  @defproc[(sql-date->date [d sql-date?]) date-provider?]
+  @defproc[(sql-timestamp->moment [d sql-date?]) moment-provider?])]{
+
+  Converters between dates, moments and SQL dates and timestamps, respectively.
+
+  @history[#:added "0.37"]
+}
+
+@defproc[(seconds->sql-timestamp [seconds real?]
+                                 [local-time? #t]) sql-timestamp?]{
+  Converts the given @racket[seconds], a time in seconds since the
+  UNIX epoch, to a SQL timestamp.
+
+  The @racket[local-time?] argument has the same meaning as in
+  @racket[seconds->date].
+
+  @history[#:added "0.37"]
 }
 
 @include-section["database-url.scrbl"]
