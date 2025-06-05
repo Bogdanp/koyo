@@ -201,7 +201,8 @@
   [sql-date->date (-> sql-date? date?)]
   [sql-timestamp->moment (-> sql-timestamp? moment?)]
   [->sql-date (-> date-provider? sql-date?)]
-  [->sql-timestamp (-> time-provider? sql-timestamp?)]))
+  [->sql-timestamp (-> time-provider? sql-timestamp?)]
+  [seconds->sql-timestamp (->* [real?] [boolean?] sql-timestamp?)]))
 
 (define id/c exact-positive-integer?)
 (define maybe-id/c (or/c #f id/c))
@@ -267,6 +268,11 @@
                  (->seconds m)
                  (->nanoseconds m)
                  (->utc-offset m)))
+
+(define (seconds->sql-timestamp ts [local-time? #t])
+  (match-define (date* s m h D M Y _ _ _ tz ns _)
+    (seconds->date ts local-time?))
+  (sql-timestamp Y M D h m s ns tz))
 
 (define-syntax-rule (if-null v d)
   (let ([tmp v])
