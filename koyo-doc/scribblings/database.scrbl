@@ -157,7 +157,7 @@ working with database connections.
 
 @deftogether[
  (@defproc[(->sql-date [d date-provider?]) sql-date?]
-  @defproc[(->sql-timestamp [t time-provider?]) sql-timestamp?]
+  @defproc[(->sql-timestamp [m moment-provider?]) sql-timestamp?]
   @defproc[(sql-date->date [d sql-date?]) date-provider?]
   @defproc[(sql-timestamp->moment [d sql-date?]) moment-provider?])]{
 
