@@ -8,7 +8,8 @@ EnvironmentFile=@|destination|/environment-%i
 WorkingDirectory=@|versions-path|/current-%i/
 ExecStart=@|versions-path|/current-%i/bin/@exec-name @exec-flags
 Restart=on-failure
-RestartSec=30
+RestartSteps=10
+RestartMaxDelaySec=60
 LimitNOFILE=65535
 
 [Install]
