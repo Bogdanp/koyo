@@ -14,7 +14,9 @@
    (->* [symbol? (listof (list/c symbol? string?))]
         [#:dialect (or/c 'postgresql)
          #:batch-size exact-positive-integer?
-         #:on-conflict (or/c 'error (list/c 'do-nothing (listof symbol?)))]
+         #:on-conflict (or/c 'error
+                             (list/c 'do-nothing (listof symbol?))
+                             (list/c 'update (listof symbol?) (listof (list/c symbol? string?))))]
         insert-batcher?)]
   [ib-push! (-> insert-batcher? connection? any/c any/c ... void?)]
   [ib-flush! (-> insert-batcher? connection? void?)]))
@@ -72,7 +74,16 @@
        ['error (void)]
        [`(do-nothing ,conflict-columns)
         (define conflict-columns-str (string-join (map symbol->string conflict-columns) ", "))
-        (fprintf out "ON CONFLICT (~a) DO NOTHING" conflict-columns-str)]))))
+        (fprintf out "ON CONFLICT (~a) DO NOTHING" conflict-columns-str)]
+       [`(update ,conflict-columns ,updates)
+        (define conflict-columns-str (string-join (map symbol->string conflict-columns) ", "))
+        (fprintf out "ON CONFLICT (~a) DO UPDATE SET~n" conflict-columns-str)
+        (for ([(col idx) (in-indexed (in-list updates))])
+          (match-define (list column expr) col)
+          (if (zero? idx)
+              (fprintf out "  ")
+              (fprintf out " ,"))
+          (fprintf out "~a = ~a~n" column expr))]))))
 
 (define (insert-batcher-exec ib conn)
   (define dialect (dbsystem-name (connection-dbsystem conn)))

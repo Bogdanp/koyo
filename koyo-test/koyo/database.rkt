@@ -100,7 +100,7 @@
          (query-value conn "SELECT COUNT(*) FROM ib_test")
          201)))
 
-    (test-case "handles conflicts"
+    (test-case "handles conflicts with do-nothing"
       (define ib
         (make-insert-batcher
          #:batch-size 100
@@ -115,6 +115,32 @@
         (ib-flush! ib conn)
         (check-equal?
          (query-value conn "SELECT COUNT(*) FROM ib_test")
+         300)))
+
+    (test-case "handles conflicts with update"
+      (define ib
+        (make-insert-batcher
+         #:batch-size 100
+         #:on-conflict '(update
+                         (a)
+                         ([b "EXCLUDED.b || '!'"]
+                          [c "42"]))
+         'ib_test
+         '([a "INTEGER"]
+           [b "TEXT"]
+           [c "REAL"])))
+      (with-database-connection [conn db]
+        (for ([idx (in-range 400)])
+          (ib-push! ib conn idx (format "row ~a" idx) (* 1.0 idx)))
+        (ib-flush! ib conn)
+        (check-equal?
+         (query-value conn "SELECT COUNT(*) FROM ib_test")
+         400)
+        (check-equal?
+         (query-value conn "SELECT COUNT(*) FROM ib_test WHERE b ~ '!$'")
+         300)
+        (check-equal?
+         (query-value conn "SELECT COUNT(*) FROM ib_test WHERE c = 42")
          300)))
 
     (test-case "complains when pushing fewer cols than expected"

@@ -26,7 +26,11 @@ possible. Insert batchers are not thread safe.
                               [columns (listof (list/c symbol? string?))]
                               [#:dialect dialect (or/c 'postgresql) 'postgresql]
                               [#:batch-size batch-size exact-positive-integer? 10000]
-                              [#:on-conflict on-conflict (or/c 'error (list/c 'do-nothing (listof symbol?))) 'error]) insert-batcher?]{
+                              [#:on-conflict on-conflict (or/c 'error
+                                                               (list/c 'do-nothing (listof symbol?))
+                                                               (list/c 'update (listof symbol?)
+                                                                               (listof (list/c symbol? string?)))) 'error])
+         insert-batcher?]{
   @margin-note{@bold{Warning:} The table name, column names and column
   types are interpolated into the insert queries. Avoid blindly passing
   in user input for these values as doing so could lead to SQL injection
@@ -49,7 +53,10 @@ possible. Insert batchers are not thread safe.
   handled in the target dbsystem. The @racket['error] behavior causes
   inserts to fail with a constraint violation on conflict. The
   @racket['do-nothing] behavior ignores conflicts for rows that have a
-  conflict for the given set of columns.
+  conflict for the given set of columns. The @racket['update] behavior
+  updates the second set of columns on conflict with the first set. For
+  an update, the second set of columns is a list of column, expression
+  pairs.
 
   @racketblock[
     (define ib
@@ -65,7 +72,10 @@ possible. Insert batchers are not thread safe.
       (ib-flush! ib conn))
   ]
 
-  @history[#:added "0.30"]
+  @history[
+   #:added "0.30"
+   #:changed "0.38" @elem{Added the @racket['update] conflict behavior.}
+  ]
 }
 
 @defproc[(ib-push! [ib insert-batcher?]
