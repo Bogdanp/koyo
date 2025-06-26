@@ -24,6 +24,7 @@ possible. Insert batchers are not thread safe.
 
 @defproc[(make-insert-batcher [table symbol?]
                               [columns (listof (list/c symbol? string?))]
+                              [#:alias alias (or/c #f symbol?) #f]
                               [#:dialect dialect (or/c 'postgresql) 'postgresql]
                               [#:batch-size batch-size exact-positive-integer? 10000]
                               [#:on-conflict on-conflict (or/c 'error
@@ -42,9 +43,13 @@ possible. Insert batchers are not thread safe.
   strings for the target dbsystem. None of the columns may, themselves,
   be arrays.
 
-  The @racket[#:dialect] controls how data is inserted into the target
-  database. For example, when the dialect is @racket['postgresql], the
-  data is passed to the database using one @racket[pg-array] per column.
+  If provided, the @racket[#:alias] argument sets the table alias for
+  update expressions.
+
+  The @racket[#:dialect] argument controls how data is inserted
+  into the target database. For example, when the dialect is
+  @racket['postgresql], the data is passed to the database using one
+  @racket[pg-array] per column.
 
   The @racket[#:batch-size] argument controls the maximum number of
   rows that are buffered in memory before they are flushed.
@@ -75,6 +80,7 @@ possible. Insert batchers are not thread safe.
   @history[
    #:added "0.30"
    #:changed "0.38" @elem{Added the @racket['update] conflict behavior.}
+   #:changed "0.39" @elem{Added the @racket[#:alias] argument.}
   ]
 }
 

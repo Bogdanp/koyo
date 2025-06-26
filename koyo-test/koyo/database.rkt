@@ -120,11 +120,13 @@
     (test-case "handles conflicts with update"
       (define ib
         (make-insert-batcher
+         #:alias 't
          #:batch-size 100
-         #:on-conflict '(update
-                         (a)
-                         ([b "EXCLUDED.b || '!'"]
-                          [c "42"]))
+         #:on-conflict
+         '(update
+           (a)
+           ([b "EXCLUDED.b || '!'"]
+            [c "42"]))
          'ib_test
          '([a "INTEGER"]
            [b "TEXT"]

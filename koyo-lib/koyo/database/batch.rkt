@@ -12,14 +12,17 @@
  (contract-out
   [make-insert-batcher
    (->* [symbol? (listof (list/c symbol? string?))]
-        [#:dialect (or/c 'postgresql)
+        [#:alias (or/c #f symbol?)
+         #:dialect (or/c 'postgresql)
          #:batch-size exact-positive-integer?
          #:on-conflict (or/c 'error
                              (list/c 'do-nothing (listof symbol?))
                              (list/c 'update (listof symbol?) (listof (list/c symbol? string?))))]
         insert-batcher?)]
-  [ib-push! (-> insert-batcher? connection? any/c any/c ... void?)]
-  [ib-flush! (-> insert-batcher? connection? void?)]))
+  [ib-push!
+   (-> insert-batcher? connection? any/c any/c ... void?)]
+  [ib-flush!
+   (-> insert-batcher? connection? void?)]))
 
 (struct insert-batcher
   (table
@@ -34,13 +37,14 @@
 
 (define (make-insert-batcher
          table columns
+         #:alias [alias #f]
          #:dialect [dialect 'postgresql]
          #:batch-size [batch-size 10000]
          #:on-conflict [on-conflict 'error])
   (define stmt
     (virtual-statement
      (case dialect
-       [(postgresql) (make-insert-batcher-stmt/pg table columns on-conflict)]
+       [(postgresql) (make-insert-batcher-stmt/pg table alias columns on-conflict)]
        [else (error 'make-insert-batcher "not implemented for dialect ~s" dialect)])))
   (insert-batcher
    #;table table
@@ -53,7 +57,7 @@
    #;n-cols (length columns)
    #;n-rows 0))
 
-(define (make-insert-batcher-stmt/pg table columns on-conflict)
+(define (make-insert-batcher-stmt/pg table alias columns on-conflict)
   (call-with-output-string
    (lambda (out)
      (define columns-str
@@ -67,7 +71,9 @@
           (match-define (list _ type) column)
           (format "$~a::~a[]" (add1 idx) type))
         ", "))
-     (fprintf out "INSERT INTO ~a (~n" table)
+     (if alias
+         (fprintf out "INSERT INTO ~a AS ~a (~n" table alias)
+         (fprintf out "INSERT INTO ~a (~n" table))
      (fprintf out "  ~a~n" columns-str)
      (fprintf out ") SELECT * FROM UNNEST(~a) AS t(~a)~n" placeholders-str columns-str)
      (match on-conflict
