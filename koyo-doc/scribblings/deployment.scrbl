@@ -83,15 +83,16 @@ You can specify environment variables using the @tt{-e} flag:
 }
 
 The environment variables are written to the @filepath{environment-blue}
-and @filepath{environment-green} files on deploy, depending on the
-variant being deployed, and loaded into the app's runtime environment
-by the systemd service. The @tt{HOST}, @tt{PORT}, @tt{PLTUSERHOME},
-@tt{APP_NAME_HTTP_HOST} and @tt{APP_NAME_HTTP_PORT} environment
-variables are set automatically based on the target environment.
+and @filepath{environment-green} files on deploy, depending on
+the variant being deployed, and loaded into the app's runtime
+environment by the systemd service. The @tt{HOST}, @tt{PORT},
+@tt{PLTUSERHOME}, @tt{APP_NAME_HTTP_HOST}, @tt{APP_NAME_HTTP_PORT} and
+@tt{APP_NAME_VARIANT} environment variables are set automatically based
+on the target environment.
 
 By default, the @tt{blue} variant listens on localhost port
 @racket[8001] and the @tt{green} variant on @racket[8002]. These ports
-can be customized passing @flag{port}. For example:
+can be customized by passing @flag{port}. For example:
 
 @verbatim[#:indent 2]{
  $ raco koyo deploy \
@@ -99,6 +100,9 @@ can be customized passing @flag{port}. For example:
      -p green 9000 \
      dist v1.0 target-host
 }
+
+@history[
+ #:changed "0.40" @elem{Added the @tt{APP_NAME_VARIANT} environment variable.}]
 
 @section{Pre and Post Scripts}
 
