@@ -32,7 +32,9 @@
 
      (start)))
 
-(define (start-console dynamic-module-path [namespace (make-base-empty-namespace)])
+(define (start-console dynamic-module-path
+                       [namespace (make-base-empty-namespace)]
+                       [repl read-eval-print-loop])
   (displayln "Compiling application...")
   (make! dynamic-module-path)
   (displayln "Starting REPL...")
@@ -44,7 +46,7 @@
     (namespace-require mod))
   (namespace-require dynamic-module-path)
   (eval (preamble))
-  (read-eval-print-loop))
+  (repl))
 
 (define (start-console-here)
   (define dynamic-module-path (find-file-in-project "dynamic.rkt" (current-directory)))

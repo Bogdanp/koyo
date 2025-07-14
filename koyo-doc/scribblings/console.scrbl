@@ -18,7 +18,8 @@
 }
 
 @defproc[(start-console [dynamic-module-path path?]
-                        [namespace namespace? (make-base-empty-namespace)]) void?]{
+                        [namespace namespace? (make-base-empty-namespace)]
+                        [repl (-> any) read-eval-print-loop]) void?]{
 
   Loads @racket[dynamic-module-path] and starts its system, stubbing out
   any components whose ids are members of @racket[stubbed-components].
@@ -37,7 +38,13 @@
       (koyo:start-console dynamic.rkt ns))
   ]
 
-  @history[#:added "0.28"]
+  The @racket[repl] procedure is called after the environment is set up
+  to start the @emph{REPL}.
+
+  @history[
+   #:added "0.28"
+   #:changed "0.41" @elem{Added the @racket[repl] argument.}
+  ]
 }
 
 @defproc[(start-console-here) void?]{
