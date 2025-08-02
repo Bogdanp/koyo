@@ -4,7 +4,7 @@
          racket/contract/base
          racket/match
          racket/place
-         "argon2id-place.rkt"
+         "argon2id/place.rkt"
          "error.rkt"
          "generic.rkt")
 
@@ -31,26 +31,12 @@
   [(define (hasher-make-hash h pass)
      (try-start-hasher-place! 'hasher-make-hash h)
      (define pch (argon2id-hasher-ch h))
-     (define-values (in out)
-       (place-channel))
-     (place-channel-put pch `(hash ,pass ,out))
-     (sync
-      (command-result-evt 'hasher-make-hash in)
-      (handle-evt
-       (place-dead-evt pch)
-       (λ (_) (oops 'hasher-make-hash "place crashed")))))
+     (sync (command-evt 'hasher-make-hash pch 'hash-string pass)))
 
    (define (hasher-hash-matches? h pass-hash pass)
      (try-start-hasher-place! 'hasher-hash-matches? h)
      (define pch (argon2id-hasher-ch h))
-     (define-values (in out)
-       (place-channel))
-     (place-channel-put pch `(verify ,pass ,pass-hash ,out))
-     (sync
-      (command-result-evt 'hasher-hash-matches? in)
-      (handle-evt
-       (place-dead-evt pch)
-       (λ (_) (oops 'hasher-hash-matches? "place crashed")))))])
+     (sync (command-evt 'hasher-hash-matches? pch 'hash-verify pass pass-hash)))])
 
 (define ((make-argon2id-hasher-factory
           #:parallelism [parallelism (processor-count)]
@@ -80,9 +66,17 @@
         (place-channel-put ch '(stop))
         (set-argon2id-hasher-ch! h #f)))))
 
-(define (command-result-evt who in)
-  (handle-evt
-   in
-   (match-lambda
-     [`(err ,msg) (oops who "~a" msg)]
-     [`(ok ,res) res])))
+(define (command-evt who pch . message)
+  (define-values (in out)
+    (place-channel))
+  (place-channel-put pch (append message (list out)))
+  (choice-evt
+   (handle-evt
+    in
+    (match-lambda
+      [`(err ,msg) (oops who "~a" msg)]
+      [`(ok ,res) res]))
+   (handle-evt
+    (place-dead-evt pch)
+    (lambda (_)
+      (oops who "place crashed")))))
