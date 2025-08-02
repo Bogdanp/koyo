@@ -25,6 +25,7 @@
     "struct-define"
     "threading-lib"
     "unix-socket-lib"
+    "version-case"
     "web-server-lib"))
 (define build-deps
   '("at-exp-lib"))
