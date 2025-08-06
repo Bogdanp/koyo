@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
+         box-extra
          racket/contract/base
          racket/format
          racket/match
@@ -42,29 +43,28 @@
 
 (struct timing (id parent label description duration db-statements))
 (struct pdata (seq timings))
-(struct profile (data))
+(struct profile (data update))
 
 (define (make-profile)
-  (profile (box (pdata 0 null))))
+  (define data (box (pdata 0 null)))
+  (define update (make-box-update-proc data))
+  (profile data update))
 
 (define profile-timings
   (compose1 pdata-timings unbox profile-data))
 
-(define (profile-generate-id! p)
-  (let ([next-id #f])
-    (box-swap!
-     (profile-data p)
-     (lambda (data)
-       (set! next-id (add1 (pdata-seq data)))
-       (struct-copy pdata data [seq next-id])))
-    next-id))
+(define (profile-next-id p)
+  (pdata-seq
+   ((profile-update p)
+    (lambda (data)
+      (struct-copy pdata data [seq (add1 (pdata-seq data))])))))
 
 (define (profile-add-timing! p t)
-  (box-swap!
-   (profile-data p)
+  ((profile-update p)
    (lambda (data)
      (define timings (cons t (pdata-timings data)))
-     (struct-copy pdata data [timings timings]))))
+     (struct-copy pdata data [timings timings])))
+  (void))
 
 (define (profile-find-roots p)
   (reverse
@@ -129,7 +129,7 @@
   (dynamic-wind
     (lambda ()
       (set! parent-id (current-timing-id))
-      (set! current-id (profile-generate-id! the-profile))
+      (set! current-id (profile-next-id the-profile))
       (set! start-time (current-inexact-monotonic-milliseconds))
       (set! get-statements
             (make-db-statement-collector

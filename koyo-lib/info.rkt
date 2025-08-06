@@ -7,6 +7,7 @@
 (define deps
   '("actor-lib"
     ["base" #:version "8.1.0.4"]
+    "box-extra-lib"
     ["buid-lib" #:version "1.2"]
     ["component-lib" #:version "1.0"]
     ["crontab-lib" #:version "0.2"]

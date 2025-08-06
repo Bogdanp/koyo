@@ -179,14 +179,15 @@
 (define current-session-id
   (make-parameter #f))
 
-(struct session-manager (cookie-name
-                         cookie-path
-                         cookie-secure?
-                         cookie-http-only?
-                         cookie-same-site
-                         shelf-life
-                         secret-key
-                         store)
+(struct session-manager
+  (cookie-name
+   cookie-path
+   cookie-secure?
+   cookie-http-only?
+   cookie-same-site
+   shelf-life
+   secret-key
+   store)
   #:methods gen:component
   [(define (component-start sm)
      (begin0 sm
