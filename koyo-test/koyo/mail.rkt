@@ -12,9 +12,10 @@
 
 (define mailer
   (component-start
-   ((make-mailer-factory #:adapter adapter
-                         #:sender "example@koyoweb.org"
-                         #:common-variables (hasheq 'support-email "support@koyoweb.org")))))
+   ((make-mailer-factory
+     #:adapter adapter
+     #:sender "example@koyoweb.org"
+     #:common-variables (hasheq 'support-email "support@koyoweb.org")))))
 
 (define mail-tests
   (test-suite
