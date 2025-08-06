@@ -10,8 +10,7 @@
          web-server/servlet
          xml
          "contract.rkt"
-         "haml.rkt"
-         "util.rkt")
+         "haml.rkt")
 
 
 ;; Timings and profiles ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

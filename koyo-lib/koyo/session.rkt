@@ -1,10 +1,10 @@
 #lang racket/base
 
-(require component
+(require box-extra
+         component
          racket/contract/base
          racket/file
          racket/format
-         racket/function
          racket/generic
          racket/serialize
          racket/string
@@ -12,8 +12,7 @@
          web-server/http/id-cookie
          "contract.rkt"
          "profiler.rkt"
-         "random.rkt"
-         "util.rkt")
+         "random.rkt")
 
 ;; Session stores ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -52,7 +51,7 @@
 
 (define-logger memory-session-store)
 
-(struct memory-session-store (custodian data file-path)
+(struct memory-session-store (custodian data update-data file-path)
   #:methods gen:session-store
   [(define (session-store-generate-id! ss)
      (~a (memory-session-store-next-id! ss) "." (generate-random-string)))
@@ -73,36 +72,42 @@
          (write (serialize (unbox (memory-session-store-data ss)))))))
 
    (define (session-store-ref ss session-id key default)
-     (let* ([data (unbox (memory-session-store-data ss))]
-            [sessions (mss-data-sessions data)]
-            [session-pair (hash-ref sessions
-                                    (string->symbol session-id)
-                                    (cons (current-seconds) (hasheq)))]
-            [session-data (cdr session-pair)])
-       (hash-ref session-data key default)))
+     (define data (unbox (memory-session-store-data ss)))
+     (define sessions (mss-data-sessions data))
+     (define session-pair
+       (hash-ref sessions
+                 (string->symbol session-id)
+                 (cons (current-seconds) (hasheq))))
+     (define session-data (cdr session-pair))
+     (hash-ref session-data key default))
 
    (define (session-store-set! ss session-id key value)
-     (memory-session-store-update-session! ss session-id (curryr hash-set key value)))
+     (memory-session-store-update-session!
+      ss session-id
+      (lambda (data)
+        (hash-set data key value))))
 
-   (define (session-store-update! ss session-id key value default)
-     (memory-session-store-update-session! ss session-id (curryr hash-update key value default)))
+   (define (session-store-update! ss session-id key proc default)
+     (memory-session-store-update-session!
+      ss session-id
+      (lambda (data)
+        (hash-update data key proc default))))
 
    (define (session-store-remove! ss session-id key)
-     (memory-session-store-update-session! ss session-id (curryr hash-remove key)))])
+     (memory-session-store-update-session!
+      ss session-id
+      (lambda (data)
+        (hash-remove data key))))])
 
 (define (memory-session-store-next-id! ss)
-  (let ([next-id #f])
-    (box-swap!
-     (memory-session-store-data ss)
-     (lambda (data)
-       (set! next-id (add1 (mss-data-seq data)))
-       (struct-copy mss-data data [seq next-id])))
-
-    next-id))
+  (mss-data-seq
+   ((memory-session-store-update-data ss)
+    (lambda (data)
+      (define next-id (add1 (mss-data-seq data)))
+      (struct-copy mss-data data [seq next-id])))))
 
 (define (memory-session-store-update-session! ss session-id f)
-  (box-swap!
-   (memory-session-store-data ss)
+  ((memory-session-store-update-data ss)
    (lambda (data)
      (define sessions
        (hash-update (mss-data-sessions data)
@@ -110,8 +115,8 @@
                     (lambda (session-data)
                       (cons (current-seconds) (f (cdr session-data))))
                     (cons (current-seconds) (hasheq))))
-
-     (struct-copy mss-data data [sessions sessions]))))
+     (struct-copy mss-data data [sessions sessions])))
+  (void))
 
 (define ((memory-session-store-remove-stale-sessions ttl) data)
   (define now (current-seconds))
@@ -131,16 +136,16 @@
                                    #:file-path [file-path (make-temporary-file)])
   (define custodian (make-custodian))
   (parameterize ([current-custodian custodian])
-    (define data-box (box (mss-data 0 (hasheq))))
+    (define data (box (mss-data 0 (hasheq))))
+    (define update-data (make-box-update-proc data))
     (thread
      (lambda ()
        (let loop ()
          (sleep ttl)
          (log-memory-session-store-debug "expiring stale sessions")
-         (box-swap! data-box (memory-session-store-remove-stale-sessions ttl))
+         (update-data (memory-session-store-remove-stale-sessions ttl))
          (loop))))
-
-    (memory-session-store custodian data-box file-path)))
+    (memory-session-store custodian data update-data file-path)))
 
 
 ;; Session manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -190,35 +195,39 @@
    store)
   #:methods gen:component
   [(define (component-start sm)
-     (begin0 sm
-       (session-store-load! (session-manager-store sm))))
+     (session-store-load! (session-manager-store sm))
+     sm)
 
    (define (component-stop sm)
-     (begin0 sm
-       (session-store-persist! (session-manager-store sm))))])
+     (session-store-persist! (session-manager-store sm))
+     sm)])
 
-(define ((make-session-manager-factory #:cookie-name cookie-name
-                                       #:cookie-path [cookie-path "/"]
-                                       #:cookie-secure? [cookie-secure? #t]
-                                       #:cookie-http-only? [cookie-http-only? #t]
-                                       #:cookie-same-site [cookie-same-site 'strict]
-                                       #:shelf-life shelf-life
-                                       #:secret-key secret-key
-                                       #:store store))
-  (session-manager cookie-name
-                   cookie-path
-                   cookie-secure?
-                   cookie-http-only?
-                   cookie-same-site
-                   shelf-life
-                   secret-key
-                   store))
+(define ((make-session-manager-factory
+          #:cookie-name cookie-name
+          #:cookie-path [cookie-path "/"]
+          #:cookie-secure? [cookie-secure? #t]
+          #:cookie-http-only? [cookie-http-only? #t]
+          #:cookie-same-site [cookie-same-site 'strict]
+          #:shelf-life shelf-life
+          #:secret-key secret-key
+          #:store store))
+  (session-manager
+   cookie-name
+   cookie-path
+   cookie-secure?
+   cookie-http-only?
+   cookie-same-site
+   shelf-life
+   secret-key
+   store))
 
 (define session-manager-ref
   (case-lambda
     [(sm key)
-     (session-manager-ref sm key (lambda ()
-                                   (raise-user-error 'session-manager-ref "no value found for key ~a" key)))]
+     (session-manager-ref
+      sm key
+      (lambda ()
+        (raise-user-error 'session-manager-ref "no value found for key ~a" key)))]
 
     [(sm key default)
      (with-timing 'session "session-manager-ref"
@@ -234,27 +243,32 @@
 
 (define session-manager-update!
   (case-lambda
-    [(sm key f)
-     (session-manager-update! sm key f (lambda ()
-                                         (raise-user-error 'session-manager-update! "no value found for key ~a" key)))]
+    [(sm key proc)
+     (session-manager-update!
+      sm key proc
+      (lambda ()
+        (raise-user-error 'session-manager-update! "no value found for key ~a" key)))]
 
-    [(sm key f default)
+    [(sm key proc default)
      (with-timing 'session "session-manager-update!"
-       (session-store-update! (session-manager-store sm) (current-session-id) key f default))]))
+       (session-store-update! (session-manager-store sm) (current-session-id) key proc default))]))
 
 (define (session-manager-cookie-extension sm)
-  (format "SameSite=~a" (case (session-manager-cookie-same-site sm)
-                          [(lax) "Lax"]
-                          [(strict) "Strict"])))
+  (format
+   "SameSite=~a"
+   (case (session-manager-cookie-same-site sm)
+     [(lax) "Lax"]
+     [(strict) "Strict"])))
 
 (define (session-manager-cookie sm session-id)
-  (make-id-cookie (session-manager-cookie-name sm) session-id
-                  #:path (session-manager-cookie-path sm)
-                  #:secure? (session-manager-cookie-secure? sm)
-                  #:http-only? (session-manager-cookie-http-only? sm)
-                  #:extension (session-manager-cookie-extension sm)
-                  #:key (session-manager-secret-key sm)
-                  #:max-age (session-manager-shelf-life sm)))
+  (make-id-cookie
+   (session-manager-cookie-name sm) session-id
+   #:path (session-manager-cookie-path sm)
+   #:secure? (session-manager-cookie-secure? sm)
+   #:http-only? (session-manager-cookie-http-only? sm)
+   #:extension (session-manager-cookie-extension sm)
+   #:key (session-manager-secret-key sm)
+   #:max-age (session-manager-shelf-life sm)))
 
 
 ;; Simplified API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
