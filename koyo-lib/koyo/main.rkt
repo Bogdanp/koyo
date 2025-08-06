@@ -37,5 +37,4 @@
  "static.rkt"
  "testing.rkt"
  "url.rkt"
- "util.rkt"
  "xexpr.rkt")
