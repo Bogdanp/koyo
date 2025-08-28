@@ -102,7 +102,8 @@ can be customized by passing @flag{port}. For example:
 }
 
 @history[
- #:changed "0.40" @elem{Added the @tt{APP_NAME_VARIANT} environment variable.}]
+ #:changed "0.40" @elem{Added the @tt{APP_NAME_VARIANT} environment variable.}
+ #:changed "0.44" @elem{Added @flag{exec-user} and @flag{env-var-prefix}.}]
 
 @section{Pre and Post Scripts}
 
