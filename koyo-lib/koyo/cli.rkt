@@ -72,6 +72,7 @@
   (define destination #f)
   (define (get-destination)
     (or destination (build-path "/opt" app-name)))
+  (define env-var-prefix #f)
   (define environment null)
   (define exec-flags null)
   (define exec-name #f)
@@ -93,6 +94,9 @@
    [("--destination")
     DESTINATION [(format "the absolute path on the target host where the app will be deployed (default: ~a)" (get-destination))]
     (set! destination DESTINATION)]
+   [("--env-var-prefix")
+    ENV_VAR_PREFIX [(format "the prefix for environment variables (default: ~a)" app-name)]
+    (set! env-var-prefix #f)]
    [("--exec-flags")
     EXEC_FLAGS "additional flags to pass to the application executable"
     (set! exec-flags (regexp-split #rx"[ ]" EXEC_FLAGS))]
@@ -138,6 +142,7 @@
      (deploy
       #:app-name app-name
       #:destination (get-destination)
+      #:env-var-prefix (or env-var-prefix app-name)
       #:environment environment
       #:exec-flags exec-flags
       #:exec-name (or exec-name app-name)
