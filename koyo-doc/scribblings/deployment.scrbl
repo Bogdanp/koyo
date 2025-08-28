@@ -188,6 +188,9 @@ to run these commands without being prompted for a password:
 @margin-note{
  Don't forget to replace the values in angle brackets with the
  appropriate values for your app.
+
+ @bold{Warning:} use the @tt{visudo} command to edit this file to avoid
+ bricking your machine.
 }
 
 @verbatim[#:indent 2]|{
