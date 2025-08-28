@@ -3,7 +3,7 @@
 Description=@app-name %i
 
 [Service]
-User=@user
+User=@exec-user
 EnvironmentFile=@|destination|/environment-%i
 WorkingDirectory=@|versions-path|/current-%i/
 ExecStart=@|versions-path|/current-%i/bin/@exec-name @exec-flags

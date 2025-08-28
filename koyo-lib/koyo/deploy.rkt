@@ -29,6 +29,7 @@
          #:ssh-flags [ssh-flags null]
          #:status [status status]
          #:user [user app-name] ;; noqa
+         #:exec-user [exec-user user] ;; noqa
          distribution version-str hosts)
   (parameterize ([date-display-format 'iso-8601])
     (let ([app-name (if (path? app-name) (path->string app-name) app-name)]

@@ -76,6 +76,7 @@
   (define environment null)
   (define exec-flags null)
   (define exec-name #f)
+  (define exec-user #f)
   (define group "www-data")
   (define health-check? #f)
   (define ports
@@ -103,6 +104,9 @@
    [("--exec-name")
     EXEC_NAME [(format "the executable name (default: ~a)" app-name)]
     (set! exec-name EXEC_NAME)]
+   [("--exec-user")
+    EXEC_USER [(format "the user to run the service as (default: ~a)" user)]
+    (set! exec-user EXEC_USER)]
    [("--group")
     GROUP "the group that will own the uploaded files (default: www-data)"
     (set! group GROUP)]
@@ -146,6 +150,7 @@
       #:environment environment
       #:exec-flags exec-flags
       #:exec-name (or exec-name app-name)
+      #:exec-user (or exec-user user)
       #:group group
       #:health-check? health-check?
       #:ports ports
