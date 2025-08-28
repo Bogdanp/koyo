@@ -97,7 +97,7 @@
     (set! destination DESTINATION)]
    [("--env-var-prefix")
     ENV_VAR_PREFIX [(format "the prefix for environment variables (default: ~a)" app-name)]
-    (set! env-var-prefix #f)]
+    (set! env-var-prefix ENV_VAR_PREFIX)]
    [("--exec-flags")
     EXEC_FLAGS "additional flags to pass to the application executable"
     (set! exec-flags (regexp-split #rx"[ ]" EXEC_FLAGS))]
