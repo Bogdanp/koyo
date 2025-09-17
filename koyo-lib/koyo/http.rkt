@@ -72,8 +72,11 @@
    (and~>
     (request-headers-ref req #"x-forwarded-for")
     (regexp-split #rx"," _)
-    (car))
-   (request-headers-ref req #"x-real-ip")
+    (car)
+    (bytes->string/utf-8))
+   (and~>
+    (request-headers-ref req #"x-real-ip")
+    (bytes->string/utf-8))
    (request-client-ip req)))
 
 (define (request-json req)

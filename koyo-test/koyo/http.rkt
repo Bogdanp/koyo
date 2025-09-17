@@ -49,6 +49,25 @@
       (check-equal? (request-path (make-test-request #:path "/a/b/c;test")) "/a/b/c")))
 
    (test-suite
+    "request-ip-address"
+
+    (check-equal?
+     (request-ip-address
+      (make-test-request))
+     "127.0.0.1")
+    (check-equal?
+     (request-ip-address
+      (make-test-request
+       #:headers `(("x-real-ip" . "10.0.0.1"))))
+     "10.0.0.1")
+    (check-equal?
+     (request-ip-address
+      (make-test-request
+       #:headers `(("x-forwarded-for" . "10.0.0.2,10.0.0.1")
+                   ("x-real-ip" . "10.0.0.1"))))
+     "10.0.0.2"))
+
+   (test-suite
     "bindings-ref"
 
     (test-case "returns #f or a default if the binding is not set"
