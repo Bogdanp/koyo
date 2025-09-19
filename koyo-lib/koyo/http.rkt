@@ -70,13 +70,10 @@
 (define (request-ip-address req)
   (or
    (and~>
-    (request-headers-ref req #"x-forwarded-for")
+    (request-headers-ref* req #"x-forwarded-for")
     (regexp-split #rx"," _)
-    (car)
-    (bytes->string/utf-8))
-   (and~>
-    (request-headers-ref req #"x-real-ip")
-    (bytes->string/utf-8))
+    (car))
+   (request-headers-ref* req #"x-real-ip")
    (request-client-ip req)))
 
 (define (request-json req)
