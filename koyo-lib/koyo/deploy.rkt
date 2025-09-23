@@ -18,7 +18,7 @@
 (define (deploy
          #:app-name app-name
          #:destination [destination (format "/opt/~a" app-name)]
-         #:env-var-prefix [env-var-prefix (~a app-name)]
+         #:env-var-prefix [env-var-prefix app-name]
          #:environment [environment null] ;; noqa
          #:exec-flags [exec-flags null]
          #:exec-name [exec-name app-name] ;; noqa
@@ -50,7 +50,7 @@
         (append (current-ssh-flags) ssh-flags))
       (status "SSH Flags: ~a" all-flags)
       (define (~env-var name) ;; noqa
-        (format "~a_~a" (regexp-replace* #rx"-" (string-upcase env-var-prefix) "_") name))
+        (format "~a_~a" (regexp-replace* #rx"-" (string-upcase (~a env-var-prefix)) "_") name))
       (parameterize ([current-ssh-flags all-flags])
         (define versions-path (build-path destination "versions"))
         (define version-path (build-path versions-path version-str))
