@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/date
+         racket/format
          racket/match
          racket/port
          racket/system
@@ -17,7 +18,7 @@
 (define (deploy
          #:app-name app-name
          #:destination [destination (format "/opt/~a" app-name)]
-         #:env-var-prefix [env-var-prefix app-name]
+         #:env-var-prefix [env-var-prefix (~a app-name)]
          #:environment [environment null] ;; noqa
          #:exec-flags [exec-flags null]
          #:exec-name [exec-name app-name] ;; noqa
