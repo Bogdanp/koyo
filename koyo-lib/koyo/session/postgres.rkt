@@ -36,22 +36,29 @@
 
    (define (session-store-ref ss session-id key default)
      (match-define (postgres-session-store db ttl) ss)
-     (with-database-transaction [conn db]
-       (query-exec conn expire)
-       (define uuid (buid->uuid session-id))
-       (define key-str (symbol->string key))
-       (match (query-maybe-row conn lookup uuid key-str)
-         [#f (if (procedure? default) (default) default)]
-         [(vector data) (begin0 (deserialize* data)
-                          (query-exec conn touch uuid ttl))])))
+     (define uuid (buid->uuid session-id))
+     (define key-str (symbol->string key))
+     (define maybe-val-bs
+       (with-database-transaction [conn db]
+         (query-exec conn expire)
+         (define maybe-row
+           (query-maybe-row conn lookup uuid key-str))
+         (when maybe-row
+           (query-exec conn touch uuid ttl))
+         (and maybe-row (vector-ref maybe-row 0))))
+     (cond
+       [maybe-val-bs (deserialize* maybe-val-bs)]
+       [(procedure? default) (default)]
+       [else default]))
 
    (define (session-store-set! ss session-id key value)
      (match-define (postgres-session-store db ttl) ss)
+     (define uuid (buid->uuid session-id))
+     (define key-str (symbol->string key))
+     (define val-bs (serialize* value))
      (with-database-transaction [conn db]
-       (define uuid (buid->uuid session-id))
-       (define key-str (symbol->string key))
        (query-exec conn touch uuid ttl)
-       (query-exec conn update uuid key-str (serialize* value))))
+       (query-exec conn update uuid key-str val-bs)))
 
    (define (session-store-update! ss session-id key updater default)
      (match-define (postgres-session-store db _) ss)
@@ -61,9 +68,9 @@
 
    (define (session-store-remove! ss session-id key)
      (match-define (postgres-session-store db _) ss)
-     (with-database-transaction [conn db]
-       (define uuid (buid->uuid session-id))
-       (define key-str (symbol->string key))
+     (define uuid (buid->uuid session-id))
+     (define key-str (symbol->string key))
+     (with-database-connection [conn db]
        (query-exec conn delete uuid key-str)))])
 
 (define-query-definer define-query
