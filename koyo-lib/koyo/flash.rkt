@@ -55,8 +55,8 @@
   (with-timing 'flash "wrap-flash"
     (define sessions (flash-manager-sessions fm))
     (define flash-messages (session-manager-ref sessions session-key null))
-    (session-manager-remove! sessions session-key)
-
+    (unless (null? flash-messages)
+      (session-manager-remove! sessions session-key))
     (parameterize ([current-flash-manager fm]
                    [current-flash-messages flash-messages])
       (apply handler req args))))
