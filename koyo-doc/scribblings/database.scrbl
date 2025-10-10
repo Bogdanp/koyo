@@ -24,6 +24,7 @@ working with database connections.
 @defproc[(make-database-factory [connector (-> connection?)]
                                 [#:log-statements? log-statements? boolean? #f]
                                 [#:max-connections max-connections exact-positive-integer? 16]
+                                [#:connection-idle-ttl connection-idle-ttl (or/c inf.0 exact-positive-integer?) (* 60 1000)]
                                 [#:max-idle-connections max-idle-connections exact-positive-integer? 2]) (-> database?)]{
 
   Returns a function that will create a database component containing a
@@ -36,6 +37,11 @@ working with database connections.
   executed from, the name of the procedure that executed the query and
   the statement itself.
 
+  The @racket[#:connection-idle-ttl] argument controls the maximum
+  amount of time (in milliseconds) that connections will remain idle
+  in the pool for. The @racket[#:max-idle-connections] argument is
+  deprecated and will be removed in a future release.
+
   @history[
     #:changed "0.8" @elem{The component no longer forcefully shuts
      down its associated custodian when the component is stopped. There
@@ -43,6 +49,9 @@ working with database connections.
      that shared libraries (eg. for libargon2) correctly get included in
      distributions (using @tt{koyo dist} or @tt{raco distribute}).}
     #:changed "0.20" @elem{Addded the @racket[#:log-statements?]
+     argument.}
+    #:changed "0.45" @elem{Added the @racket[#:connection-idle-ttl]
+     argument. Deprecated the @racket[#:max-idle-connections]
      argument.}]
 }
 
@@ -67,13 +76,12 @@ working with database connections.
 
   Retrieves a database connection from the pool, enters a transaction
   with the requested @racket[#:isolation] level and passes the
-  connection to @racket[proc].  If @racket[proc] completes
-  successfully, the transaction is committed, otherwise it is rolled
-  back.
+  connection to @racket[proc]. If @racket[proc] completes successfully,
+  the transaction is committed, otherwise it is rolled back.
 
   Nested calls to @racket[call-with-database-transaction] reuse the
-  same connection and, if the database supports it, create nested
-  transactions.
+  same connection and create nested transactions, if supported by the
+  database.
 }
 
 @deftogether[(
@@ -96,9 +104,8 @@ working with database connections.
                                   'read-uncommitted)])]
 )]{
 
-  These forms are syntactic sugar for calling @racket[call-with-database-connection]
-  and @racket[call-with-database-transaction], respectively, with an
-  anonymous thunk.
+  These forms are syntactic sugar for calling @racket[call-with-database-connection] and
+  @racket[call-with-database-transaction], respectively, with an anonymous thunk.
 
   For example, the following forms are equivalent:
 

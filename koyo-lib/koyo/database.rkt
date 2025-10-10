@@ -3,6 +3,7 @@
 (require (for-syntax racket/base
                      syntax/parse/pre)
          component
+         data/pool
          db
          (only-in db/private/generic/interfaces
                   connection<%>
@@ -24,6 +25,7 @@
    (->* [(-> connection?)]
         [#:log-statements? boolean?
          #:max-connections exact-positive-integer?
+         #:connection-idle-ttl (or/c +inf.0 exact-positive-integer?)
          #:max-idle-connections exact-positive-integer?]
         (-> database?))]
   [call-with-database-connection
@@ -46,32 +48,38 @@
   (connection-pool
    connector ;; noqa
    max-connections ;; noqa
-   max-idle-connections ;; noqa
+   connection-idle-ttl ;; noqa
    log-statements?)
   #:methods gen:component
   [(define (component-start db) ;; noqa
-     (match-define (database _ connector max-conns max-idle-conns _log?)
-       db)
+     (match-define (database _ connector max-size idle-ttl _) db)
      (define pool
-       (connection-pool
-        #:max-connections max-conns
-        #:max-idle-connections max-idle-conns
-        connector))
+       (make-pool
+        #:max-size max-size
+        #:idle-ttl idle-ttl
+        (lambda ()
+          ;; This procedure must not raise an exception. So, on connect failure, return
+          ;; a dummy object whose connected? method re-raises the exception. This makes
+          ;; database-borrow-connection raise at the appropriate time.
+          (with-handlers ([exn:fail? (λ (e) (new dummy-connection% [p pool] [e e]))])
+            (connector)))
+        disconnect))
      (struct-copy database db [connection-pool pool]))
 
    (define (component-stop db) ;; noqa
-     (send (database-connection-pool db) clear-idle)
+     (pool-close! (database-connection-pool db))
      (struct-copy database db [connection-pool #f]))])
 
 (define ((make-database-factory connector
                                 #:log-statements? [log-statements? #f]
                                 #:max-connections [max-connections 16]
-                                #:max-idle-connections [max-idle-connections 2]))
+                                #:connection-idle-ttl [connection-idle-ttl (* 60 1000)]
+                                #:max-idle-connections [_max-idle-connections 2]))
   (database
    #;connection-pool #f
    #;connector connector
    #;max-connections max-connections
-   #;max-idle-connections max-idle-connections
+   #;connection-idle-ttl connection-idle-ttl
    #;log-statements log-statements?))
 
 (define current-database-connection
@@ -90,11 +98,9 @@
                   (set! conn the-conn)
                   (set! close void))]
             [else
-             (define the-conn
-               (connection-pool-lease
-                (database-connection-pool db)))
+             (define the-conn (database-borrow-connection db))
              (set! conn the-conn)
-             (set! close (λ () (disconnect the-conn)))])))
+             (set! close (λ () (database-release-connection db the-conn)))])))
       (lambda ()
         (with-timing "proc"
           (parameterize ([current-database-connection conn])
@@ -114,11 +120,19 @@
           (proc conn))))))
 
 (define (database-borrow-connection db)
-  (connection-pool-lease
-   (database-connection-pool db)))
+  (define the-pool
+    (database-connection-pool db))
+  (define the-conn
+    (pool-take! the-pool))
+  (cond
+    [(send the-conn connected?)
+     the-conn]
+    [else
+     (pool-abandon! the-pool the-conn)
+     (database-borrow-connection db)]))
 
-(define (database-release-connection _db conn)
-  (disconnect conn))
+(define (database-release-connection db conn)
+  (pool-release! (database-connection-pool db) conn))
 
 (define-syntax (with-database-connection stx)
   (syntax-parse stx
@@ -139,6 +153,37 @@
          #:isolation isolation
          (lambda (name)
            e ...))]))
+
+(define dummy-connection%
+  (class* object% (connection<%>)
+    (init-field p e)
+    (super-new)
+
+    (define-syntax-rule (define-dummies [id arg ...] ...)
+      (begin
+        (define/public (id arg ...)
+          (unless abandoned?
+            (set! abandoned? #t)
+            (pool-abandon! p this))
+          (raise e)) ...))
+
+    (define abandoned? #f)
+
+    (define-dummies
+      [connected?]
+      [get-dbsystem]
+      [query fsym stmt cursor?]
+      [prepare fsym stmt close-on-exec?]
+      [fetch/cursor fsym cursor fetch-size]
+      [get-base]
+      [list-tables fsym schema]
+      [start-transaction fsym isolation option cwt?]
+      [end-transaction fsym mode cwt?]
+      [transaction-status fsym]
+      [free-statement pst need-lock?])
+
+    (define/public (disconnect)
+      (void))))
 
 
 ;; Query Logging ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

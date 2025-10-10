@@ -1,7 +1,7 @@
 #lang info
 
 (define license 'BSD-3-Clause)
-(define version "0.44.4")
+(define version "0.45")
 (define collection 'multi)
 
 (define deps
@@ -21,6 +21,7 @@
     "monocle-lib"
     "net-lib"
     "raco-invoke"
+    "resource-pool-lib"
     "scribble-text-lib"
     "srfi-lite-lib"
     "struct-define"
