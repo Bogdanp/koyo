@@ -42,7 +42,21 @@
      (with-database-transaction [conn db]
        #:isolation 'repeatable-read
        (query-value conn "select 1"))
-     1))
+     1)
+
+    (test-case "nesting"
+      (with-database-connection [conn1 db]
+        (with-database-connection [conn2 db]
+          (check-eq? conn1 conn2))))
+
+    (test-case "disconnected connections get abandoned"
+      (define the-conn #f)
+      (with-database-connection [conn db]
+        (set! the-conn conn)
+        (disconnect conn))
+      (with-database-connection [conn db]
+        (check-false (eq? the-conn conn))
+        (check-equal? (query-value conn "SELECT 42") 42))))
 
    (test-suite
     "in-rows"
@@ -71,12 +85,16 @@
 
    (test-suite
     "insert-batcher"
-    #:before (lambda ()
-               (with-database-connection [conn db]
-                 (query-exec conn "CREATE TEMPORARY TABLE ib_test(a INTEGER PRIMARY KEY, b TEXT, c REAL)")))
-    #:after (lambda ()
-              (with-database-connection [conn db]
-                (query-exec conn "DROP TABLE ib_test")))
+
+    #:before
+    (lambda ()
+      (with-database-connection [conn db]
+        (query-exec conn "CREATE TEMPORARY TABLE ib_test(a INTEGER PRIMARY KEY, b TEXT, c REAL)")))
+
+    #:after
+    (lambda ()
+      (with-database-connection [conn db]
+        (query-exec conn "DROP TABLE ib_test")))
 
     (test-case "does nothing on empty flush"
       (define ib
