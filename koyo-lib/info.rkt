@@ -21,7 +21,7 @@
     "monocle-lib"
     "net-lib"
     "raco-invoke"
-    "resource-pool-lib"
+    ["resource-pool-lib" #:version "0.6"]
     "scribble-text-lib"
     "srfi-lite-lib"
     "struct-define"

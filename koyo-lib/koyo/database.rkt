@@ -57,12 +57,7 @@
        (make-pool
         #:max-size max-size
         #:idle-ttl idle-ttl
-        (lambda ()
-          ;; This procedure must not raise an exception. So, on connect failure, return
-          ;; a dummy object whose connected? method re-raises the exception. This makes
-          ;; database-borrow-connection raise at the appropriate time.
-          (with-handlers ([exn:fail? (λ (e) (new dummy-connection% [p pool] [e e]))])
-            (connector)))
+        connector
         disconnect))
      (struct-copy database db [connection-pool pool]))
 
@@ -153,37 +148,6 @@
          #:isolation isolation
          (lambda (name)
            e ...))]))
-
-(define dummy-connection%
-  (class* object% (connection<%>)
-    (init-field p e)
-    (super-new)
-
-    (define-syntax-rule (define-dummies [id arg ...] ...)
-      (begin
-        (define/public (id arg ...)
-          (unless abandoned?
-            (set! abandoned? #t)
-            (pool-abandon! p this))
-          (raise e)) ...))
-
-    (define abandoned? #f)
-
-    (define-dummies
-      [connected?]
-      [get-dbsystem]
-      [query fsym stmt cursor?]
-      [prepare fsym stmt close-on-exec?]
-      [fetch/cursor fsym cursor fetch-size]
-      [get-base]
-      [list-tables fsym schema]
-      [start-transaction fsym isolation option cwt?]
-      [end-transaction fsym mode cwt?]
-      [transaction-status fsym]
-      [free-statement pst need-lock?])
-
-    (define/public (disconnect)
-      (void))))
 
 
 ;; Query Logging ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
