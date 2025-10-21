@@ -5,6 +5,7 @@
          gregor
          koyo/database
          koyo/database/batch
+         racket/class
          racket/sequence
          rackunit
          "common.rkt")
@@ -47,7 +48,10 @@
     (test-case "nesting"
       (with-database-connection [conn1 db]
         (with-database-connection [conn2 db]
-          (check-eq? conn1 conn2))))
+          ;; get-base because these are logged-connection%s
+          (check-eq?
+           (send conn1 get-base)
+           (send conn2 get-base)))))
 
     (test-case "disconnected connections get abandoned"
       (define the-conn #f)
