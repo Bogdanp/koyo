@@ -11,13 +11,19 @@
 
 (provide database-tests)
 
-(define db
-  (component-start
-   (make-test-database)))
+(define db #f)
 
 (define database-tests
   (test-suite
    "database"
+
+   #:before
+   (lambda ()
+     (set! db (component-start (make-test-database))))
+
+   #:after
+   (lambda ()
+     (set! db (component-stop db)))
 
    (test-suite
     "with-database-connection"
