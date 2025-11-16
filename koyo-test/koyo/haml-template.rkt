@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require koyo/haml-template
-         rackunit)
+         rackunit
+         syntax/macro-testing)
 
 (provide
  haml-template-tests)
@@ -53,7 +54,50 @@
          (.spacer))
        (check-equal?
         (spacer)
-        '(div ([class "spacer"])))))))
+        '(div ([class "spacer"]))))
+
+     (test-case "slots without default"
+       (define-haml-template nav-item
+         (:li.nav-item
+          (:a
+           ([:href (slot #:destination)])
+           (slot))))
+
+       (check-equal?
+        (nav-item #:destination "/" "Home")
+        '(li
+          ([class "nav-item"])
+          (a
+           ([href "/"])
+           "Home")))
+
+       (check-exn
+        #rx"required keyword argument not supplied"
+        (lambda ()
+          (convert-compile-time-error
+           (nav-item "Home")))))
+
+     (test-case "slots with default"
+       (define-haml-template nav-item
+         (:li.nav-item
+          (:a
+           ([:href (slot #:destination "/")])
+           (slot))))
+
+       (check-equal?
+        (nav-item "Home")
+        '(li
+          ([class "nav-item"])
+          (a
+           ([href "/"])
+           "Home")))
+       (check-equal?
+        (nav-item #:destination "/account" "My Account")
+        `(li
+          ([class "nav-item"])
+          (a
+           ([href "/account"])
+           "My Account")))))))
 
 (module+ test
   (require rackunit/text-ui)

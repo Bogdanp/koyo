@@ -155,6 +155,13 @@ of @racket[xexpr?]s:
 @defform[
   #:literals (slot)
   (define-haml-template id element)
+  #:grammar ([element
+              (code:line slot)
+              (code:line element)]
+             [slot
+              (slot keyword maybe-default)
+              (slot keyword)
+              (slot)])
 ]{
 
   Defines a @tech{HAML template} named @racket[id] that expands to
@@ -165,15 +172,28 @@ of @racket[xexpr?]s:
   @examples[
     #:eval sandbox
     #:label #f
+    (require racket/pretty)
+    (define-haml-template nav-item
+      (:li.nav-item
+       (:a
+        ([:href (slot #:destination "/")])
+        (slot))))
     (define-haml-template container
       (.container
        (slot)))
-    (container
-     (:strong "child 1")
-     (:strong "child 2"))
+    (pretty-print
+     (container
+      (:ul.nav
+       (nav-item "Home")
+       (nav-item #:destination "/me" "My Account"))
+      (:strong "child 1")
+      (:strong "child 2")))
   ]
 
-  @history[#:added "0.22"]
+  @history[
+   #:changed "0.47" @elem{Added support for named slots.}
+   #:added "0.22"
+  ]
 }
 
 @defform[(slot)]{
