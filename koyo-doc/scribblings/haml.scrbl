@@ -155,13 +155,11 @@ of @racket[xexpr?]s:
 @defform[
   #:literals (slot)
   (define-haml-template id element)
-  #:grammar ([element
-              (code:line slot)
-              (code:line element)]
-             [slot
-              (slot keyword maybe-default)
-              (slot keyword)
-              (slot)])
+  #:grammar ([element (code:line slot)
+                      (code:line element)]
+             [slot (slot keyword default)
+                   (slot keyword)
+                   (slot)])
 ]{
 
   Defines a @tech{HAML template} named @racket[id] that expands to
