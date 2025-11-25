@@ -47,7 +47,7 @@
   #:default "86400"
   (string->number session-shelf-life))
 (define-option session-secret-key-path
-  #:default "/tmp/app-name-here-secret-key")
+  #:default (build-path (find-system-path 'temp-dir) "app-name-here-secret-key"))
 (define-option session-secret-key
   (or session-secret-key (make-secret-salt/file session-secret-key-path)))
 

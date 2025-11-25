@@ -26,7 +26,9 @@
              #:shelf-life config:session-shelf-life
              #:secret-key config:session-secret-key
              #:store (make-memory-session-store
-                      #:file-path "/tmp/app-name-here-session.rktd"))])
+                      #:file-path (build-path
+                                   (find-system-path 'temp-dir)
+                                   "app-name-here-session.rktd")))])
 
 
 ;; Interface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
