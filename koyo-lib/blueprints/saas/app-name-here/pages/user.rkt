@@ -19,7 +19,7 @@
   [me-page (-> user-manager? (-> request? response?))]))
 
 (define ((create-password-reset-token-page db m um) req)
-  (with-guard (λ () (bad-request))
+  (with-guard bad-request
     (define data (guard (request-json req)))
     (with-database-transaction [_ db]
       (define-values (u t)
@@ -28,11 +28,12 @@
          #:ip-address (request-ip-address req)
          #:user-agent (guard (request-headers-ref* req #"user-agent"))
          um))
-      (send-password-reset-email m u t))
+      (when (and u t)
+        (send-password-reset-email m u t)))
     (response/empty)))
 
 (define ((reset-password-page um) req id)
-  (with-guard (λ () (bad-request))
+  (with-guard bad-request
     (define data (guard (request-json req)))
     (reset-user-password!
      #:user-id id
@@ -42,7 +43,7 @@
     (response/empty)))
 
 (define ((create-user-page db m um) req)
-  (with-guard (λ () (bad-request))
+  (with-guard bad-request
     (define data (guard (request-json req)))
     (define username (guard (if-null (hash-ref data 'username #f) #f)))
     (guard (regexp-match? #rx".+@.+" username) #:else (bad-request "Username must be a valid e-mail address."))
