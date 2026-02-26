@@ -120,13 +120,16 @@
   (define the-conn
     (pool-take! the-pool))
   (cond
-    [(send the-conn connected?)
+    [(connected? the-conn)
      the-conn]
     [else
      (pool-abandon! the-pool the-conn)
      (database-borrow-connection db)]))
 
 (define (database-release-connection db conn)
+  (when (and (connected? conn)
+             (in-transaction? conn))
+    (rollback-transaction conn))
   (pool-release! (database-connection-pool db) conn))
 
 (define-syntax (with-database-connection stx)

@@ -60,7 +60,13 @@
         (disconnect conn))
       (with-database-connection [conn db]
         (check-false (eq? the-conn conn))
-        (check-equal? (query-value conn "SELECT 42") 42))))
+        (check-equal? (query-value conn "SELECT 42") 42)))
+
+    (test-case "dangling transactions get rolled back"
+      (with-database-connection [conn db]
+        (query-exec conn "begin"))
+      (with-database-connection [conn db]
+        (check-false (in-transaction? conn)))))
 
    (test-suite
     "in-rows"
