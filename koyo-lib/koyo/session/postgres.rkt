@@ -29,10 +29,13 @@
    (define (session-store-load! ss)
      (with-database-transaction [conn (postgres-session-store-database ss)]
        (query-exec conn create-sessions-table)
-       (query-exec conn create-session-data-table)))
+       (query-exec conn create-session-data-table)
+       (query-exec conn expire)))
 
-   (define (session-store-persist! _ss)
-     (void))
+   (define (session-store-persist! ss)
+     (match-define (postgres-session-store db _ttl) ss)
+     (with-database-connection [conn db]
+       (query-exec conn expire)))
 
    (define (session-store-ref ss session-id key default)
      (match-define (postgres-session-store db ttl) ss)
@@ -40,7 +43,6 @@
      (define key-str (symbol->string key))
      (define maybe-val-bs
        (with-database-transaction [conn db]
-         (query-exec conn expire)
          (define maybe-row
            (query-maybe-row conn lookup uuid key-str))
          (when maybe-row
