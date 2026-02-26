@@ -81,3 +81,11 @@ procedure and dispatcher combinators.
 
   @history[#:added "0.28"]
 }
+
+@defproc[(dispatch/plain [servlet (-> request? response?)]) dispatcher/c]{
+  Returns a dispatcher that servers requests using @racket[servlet],
+  without installing a continuation prompt. You probably don't need to
+  use this.
+
+  @history[#:added "0.48"]
+}

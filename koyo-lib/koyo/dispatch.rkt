@@ -8,13 +8,16 @@
          racket/string
          web-server/dispatch
          web-server/dispatchers/dispatch
+         web-server/http
+         web-server/http/response
          "http.rkt"
          "url.rkt")
 
 (provide
  dispatch-rules+roles
  (contract-out
-  [dispatch/mount (-> string? dispatcher/c dispatcher/c)]))
+  [dispatch/mount (-> string? dispatcher/c dispatcher/c)]
+  [dispatch/plain (-> (-> request? response?) dispatcher/c)]))
 
 (define (default-else-proc _req)
   (next-dispatcher))
@@ -86,3 +89,6 @@
                               (old (string-append root path))))])
             (dispatcher conn rerooted-req))
           (next-dispatcher)))))
+
+(define ((dispatch/plain servlet) conn req)
+  (output-response conn (servlet req)))
