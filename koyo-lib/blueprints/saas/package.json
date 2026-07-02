@@ -15,7 +15,7 @@
     "@trivago/prettier-plugin-sort-imports": "^5.2.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.28.1",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-sass-plugin": "^3.3.1",
     "eslint": "^9.17.0",
