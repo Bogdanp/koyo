@@ -5,6 +5,7 @@
          racket/stxparam)
 
 (provide
+ define-guard
  with-guard
  guard)
 
@@ -25,3 +26,17 @@
                                       [(_ v:expr #:else result-expr:expr)
                                        #'(or v (call-with-values (λ () result-expr) return))]))])
              body ...)))]))
+
+(define-syntax (define-guard stx)
+  (syntax-parse stx
+    [(_ (guard-id:id arg-id:id ...)
+        {~optional {~seq #:else else-expr:expr}}
+        guard-expr:expr)
+     #'(define-syntax (guard-id stx)
+         (syntax-parse stx
+           [(_ arg:expr (... ...))
+            #'(guard
+               ((lambda (arg-id ...)
+                  guard-expr)
+                arg (... ...))
+               {~? {~@ #:else else-expr}})]))]))

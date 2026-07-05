@@ -49,3 +49,26 @@ request handlers and other procedures.
 
   @history[#:added "0.28"]
 }
+
+@defform[(define-guard (guard-id arg-id ...)
+           maybe-else
+           guard-expr)
+         #:grammar ([maybe-else
+                     (code:line)
+                     (code:line #:else else-expr)])]{
+
+  Defines a reusable guard.
+
+  @examples[
+    (require koyo/guard)
+    (define-guard (guard-positive x)
+      #:else 'fail-not-positive
+      (> x 0))
+    (with-guard (lambda () 'fail)
+      (guard-positive 5)
+      (println 'after-5)
+      (guard-positive 0))
+  ]
+
+  @history[#:added "0.49"]
+}

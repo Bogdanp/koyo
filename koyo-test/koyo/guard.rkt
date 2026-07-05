@@ -40,7 +40,34 @@
                    (guard #f #:else (values null null))
                    (error 'not-reachable))])
      (check-equal? as null)
-     (check-equal? bs null))))
+     (check-equal? bs null))
+
+   (test-case "define-guard"
+     (define-guard (guard-never)
+       #f)
+     (check-false
+      (with-guard (λ () #f)
+        (guard-never)
+        #t))
+
+     (define-guard (guard-never+else)
+       #:else 42
+       #f)
+     (check-equal?
+      (with-guard (λ () #f)
+        (guard-never+else)
+        #t)
+      42)
+
+     (define-guard (guard-string? s)
+       (string? s))
+     (check-false
+      (with-guard (λ () #f)
+        (guard-string? #t)))
+     (check-true
+      (with-guard (λ () #f)
+        (guard-string? "hello")
+        #t)))))
 
 (module+ test
   (require rackunit/text-ui)
