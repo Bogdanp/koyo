@@ -5,6 +5,7 @@
          gregor
          koyo/database
          koyo/database/batch
+         koyo/guard
          racket/class
          racket/sequence
          rackunit
@@ -66,7 +67,29 @@
       (with-database-connection [conn db]
         (query-exec conn "begin"))
       (with-database-connection [conn db]
-        (check-false (in-transaction? conn)))))
+        (check-false (in-transaction? conn))))
+
+    (test-case "handles exns"
+      (with-database-transaction [conn db]
+        (query-exec conn "create table if not exists exn_test(x integer)")
+        (query-exec conn "truncate exn_test"))
+      (with-handlers ([exn:fail? void])
+        (with-database-transaction [conn db]
+          (query-exec conn "insert into exn_test(x) values(42)")
+          (error 'fail)))
+      (with-database-connection [conn db]
+        (check-false (query-maybe-row conn "select * from exn_test limit 1"))))
+
+    (test-case "handles escapes"
+      (with-database-transaction [conn db]
+        (query-exec conn "create table if not exists guard_test(x integer)")
+        (query-exec conn "truncate guard_test"))
+      (with-guard void
+        (with-database-transaction [conn db]
+          (query-exec conn "insert into guard_test(x) values(42)")
+          (guard #f)))
+      (with-database-connection [conn db]
+        (check-false (query-maybe-row conn "select * from guard_test limit 1")))))
 
    (test-suite
     "in-rows"

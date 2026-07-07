@@ -106,13 +106,26 @@
         (with-timing "disconnect"
           (close))))))
 
+;; Owns the transaction instead of delegating to `call-with-transaction',
+;; which only rolls back on exceptions: a continuation escape (e.g. a guard
+;; from koyo/guard) would commit.
 (define (call-with-database-transaction db proc #:isolation [isolation #f])
   (with-timing 'database "call-with-database-transaction"
     (with-database-connection [conn db]
-      (call-with-transaction conn
-        #:isolation isolation
+      (define ok? #f)
+      (start-transaction #:isolation isolation conn)
+      (dynamic-wind
+        void
         (lambda ()
-          (proc conn))))))
+          (begin0 (call-with-continuation-barrier
+                   (lambda ()
+                     (proc conn)))
+            (commit-transaction conn)
+            (set! ok? #t)))
+        (lambda ()
+          (unless ok?
+            (when (connected? conn)
+              (rollback-transaction conn))))))))
 
 (define (database-borrow-connection db)
   (define the-pool
