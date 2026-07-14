@@ -134,8 +134,9 @@
            port->bytes))))))
 
 (define (static-page _req filename)
-  (let ([filename (path-add-extension filename #".gz" #".")])
-    (with-guard (λ () (response/empty))
+  (with-guard (λ () (response/empty))
+    (guard (not (string=? filename "")))
+    (let ([filename (path-add-extension filename #".gz" #".")])
       (guard (member filename (directory-list assets)))
       (define data
         (get-asset filename))
