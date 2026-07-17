@@ -136,7 +136,8 @@
 (define (static-page _req filename)
   (with-guard (λ () (response/empty))
     (guard (not (string=? filename "")))
-    (let ([filename (path-add-extension filename #".gz" #".")])
+    (let ([original-filename filename]
+          [filename (path-add-extension filename #".gz" #".")])
       (guard (member filename (directory-list assets)))
       (define data
         (get-asset filename))
@@ -144,10 +145,8 @@
        #;code 200
        #;message #"OK"
        #;seconds (current-seconds)
-       #;mime (path->mime-type filename)
-       #;headers (list
-                  (make-header #"content-encoding" #"gzip")
-                  (make-header #"content-length" (string->bytes/utf-8 (number->string (bytes-length data)))))
+       #;mime (path->mime-type original-filename)
+       #;headers (list (make-header #"content-encoding" #"gzip"))
        #;body (list data)))))
 
 (define ((jobs-page broker) req)
