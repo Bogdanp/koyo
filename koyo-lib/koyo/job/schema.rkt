@@ -12,14 +12,31 @@
 (define-runtime-path migrations-path
   (build-path "migrations"))
 
+(define advisory-lock-key
+  199411090000)
+
 (define (ensure-latest-schema! database)
   (with-database-transaction [conn database]
-    (query-exec conn "CREATE TABLE IF NOT EXISTS koyo_job_schema_version(version TEXT)")
-    (define last-version
-      (query-maybe-value conn "SELECT version FROM koyo_job_schema_version"))
-
-    (for ([migration (sort (map path->string (directory-list migrations-path)) string-ci<?)]
-          #:unless (and last-version (string-ci<=? migration last-version)))
-      (query-exec conn (file->string (build-path migrations-path migration)))
-      (query-exec conn "DELETE FROM koyo_job_schema_version")
-      (query-exec conn "INSERT INTO koyo_job_schema_version(version) VALUES($1)" migration))))
+    (define ok? #f)
+    (dynamic-wind
+      (lambda ()
+        (query-exec conn "SELECT pg_advisory_lock($1)" advisory-lock-key))
+      (lambda ()
+        (query-exec conn "CREATE TABLE IF NOT EXISTS koyo_job_schema_version(version TEXT)")
+        (define last-version
+          (query-maybe-value conn "SELECT version FROM koyo_job_schema_version"))
+        (for ([migration (sort (map path->string (directory-list migrations-path)) string-ci<?)]
+              #:unless (and last-version (string-ci<=? migration last-version)))
+          (query-exec conn (file->string (build-path migrations-path migration)))
+          (query-exec conn "DELETE FROM koyo_job_schema_version")
+          (query-exec conn "INSERT INTO koyo_job_schema_version(version) VALUES($1)" migration))
+        (set! ok? #t))
+      (lambda ()
+        (with-handlers ([exn:fail?
+                         (lambda (e)
+                           (if ok?
+                               (raise e)
+                               ((error-display-handler)
+                                (format "ensure-latest-schema!: ~a" (exn-message e))
+                                e)))])
+          (query-exec conn "SELECT pg_advisory_unlock($1)" advisory-lock-key))))))
