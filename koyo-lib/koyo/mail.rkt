@@ -15,7 +15,8 @@
  gen:mail-adapter
  mail-adapter?
  mail-adapter-send-email
- mail-adapter-send-email-with-template)
+ mail-adapter-send-email-with-template
+ mail-adapter-send-email-with-template+extras)
 
 (define-logger mail-adapter)
 
@@ -29,6 +30,13 @@
    #:html-content [html-content])
   (mail-adapter-send-email-with-template
    mail-adapter
+   #:to to
+   #:from from
+   #:template-id [template-id]
+   #:template-alias [template-alias]
+   #:template-model template-model)
+  (mail-adapter-send-email-with-template+extras
+   mail-adapter extras
    #:to to
    #:from from
    #:template-id [template-id]
@@ -77,6 +85,23 @@
         'template (or template-id template-alias)
         'template-model template-model))
      (push-message! ma message)
+     (log-mail-adapter-info "templated email added to outbox ~v" message))
+
+   (define (mail-adapter-send-email-with-template+extras
+            #:to to
+            #:from from
+            #:template-id [template-id #f]
+            #:template-alias [template-alias #f]
+            #:template-model template-model
+            ma extras)
+     (define message
+       (hasheq
+        'to to
+        'from from
+        'template (or template-id template-alias)
+        'template-model template-model
+        'extras extras))
+     (push-message! ma message)
      (log-mail-adapter-info "templated email added to outbox ~v" message))])
 
 (define (make-stub-mail-adapter)
@@ -97,17 +122,21 @@
 ;; Mailer ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ mailer?
  (contract-out
   [make-mailer-factory
    (-> #:adapter mail-adapter?
        #:sender non-empty-string?
        #:common-variables (hash/c symbol? string?)
        (-> mailer?))]
-  [mailer? (-> any/c boolean?)]
-  [mailer-adapter (-> mailer? mail-adapter?)]
-  [mailer-sender (-> mailer? non-empty-string?)]
-  [mailer-common-variables (-> mailer? (hash/c symbol? string?))]
-  [mailer-merge-common-variables (-> mailer? any/c ... (hash/c symbol? string?))]
+  [mailer-adapter
+   (-> mailer? mail-adapter?)]
+  [mailer-sender
+   (-> mailer? non-empty-string?)]
+  [mailer-common-variables
+   (-> mailer? (hash/c symbol? string?))]
+  [mailer-merge-common-variables
+   (-> mailer? any/c ... (hash/c symbol? string?))]
   [mailer-send-email
    (->i [(m mailer?)
          #:to [to non-empty-string?]
@@ -122,6 +151,20 @@
         [result void?])]
   [mailer-send-email-with-template
    (->i [[m mailer?]
+         #:to [to non-empty-string?]]
+        [#:from [from non-empty-string?]
+         #:template-id [template-id (or/c #f exact-positive-integer?)]
+         #:template-alias [template-alias (or/c #f symbol?)]
+         #:template-model [template-model (hash/c symbol? string?)]]
+        #:pre/name (template-id template-alias)
+        "either #:template-id or #:template-alias must be provided, but not both"
+        (cond
+          [(unsupplied-arg? template-id) (not (unsupplied-arg? template-alias))]
+          [else (not (unsupplied-arg? template-id))])
+        [result void?])]
+  [mailer-send-email-with-template+extras
+   (->i [[m mailer?]
+         [extras any/c]
          #:to [to non-empty-string?]]
         [#:from [from non-empty-string?]
          #:template-id [template-id (or/c #f exact-positive-integer?)]
@@ -149,6 +192,14 @@
    (apply hasheq variables)
    #:combine/key (lambda (_k1 _k2 v) v)))
 
+(define (mailer-merge-common-variables* m ht)
+  (define assocs
+    (flatten
+     (for/fold ([items null])
+               ([(k v) (in-hash ht)])
+       (cons k (cons v items)))))
+  (apply mailer-merge-common-variables m assocs))
+
 (define (mailer-send-email
          m
          #:to to
@@ -157,12 +208,12 @@
          #:text-content [text-content #f]
          #:html-content [html-content #f])
   (mail-adapter-send-email
-   (mailer-adapter m)
    #:to to
    #:from from
    #:subject subject
    #:text-content text-content
-   #:html-content html-content))
+   #:html-content html-content
+   (mailer-adapter m)))
 
 (define (mailer-send-email-with-template
          m
@@ -171,15 +222,25 @@
          #:template-id [template-id #f]
          #:template-alias [template-alias #f]
          #:template-model [template-model (hasheq)])
-  (define assocs
-    (flatten
-     (for/fold ([items null])
-               ([(k v) (in-hash template-model)])
-       (cons k (cons v items)))))
   (mail-adapter-send-email-with-template
-   (mailer-adapter m)
    #:to to
    #:from from
    #:template-id template-id
    #:template-alias template-alias
-   #:template-model (apply mailer-merge-common-variables m assocs)))
+   #:template-model (mailer-merge-common-variables* m template-model)
+   (mailer-adapter m)))
+
+(define (mailer-send-email-with-template+extras
+         m extras
+         #:to to
+         #:from [from (mailer-sender m)]
+         #:template-id [template-id #f]
+         #:template-alias [template-alias #f]
+         #:template-model [template-model (hasheq)])
+  (mail-adapter-send-email-with-template+extras
+   #:to to
+   #:from from
+   #:template-id template-id
+   #:template-alias template-alias
+   #:template-model (mailer-merge-common-variables* m template-model)
+   (mailer-adapter m) extras))
