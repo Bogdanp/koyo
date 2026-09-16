@@ -21,22 +21,25 @@
 ;; like #e1e99999 will cause the process to hang and OOM.
 
 (define (id-string? s)
-  (regexp-match? #px"^(0|[1-9][0-9]{0,12})$" s))
+  (regexp-match? #px"^(0|[1-9][0-9]{0,18})$" s))
 
 (define (integer-string? s)
-  (regexp-match? #px"^-?(0|[1-9][0-9]{0,12})$" s))
+  (regexp-match? #px"^-?(0|[1-9][0-9]{0,18})$" s))
 
 (define (real-string? s)
-  (regexp-match? #px"^-?(0|[1-9][0-9]{0,12})(\\.[0-9]{0,12})?$" s))
+  (regexp-match? #px"^-?(0|[1-9][0-9]{0,18})(\\.[0-9]{0,18})?(e[-+]?[0-9]+)?$" s))
 
 (define (string->id s)
   (and (id-string? s)
-       (string->number s)))
+       (let ([n (string->number s)])
+         (and n (<= 0 n #xFFFFFFFFFFFFFFFF) n))))
 
 (define (string->integer s)
   (and (integer-string? s)
-       (string->number s)))
+       (let ([n (string->number s)])
+         (and n (<= #x-8000000000000000 n #x7FFFFFFFFFFFFFFF) n))))
 
 (define (string->real s)
   (and (real-string? s)
-       (string->number s)))
+       (let ([n (string->number s)])
+         (and n (real? n) n))))
