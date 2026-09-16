@@ -11,11 +11,11 @@
   [real-string?
    (-> string? boolean?)]
   [string->id
-   (-> string? (or/c #f exact-integer?))]
+   (-> string? (or/c #f exact-nonnegative-integer?))]
   [string->integer
    (-> string? (or/c #f exact-integer?))]
   [string->real
-   (-> string? (or/c #f exact-integer?))]))
+   (-> string? (or/c #f real?))]))
 
 ;; string->number should not be used to parse untrusted data. A string
 ;; like #e1e99999 will cause the process to hang and OOM.
