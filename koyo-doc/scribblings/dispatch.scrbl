@@ -16,6 +16,18 @@
 This module provides syntax for building a role-aware dispatch
 procedure and dispatcher combinators.
 
+@deftogether[(
+ @defform[(id-arg)]
+ @defform[(safe-integer-arg)]
+ @defform[(safe-real-arg)]
+)]{
+
+ A bidirectional match expander for @racket[id/c] values, and safe
+ versions of @racket[integer-arg] and @racket[real-arg], respectively.
+
+ @history[#:added "0.52"]
+}
+
 @defform[
   #:literals (else)
   (dispatch-rules+roles

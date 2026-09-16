@@ -47,13 +47,13 @@
      [("password-reset")
       (request-password-reset-page mailer users)]
 
-     [("password-reset" (integer-arg) (string-arg))
+     [("password-reset" (id-arg) (string-arg))
       (password-reset-page users)]
 
      [("signup")
       (signup-page auth mailer users)]
 
-     [("verify" (integer-arg) (string-arg))
+     [("verify" (id-arg) (string-arg))
       (verify-page users)]))
 
   (define ((wrap-params handler) req)

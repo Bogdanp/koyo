@@ -123,7 +123,7 @@ working with database connections.
 }
 
 @defthing[id/c contract?]{
-  An alias for @racket[exact-positive-integer?].
+  An alias for @racket[exact-nonnegative-integer?].
 }
 
 @defthing[maybe-id/c contract?]{

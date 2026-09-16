@@ -227,7 +227,7 @@
   [->sql-timestamp (-> time-provider? sql-timestamp?)]
   [seconds->sql-timestamp (->* [real?] [boolean?] sql-timestamp?)]))
 
-(define id/c exact-positive-integer?)
+(define id/c exact-nonnegative-integer?)
 (define maybe-id/c (or/c #f id/c))
 
 (define exn:fail:sql:constraint-violation?

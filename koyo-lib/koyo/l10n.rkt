@@ -8,7 +8,8 @@
          web-server/http
          "contract.rkt"
          "profiler.rkt"
-         "session.rkt")
+         "session.rkt"
+         "string.rkt")
 
 ;; Translate ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -94,7 +95,7 @@
         (regexp-match language-spec-re spec))
 
       (cons (make-locale-pair language country)
-            (string->number (or weight "1")))))
+            (string->real (or weight "1")))))
 
   (for/first ([spec (sort specs > #:key cdr)]
               #:when (member (car spec) (current-locales)))

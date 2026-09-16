@@ -7,7 +7,8 @@
          racket/match
          racket/string
          threading
-         web-server/http)
+         web-server/http
+         "string.rkt")
 
 ;; URL ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -114,5 +115,5 @@
     [else default]))
 
 (define bindings-ref-bytes  (make-bindings-reffer string->bytes/utf-8))
-(define bindings-ref-number (make-bindings-reffer string->number))
+(define bindings-ref-number (make-bindings-reffer string->real))
 (define bindings-ref-symbol (make-bindings-reffer string->symbol))

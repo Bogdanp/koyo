@@ -37,11 +37,11 @@
          [("")
           home-page]
 
-         [("orders" (integer-arg))
+         [("orders" (id-arg))
           #:roles (user)
           (order-page 'order-manager)]
 
-         [("admin" "orders" (integer-arg))
+         [("admin" "orders" (id-arg))
           #:roles (admin)
           (admin:edit-order-page 'order-manager)]))
 
@@ -57,10 +57,10 @@
          [("")
           home-page]
 
-         [("orders" (integer-arg))
+         [("orders" (id-arg))
           (order-page 'order-manager)]
 
-         [("admin" "orders" (integer-arg))
+         [("admin" "orders" (id-arg))
           #:name 'edit-order-page
           (admin:edit-order-page 'order-manager)]))
 
@@ -74,7 +74,7 @@
          [("")
           home-page]
 
-         [("orders" (integer-arg))
+         [("orders" (id-arg))
           (order-page 'order-manager)]))
 
       (check-not-exn
@@ -109,7 +109,7 @@
           (lambda (_req)
             (set! jobs (cons "a job" jobs))
             (response/empty))]
-         [((integer-arg))
+         [((id-arg))
           #:name 'get-job
           (lambda (_req idx)
             (response/jsexpr (list-ref jobs idx)))]))

@@ -2,6 +2,7 @@
 
 (require koyo/profiler
          koyo/session
+         koyo/string
          koyo/url
          net/url
          racket/contract/base
@@ -66,7 +67,7 @@
       ;; implement roles other than 'user then you're going to want to
       ;; change this part of the code.
       [(and~>> (session-manager-ref (auth-manager-sessions am) session-key #f)
-               (string->number)
+               (string->id)
                (user-manager-lookup/id (auth-manager-users am)))
        => (lambda (user)
             (parameterize ([current-user user])

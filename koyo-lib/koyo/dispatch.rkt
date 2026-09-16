@@ -7,17 +7,43 @@
          racket/function
          racket/string
          web-server/dispatch
+         web-server/dispatch/extend
          web-server/dispatchers/dispatch
          web-server/http
          web-server/http/response
+         "database.rkt"
          "http.rkt"
+         "string.rkt"
          "url.rkt")
 
 (provide
+ id-arg
+ safe-integer-arg
+ safe-real-arg
  dispatch-rules+roles
  (contract-out
   [dispatch/mount (-> string? dispatcher/c dispatcher/c)]
   [dispatch/plain (-> (-> request? response?) dispatcher/c)]))
+
+(define-syntax define-bidi-match-expander*
+  (syntax-rules ()
+    [(_ id in-test? in out-test? out)
+     (begin
+       (define-coercion-match-expander in/m in-test? in)
+       (define-coercion-match-expander out/m out-test? out)
+       (define-bidi-match-expander id in/m out/m))]))
+
+(define-bidi-match-expander* id-arg
+  id-string? string->id
+  id/c number->string)
+
+(define-bidi-match-expander* safe-integer-arg
+  integer-string? string->integer
+  integer? number->string)
+
+(define-bidi-match-expander* safe-real-arg
+  real-string? string->real
+  real? number->string)
 
 (define (default-else-proc _req)
   (next-dispatcher))

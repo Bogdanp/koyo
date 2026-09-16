@@ -49,7 +49,7 @@
        [("api" "v1" "users")
         #:method "post"
         (create-user-page db mailer users)]
-       [("api" "v1" "users" (integer-arg) "password")
+       [("api" "v1" "users" (id-arg) "password")
         #:method "patch"
         (reset-password-page users)]
        [("api" "v1" "workspaces")
@@ -59,7 +59,7 @@
         #:method "post"
         #:roles (user)
         (create-workspace-page db)]
-       [("api" "v1" "workspaces" (integer-arg) "invites")
+       [("api" "v1" "workspaces" (id-arg) "invites")
         #:method "post"
         #:roles (user)
         #:name 'invite-workspace-member-page
@@ -67,14 +67,14 @@
          (wrap-permissions
           #:permissions '(write)
           (invite-workspace-member-page db mailer)))]
-       [("api" "v1" "workspaces" (integer-arg) "invites" (string-arg))
+       [("api" "v1" "workspaces" (id-arg) "invites" (string-arg))
         #:roles (user)
         (workspace-invite-page db)]
-       [("api" "v1" "workspaces" (integer-arg) "invites" (string-arg) "join")
+       [("api" "v1" "workspaces" (id-arg) "invites" (string-arg) "join")
         #:method "post"
         #:roles (user)
         (join-workspace-page db)]
-       [("api" "v1" "workspaces" (integer-arg) "invites" (integer-arg))
+       [("api" "v1" "workspaces" (id-arg) "invites" (id-arg))
         #:method "delete"
         #:roles (user)
         #:name 'delete-workspace-invite-page
@@ -82,13 +82,13 @@
          (wrap-permissions
           #:permissions '(write)
           (delete-workspace-invite-page db)))]
-       [("api" "v1" "workspaces" (integer-arg) "members")
+       [("api" "v1" "workspaces" (id-arg) "members")
         #:roles (user)
         #:name 'workspace-members-page
         (wrap-workspace
          (wrap-permissions
           (workspace-members-page db)))]
-       [("api" "v1" "workspaces" (integer-arg) "members" (integer-arg))
+       [("api" "v1" "workspaces" (id-arg) "members" (id-arg))
         #:method "delete"
         #:roles (user)
         #:name 'delete-workspace-member-page
@@ -98,7 +98,7 @@
           (delete-workspace-member-page db)))]
        [("logout")
         (logout-page auth)]
-       [("verify" (integer-arg) (string-arg))
+       [("verify" (id-arg) (string-arg))
         (verify-user-page users)]
        [else app-page])))
 

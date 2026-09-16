@@ -88,6 +88,9 @@ structures.
 
   Finds the first binding in @racket[bindings] whose name is
   @racket[name] and returns its value or @racket[default].
+
+  @history[#:changed "0.52" @elem{The @tt{number} variant now parses a
+  safe subset of integer and real values.}]
 }
 
 @defproc[(url-scrub [u url?]) url?]{

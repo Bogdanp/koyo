@@ -3,8 +3,7 @@
 (require koyo/database
          koyo/profiler
          koyo/session
-         koyo/url
-         net/url
+         koyo/string
          racket/contract/base
          racket/match
          threading
@@ -76,7 +75,7 @@
     (define maybe-user
       (and~>
        (session-manager-ref sm key #f)
-       (string->number)
+       (string->id)
        (lookup-user-by-id (auth-manager-users am) _)))
     (cond
       [(null? roles)

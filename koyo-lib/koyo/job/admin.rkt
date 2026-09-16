@@ -69,12 +69,12 @@
       dashboard-page]
      [("api" "v1" "jobs")
       (jobs-page broker)]
-     [("api" "v1" "jobs" (integer-arg))
+     [("api" "v1" "jobs" (id-arg))
       (job-page broker)]
-     [("api" "v1" "jobs" (integer-arg) "retry")
+     [("api" "v1" "jobs" (id-arg) "retry")
       #:method "post"
       (retry-job-page broker)]
-     [("api" "v1" "jobs" (integer-arg))
+     [("api" "v1" "jobs" (id-arg))
       #:method "delete"
       (delete-job-page broker)]
      [("api" "v1" "queues")
