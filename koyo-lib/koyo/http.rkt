@@ -54,6 +54,8 @@
   [request-reroot (-> request? url? (or/c #f request?))]
   [bindings-ref (bindings-ref/c string?)]
   [bindings-ref-bytes (bindings-ref/c bytes?)]
+  [bindings-ref-id (bindings-ref/c exact-nonnegative-integer?)]
+  [bindings-ref-integer (bindings-ref/c exact-integer?)]
   [bindings-ref-number (bindings-ref/c number?)]
   [bindings-ref-symbol (bindings-ref/c symbol?)]))
 
@@ -115,5 +117,7 @@
     [else default]))
 
 (define bindings-ref-bytes  (make-bindings-reffer string->bytes/utf-8))
+(define bindings-ref-id (make-bindings-reffer string->id))
+(define bindings-ref-integer (make-bindings-reffer string->integer))
 (define bindings-ref-number (make-bindings-reffer string->real))
 (define bindings-ref-symbol (make-bindings-reffer string->symbol))
