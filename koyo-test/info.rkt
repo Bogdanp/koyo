@@ -13,6 +13,7 @@
     "http-easy-lib"
     "koyo-lib"
     "libargon2"
+    "rackcheck-lib"
     "rackunit-lib"
     "srfi-lite-lib"
     "web-server-lib"))
