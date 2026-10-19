@@ -1,7 +1,7 @@
 #lang racket/base
 
-(require "private/filesystem.rkt"
-         "private/tool.rkt")
+(require "private/compiler.rkt"
+         "private/filesystem.rkt")
 
 (provide
  stubbed-components
@@ -28,7 +28,7 @@
      (current-system dev-system)
 
      (define (start) (system-start dev-system))
-     (define (stop)  (system-stop  dev-system))
+     (define (stop)  (system-stop  dev-system)) ;; noqa
 
      (start)))
 
@@ -36,7 +36,7 @@
                        [namespace (make-base-empty-namespace)]
                        [repl read-eval-print-loop])
   (displayln "Compiling application...")
-  (make! dynamic-module-path)
+  (compile-zo dynamic-module-path)
   (displayln "Starting REPL...")
   (port-count-lines! (current-input-port))
   (port-count-lines! (current-output-port))
@@ -63,20 +63,20 @@
 ;; they're not crucial to the operation of koyo.
 (define (try-setup-expeditor!)
   (let/ec esc
-    (define (fail) (esc (dynamic-require 'readline #f void)))
+    (define (fail) (esc (dynamic-require 'readline #f void))) ;; noqa
     (define-syntax-rule (define/require mod id ...)
       (define-values (id ...)
         (dynamic-require* 'mod '(id ...) fail)))
-    (define/require racket/file
+    (define/require racket/file ;; noqa
       get-preference
       put-preferences)
-    (define/require expeditor
+    (define/require expeditor ;; noqa
       current-expeditor-lexer
       current-expeditor-reader
       expeditor-open
       expeditor-read
       expeditor-close)
-    (define/require syntax-color/racket-lexer
+    (define/require syntax-color/racket-lexer ;; noqa
       racket-lexer)
     (current-expeditor-lexer racket-lexer)
     (current-expeditor-reader (λ (in) (read-syntax (object-name in) in)))
@@ -93,7 +93,7 @@
          (put-preferences '(readline-input-history) (list (map string->bytes/utf-8 hist)))
          (old v))))))
 
-(define (dynamic-require* mod ids fail-proc)
+(define (dynamic-require* mod ids fail-proc) ;; noqa
   (apply values (for/list ([id (in-list ids)])
                   (dynamic-require mod id fail-proc))))
 

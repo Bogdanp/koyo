@@ -304,7 +304,6 @@
 
 (define (handle-serve)
   (define recompile? #t)
-  (define errortrace? #f)
   (define server-timeout 30)
   (define watch-patterns null)
   (define watch-excludes null)
@@ -320,9 +319,6 @@
       PATTERN-RE "a regular expression to exclude files & folders from the watched set"
       (set! watch-excludes (cons (regexp PATTERN-RE) watch-excludes))]
      #:once-each
-     [("--errortrace")
-      "run the application with errortrace"
-      (set! errortrace? #t)]
      [("--disable-recompile")
       "don't recompile changed files on reload"
       (set! recompile? #f)]
@@ -353,7 +349,6 @@
 
   (run-forever
    #:recompile? recompile?
-   #:errortrace? errortrace?
    #:server-timeout server-timeout
    #:watch-file?-proc watch-file?-proc
    (path->complete-path dynamic-module-path)))

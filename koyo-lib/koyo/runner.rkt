@@ -1,21 +1,21 @@
 #lang racket/base
 
-(require racket/contract/base
+(require compiler/find-exe
+         racket/contract/base
          racket/file
          racket/match
          racket/path
          racket/string
          racket/system
          threading
-         "private/platform.rkt"
-         "private/tool.rkt")
+         "private/compiler.rkt"
+         "private/platform.rkt")
 
 (provide
  (contract-out
   [run-forever
    (->* [path-string?]
         [#:recompile? boolean?
-         #:errortrace? boolean?
          #:server-timeout (and/c real? positive?)
          #:watch-file?-proc (-> (or/c path? path-string?) boolean?)]
         void?)]))
@@ -66,7 +66,6 @@
 
 (define (run-forever dynamic-module-path
                      #:recompile? [recompile? #t]
-                     #:errortrace? [errortrace? #t]
                      #:server-timeout [server-timeout 30]
                      #:watch-file?-proc [watch-file? watch-file?]) ;; noqa
   (file-stream-buffer-mode (current-output-port) 'line)
@@ -78,11 +77,10 @@
   (define root-path
     (path-only dynamic-module-path))
   (define command-args
-    (~> (list "-l" "koyo/runner" "--" root-path dynamic-module-path)
-        (when~> errortrace?
-          (list* "-l" "errortrace" _))
+    (~> (list root-path dynamic-module-path)
         (when~> recompile?
-          (list* "-y" _))))
+          (list* "--recompile" _))
+        (list* "-l" "koyo/runner" "--" _)))
 
   (define (run)
     (define-values (command-in command-out)
@@ -95,7 +93,7 @@
                (current-output-port)
                command-in
                stderr-out
-               racket-exe
+               (find-exe)
                command-args)))
 
     (define ready? (make-semaphore))
@@ -170,9 +168,14 @@
   (file-stream-buffer-mode (current-output-port) 'line)
   (file-stream-buffer-mode (current-error-port)  'line)
 
+  (define compile-app void)
   (define-values (root-path dynamic-module-path)
     (command-line
      #:program "raco koyo serve"
+     #:once-each
+     [("--recompile")
+      "compile the application before loading it"
+      (set! compile-app (λ () (compile-zo dynamic-module-path)))]
      #:args [root-path dynamic-module-path]
      (values root-path dynamic-module-path)))
 
@@ -192,6 +195,7 @@
                        (delete-zos! root-path)
                        (exit 0))])
       (jobs:allow-conflicts? #t)
+      (compile-app)
       (dynamic-rerequire mod)
       (values
        ((dynamic-require mod 'start))
