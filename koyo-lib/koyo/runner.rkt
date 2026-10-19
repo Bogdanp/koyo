@@ -4,9 +4,9 @@
          racket/file
          racket/match
          racket/path
-         racket/port
          racket/string
          racket/system
+         threading
          "private/platform.rkt"
          "private/tool.rkt")
 
@@ -37,7 +37,9 @@
         [else                      #f])))
 
 (module+ private
-  (provide log-watcher-debug watch-file?))
+  (provide
+   log-watcher-debug
+   watch-file?))
 
 (define (code-change-evt root-path watch?)
   (let ([root-path (simplify-path root-path)])
@@ -73,11 +75,14 @@
    (lambda (msg . args)
      (log-runner-warning (apply format msg args))))
 
-  (define root-path (simplify-path (build-path dynamic-module-path 'up 'up)))
+  (define root-path
+    (path-only dynamic-module-path))
   (define command-args
-    (if errortrace?
-        (list "-l" "errortrace" "-l" "koyo/runner" "--" root-path dynamic-module-path)
-        (list "-l" "koyo/runner" "--" root-path dynamic-module-path)))
+    (~> (list "-l" "koyo/runner" "--" root-path dynamic-module-path)
+        (when~> errortrace?
+          (list* "-l" "errortrace" _))
+        (when~> recompile?
+          (list* "-y" _))))
 
   (define (run)
     (define-values (command-in command-out)
@@ -130,51 +135,29 @@
      (lambda ()
        (control 'interrupt)
        (control 'wait)
-       (close-output-port stderr-out)
        (close-input-port command-in)
+       (close-output-port stderr-out)
        (close-output-port command-out))))
 
-  (define (maybe-compile-app!)
-    (when recompile?
-      (log-runner-info "compiling application")
-      (unless (make! dynamic-module-path)
-        (log-runner-warning "compilation failed"))))
-
-  (define (maybe-recompile-app! changed-path)
-    (void
-     (thread
-      (lambda ()
-        (when recompile?
-          (log-runner-info "recompiling because '~a' changed" changed-path)
-          (parameterize ([current-output-port (open-output-nowhere)]
-                         [current-error-port  (open-output-nowhere)])
-            (if (make! dynamic-module-path #:parallel? #f)
-                (log-runner-info "compilation succeeded")
-                (log-runner-warning "compilation failed (output suppressed)"))))))))
-
   (let process-loop ()
-    (maybe-compile-app!)
     (log-runner-info "starting application process")
-    (let-values ([(stopped-evt reload stop) (run)])
-      (let filesystem-loop ()
-        (with-handlers ([exn:break? (λ (_) (stop))])
-          (sync/enable-break
-           (handle-evt
-            stopped-evt
-            (lambda (status)
-              (when (eq? status 'done-error)
-                (log-runner-warning "application process failed; waiting for changes before reloading")
-                (sync (code-change-evt root-path watch-file?)))
-              (process-loop)))
-           (handle-evt
-            (code-change-evt root-path watch-file?)
-            (lambda (changed-path)
-              (reload changed-path)
-              (unless (symbol? (sync/timeout 0 stopped-evt))
-                ;; Don't recompile the app if it has stopped.  The
-                ;; process loop will take care of that.
-                (maybe-recompile-app! changed-path))
-              (filesystem-loop)))))))))
+    (define-values (stopped-evt reload stop)
+      (run))
+    (let filesystem-loop ()
+      (with-handlers ([exn:break? (λ (_) (stop))])
+        (sync/enable-break
+         (handle-evt
+          stopped-evt
+          (lambda (status)
+            (when (eq? status 'done-error)
+              (log-runner-warning "application process failed; waiting for changes before reloading")
+              (sync (code-change-evt root-path watch-file?)))
+            (process-loop)))
+         (handle-evt
+          (code-change-evt root-path watch-file?)
+          (lambda (changed-path)
+            (reload changed-path)
+            (filesystem-loop))))))))
 
 (module+ main
   (require racket/cmdline
@@ -196,7 +179,8 @@
   (define (display-exn e)
     ((error-display-handler) (exn-message e) e))
 
-  (define mod (path->module-path dynamic-module-path))
+  (define mod
+    (path->module-path dynamic-module-path))
   (define (start)
     (with-handlers ([module-redeclare-exn?
                      (lambda (e)
@@ -214,29 +198,29 @@
        (dynamic-require mod 'before-reload (λ () void)))))
 
   (let loop ()
-    (let-values ([(stop before-reload) (start)])
-      (let inner-loop ()
-        (with-handlers ([exn:break? (λ (_) (stop))])
-          (sync/enable-break
-           (handle-evt
-            (current-input-port)
-            (lambda (_)
-              (match (read)
-                [`(reload ,changed-path)
-                 (with-handlers ([(λ (_) #t)
-                                  (λ (e)
-                                    (eprintf "koyo/runner: failed to stop application~n")
-                                    (display-exn e))])
-                   (stop))
-                 (when should-touch-dependents?
-                   (touch-dependents dynamic-module-path changed-path))
-                 (with-handlers ([(λ (_) #t)
-                                  (λ (e)
-                                    (eprintf "koyo/runner: before reload hook failed~n")
-                                    (display-exn e))])
-                   (before-reload))
-                 (loop)]
-
-                [message
-                 (eprintf "koyo/runner: unhandled message ~e~n" message)
-                 (inner-loop)])))))))))
+    (define-values (stop before-reload)
+      (start))
+    (let inner-loop ()
+      (with-handlers ([exn:break? (λ (_) (stop))])
+        (sync/enable-break
+         (handle-evt
+          (current-input-port)
+          (lambda (_)
+            (match (read)
+              [`(reload ,changed-path)
+               (with-handlers ([(λ (_) #t)
+                                (λ (e)
+                                  (eprintf "koyo/runner: failed to stop application~n")
+                                  (display-exn e))])
+                 (stop))
+               (when should-touch-dependents?
+                 (touch-dependents dynamic-module-path changed-path))
+               (with-handlers ([(λ (_) #t)
+                                (λ (e)
+                                  (eprintf "koyo/runner: before reload hook failed~n")
+                                  (display-exn e))])
+                 (before-reload))
+               (loop)]
+              [message
+               (eprintf "koyo/runner: unhandled message ~e~n" message)
+               (inner-loop)]))))))))
