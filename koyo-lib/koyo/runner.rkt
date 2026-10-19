@@ -8,7 +8,6 @@
          racket/string
          racket/system
          threading
-         "private/compiler.rkt"
          "private/platform.rkt")
 
 (provide
@@ -162,6 +161,7 @@
            racket/rerequire
            setup/collects
            (prefix-in jobs: (submod "job/registry.rkt" private))
+           "private/compiler.rkt"
            "private/mod.rkt"
            "private/zo.rkt")
 
