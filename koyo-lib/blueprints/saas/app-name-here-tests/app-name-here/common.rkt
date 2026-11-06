@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          db
+         (only-in deta resolve-fields-strictly?)
          koyo/database
          koyo/database/migrator
          koyo/hasher
@@ -13,13 +14,14 @@
          app-name-here/components/user
          (prefix-in config: app-name-here/config))
 
-
 ;; database ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  make-test-database
  make-test-migrator
  run-db-tests)
+
+(resolve-fields-strictly? #t)
 
 (define-runtime-path migrations-path
   (build-path 'up 'up "migrations"))

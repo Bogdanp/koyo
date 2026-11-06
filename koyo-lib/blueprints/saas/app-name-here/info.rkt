@@ -5,7 +5,7 @@
   '("base"
     "component-lib"
     "db-lib"
-    ["deta-lib" #:version "0.9"]
+    ["deta-lib" #:version "0.21"]
     "forms-lib"
     "gregor-lib"
     "koyo-lib"

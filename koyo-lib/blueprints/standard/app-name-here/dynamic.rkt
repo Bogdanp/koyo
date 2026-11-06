@@ -3,6 +3,7 @@
 (require (for-syntax racket/base)
          component
          db
+         (only-in deta resolve-fields-strictly?)
          deta/reflect
          koyo/database
          koyo/database/migrator
@@ -22,6 +23,8 @@
          (prefix-in config: "config.rkt"))
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(resolve-fields-strictly? #t)
 
 (define-runtime-path migrations-path
   (build-path 'up "migrations"))

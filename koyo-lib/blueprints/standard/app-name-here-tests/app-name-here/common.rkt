@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          db
+         (only-in deta resolve-fields-strictly?)
          koyo/database
          koyo/database/migrator
          koyo/hasher
@@ -20,6 +21,8 @@
  make-test-database
  make-test-migrator
  run-db-tests)
+
+(resolve-fields-strictly? #t)
 
 (define-runtime-path migrations-path
   (build-path 'up 'up "migrations"))
